@@ -1,36 +1,68 @@
-# This is a basic workflow to help you get started with Actions
+name: Export Carousel & Notify n8n
 
-name: CI
-
-# Controls when the workflow will run
+# Trigger otomatis kalau ada HTML carousel baru di branch main.
+# Pull request TIDAK di-trigger — kita gak mau notify n8n / post ke Buffer
+# dari draft yang belum di-merge.
 on:
-  # Triggers the workflow on push or pull request events but only for the "main" branch
   push:
     branches: [ "main" ]
-  pull_request:
-    branches: [ "main" ]
-
-  # Allows you to run this workflow manually from the Actions tab
+    paths:
+      - "carousels/**.html"
+  # Buat testing manual — bisa pilih file HTML spesifik lewat tab Actions
   workflow_dispatch:
+    inputs:
+      html_file:
+        description: "Path ke file HTML (kosongkan untuk auto-detect dari commit terakhir)"
+        required: false
+        default: ""
 
-# A workflow run is made up of one or more jobs that can run sequentially or in parallel
 jobs:
-  # This workflow contains a single job called "build"
-  build:
-    # The type of runner that the job will run on
+  export:
     runs-on: ubuntu-latest
-
-    # Steps represent a sequence of tasks that will be executed as part of the job
     steps:
-      # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
-      - uses: actions/checkout@v4
+      - name: Checkout repo
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 2   # perlu HEAD^ buat diff, default checkout cuma ambil 1 commit
 
-      # Runs a single command using the runners shell
-      - name: Run a one-line script
-        run: echo Hello, world!
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
 
-      # Runs a set of commands using the runners shell
-      - name: Run a multi-line script
+      - name: Install dependencies
         run: |
-          echo Add other actions to build,
-          echo test, and deploy your project.
+          pip install -r requirements.txt
+          playwright install --with-deps chromium
+
+      - name: Determine target HTML file
+        id: target
+        run: |
+          if [ -n "${{ github.event.inputs.html_file }}" ]; then
+            FILE="${{ github.event.inputs.html_file }}"
+          else
+            FILE=$(git diff --name-only HEAD^ HEAD -- 'carousels/*.html' | head -n 1)
+          fi
+
+          if [ -z "$FILE" ]; then
+            echo "❌ Tidak ada file HTML carousel yang berubah atau di-input."
+            exit 1
+          fi
+
+          echo "file=$FILE" >> "$GITHUB_OUTPUT"
+          echo "Target file: $FILE"
+
+      - name: Export slides to PNG
+        run: |
+          python scripts/export-slider-content.py "${{ steps.target.outputs.file }}" \
+            --selector "section" \
+            --scale 3 \
+            --out ./output
+
+      - name: Upload images & notify n8n
+        env:
+          CLOUDINARY_URL: ${{ secrets.CLOUDINARY_URL }}
+          N8N_WEBHOOK_URL: ${{ secrets.N8N_WEBHOOK_URL }}
+          WEBHOOK_SECRET: ${{ secrets.WEBHOOK_SECRET }}
+        run: |
+          python scripts/notify.py "${{ steps.target.outputs.file }}" ./output
