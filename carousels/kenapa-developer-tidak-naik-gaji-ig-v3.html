@@ -1,11 +1,17 @@
 <!DOCTYPE html>
-<!-- build: 2026-07-01 export trigger test -->
 <html lang="id">
 <head>
 <meta charset="UTF-8">
 <title>Kenapa Banyak Developer Tidak Naik Gaji? — @vourdev</title>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Sora:wght@600;700;800&family=Nunito:wght@500;700&family=JetBrains+Mono:wght@400;500;600&display=swap">
 <script src="https://code.iconify.design/iconify-icon/2.1.0/iconify-icon.min.js"></script>
+<script type="application/json" id="vourdev-meta">
+{
+  "title": "Kenapa Banyak Developer Tidak Naik Gaji?",
+  "caption": "Gajimu nggak naik bukan karena kamu nggak kerja keras. 💰\nAda 4 alasan spesifik yang kebanyakan developer nggak sadari.\nData riil gaji developer Indonesia 2025 ada di slide 3.\nSave sekarang, buka lagi pas performance review.",
+  "hashtags": ["developer", "gajiindonesia", "karierprogrammer", "webdeveloper", "programmerindonesia"]
+}
+</script>
 <script src="https://unpkg.com/deck-stage@1/dist/deck-stage.js"></script>
 <style>
   /* ════════════════════════════════════════════════════════
@@ -179,7 +185,7 @@
     </p>
 
     <div class="card card-sky mt-40" style="display:flex; align-items:center; gap:16px; padding:24px 32px;">
-      <div class="card-ico" style="width:64px; height:64px; border-radius:16px;">
+      <div class="card-ico" style="width:64px; height:64px; border-radius:16px; background:rgba(31,9,4,0.06);">
         <iconify-icon icon="lucide:trending-up" style="font-size:32px; color:#E94B19;"></iconify-icon>
       </div>
       <div style="font-family:'Sora'; font-weight:700; font-size:36px; color:#1F0904; line-height:1.2;">
@@ -229,66 +235,63 @@
       Salary range developer Indonesia per bulan. Sumber: Glassdoor, Indeed, Timedoor 2025.
     </p>
 
-    <!-- Horizontal bar chart — div-based, proportional to Rp 50jt max = 100% -->
-    <div class="mt-40" style="display:flex; flex-direction:column; gap:20px;">
+    <!-- Horizontal bar chart — divs, pinned type sizes 28px labels / 24px values -->
+    <div class="mt-40" style="display:flex; flex-direction:column; gap:24px;">
 
-      <!-- Row: Junior -->
+      <!-- Junior -->
       <div style="display:flex; flex-direction:column; gap:8px;">
         <div style="display:flex; justify-content:space-between; align-items:baseline;">
           <span style="font-family:'Sora'; font-weight:700; font-size:28px; color:#1F0904;">Junior</span>
-          <span style="font-family:'JetBrains Mono'; font-weight:500; font-size:22px; color:#6E4B3E;">Rp 5–10 jt</span>
+          <span style="font-family:'JetBrains Mono'; font-weight:500; font-size:24px; color:#6E4B3E;">Rp 5–10 jt</span>
         </div>
-        <div style="height:48px; background:#E8D5C4; border-radius:12px; overflow:hidden; position:relative;">
+        <div style="height:44px; background:#EDE7DA; border-radius:12px; overflow:hidden; position:relative;">
           <div style="position:absolute; left:0; top:0; bottom:0; width:20%; background:#A48C7E; border-radius:12px;"></div>
           <div style="position:absolute; left:0; top:0; bottom:0; width:10%; background:#6E4B3E; border-radius:12px 0 0 12px;"></div>
         </div>
-        <div style="font-family:'Nunito'; font-weight:500; font-size:22px; color:#A48C7E;">0–2 tahun pengalaman</div>
+        <span style="font-family:'Nunito'; font-weight:500; font-size:24px; color:#A48C7E;">0–2 tahun pengalaman</span>
       </div>
 
-      <!-- Row: Middle -->
+      <!-- Middle -->
       <div style="display:flex; flex-direction:column; gap:8px;">
         <div style="display:flex; justify-content:space-between; align-items:baseline;">
           <span style="font-family:'Sora'; font-weight:700; font-size:28px; color:#1F0904;">Middle</span>
-          <span style="font-family:'JetBrains Mono'; font-weight:500; font-size:22px; color:#0C4A6E;">Rp 10–20 jt</span>
+          <span style="font-family:'JetBrains Mono'; font-weight:500; font-size:24px; color:#3D5A7E;">Rp 10–20 jt</span>
         </div>
-        <div style="height:48px; background:#BAE6FD; border-radius:12px; overflow:hidden; position:relative;">
-          <div style="position:absolute; left:0; top:0; bottom:0; width:40%; background:#7DD3FC; border-radius:12px;"></div>
-          <div style="position:absolute; left:0; top:0; bottom:0; width:20%; background:#0EA5E9; border-radius:12px 0 0 12px;"></div>
+        <div style="height:44px; background:#DEEAF7; border-radius:12px; overflow:hidden; position:relative;">
+          <div style="position:absolute; left:0; top:0; bottom:0; width:40%; background:#93BEF0; border-radius:12px;"></div>
+          <div style="position:absolute; left:0; top:0; bottom:0; width:20%; background:#5E8FC4; border-radius:12px 0 0 12px;"></div>
         </div>
-        <div style="font-family:'Nunito'; font-weight:500; font-size:22px; color:#0C4A6E;">2–5 tahun pengalaman</div>
+        <span style="font-family:'Nunito'; font-weight:500; font-size:24px; color:#3D5A7E;">2–5 tahun pengalaman</span>
       </div>
 
-      <!-- Row: Senior -->
+      <!-- Senior -->
       <div style="display:flex; flex-direction:column; gap:8px;">
         <div style="display:flex; justify-content:space-between; align-items:baseline;">
           <span style="font-family:'Sora'; font-weight:700; font-size:28px; color:#1F0904;">Senior</span>
-          <span style="font-family:'JetBrains Mono'; font-weight:500; font-size:22px; color:#7C2D12;">Rp 20–35 jt</span>
+          <span style="font-family:'JetBrains Mono'; font-weight:500; font-size:24px; color:#7C2D12;">Rp 20–35 jt</span>
         </div>
-        <div style="height:48px; background:#FDDEC8; border-radius:12px; overflow:hidden; position:relative;">
-          <div style="position:absolute; left:0; top:0; bottom:0; width:70%; background:#FDBA8C; border-radius:12px;"></div>
-          <div style="position:absolute; left:0; top:0; bottom:0; width:40%; background:#F97316; border-radius:12px 0 0 12px;"></div>
+        <div style="height:44px; background:#FBE9D9; border-radius:12px; overflow:hidden; position:relative;">
+          <div style="position:absolute; left:0; top:0; bottom:0; width:70%; background:#F5A67A; border-radius:12px;"></div>
+          <div style="position:absolute; left:0; top:0; bottom:0; width:40%; background:#E97345; border-radius:12px 0 0 12px;"></div>
         </div>
-        <div style="font-family:'Nunito'; font-weight:500; font-size:22px; color:#7C2D12;">5+ tahun pengalaman</div>
+        <span style="font-family:'Nunito'; font-weight:500; font-size:24px; color:#7C2D12;">5+ tahun pengalaman</span>
       </div>
 
-      <!-- Row: Tech Lead / Principal — accent highlight -->
+      <!-- Tech Lead — accent highlight -->
       <div style="display:flex; flex-direction:column; gap:8px;">
         <div style="display:flex; justify-content:space-between; align-items:baseline;">
           <span style="font-family:'Sora'; font-weight:700; font-size:28px; color:#E94B19;">Tech Lead</span>
-          <span style="font-family:'JetBrains Mono'; font-weight:600; font-size:22px; color:#E94B19;">Rp 35–50 jt+</span>
+          <span style="font-family:'JetBrains Mono'; font-weight:600; font-size:24px; color:#E94B19;">Rp 35–50 jt+</span>
         </div>
-        <div style="height:48px; background:#FDDEC8; border-radius:12px; overflow:hidden; position:relative;">
-          <div style="position:absolute; left:0; top:0; bottom:0; width:100%; background:#E94B19; border-radius:12px; opacity:0.18;"></div>
-          <div style="position:absolute; left:0; top:0; bottom:0; width:100%; background:#E94B19; border-radius:12px; opacity:0.5;"></div>
+        <div style="height:44px; background:#FBE9D9; border-radius:12px; overflow:hidden; position:relative;">
           <div style="position:absolute; left:0; top:0; bottom:0; width:70%; background:#E94B19; border-radius:12px;"></div>
         </div>
-        <div style="font-family:'Nunito'; font-weight:500; font-size:22px; color:#E94B19;">Principal / Engineering Manager</div>
+        <span style="font-family:'Nunito'; font-weight:500; font-size:24px; color:#E94B19;">Principal / Engineering Manager</span>
       </div>
 
     </div>
 
-    <!-- Source note -->
-    <div style="margin-top:24px; font-family:'JetBrains Mono'; font-size:20px; color:#A48C7E; text-align:right;">
+    <div style="margin-top:16px; font-family:'JetBrains Mono'; font-size:24px; color:#A48C7E; text-align:right;">
       Sumber: Glassdoor · Indeed · Timedoor · 2025
     </div>
   </div>
@@ -321,7 +324,6 @@
     </div>
   </div>
 </section>
-
 <section data-screen-label="05 · Point 2 · Skill Gap">
   <div class="counter">04 / 10</div>
 
@@ -359,7 +361,7 @@
     <p class="body-text mt-32">
       Di Indonesia ada culture nggak enak kalau ngomongin gaji duluan.<br><br>
       Tapi fakta brutalnya: rata-rata raise internal itu 3–5%. Rate pasar naik 10–20% per tahun.<br><br>
-      Kalau kamu nggak negosiasi, kamu ketinggalan secara matematis — bahkan sambil "perform dengan baik."
+      Kalau kamu nggak negosiasi, kamu ketinggalan secara matematis — bahkan sambil perform dengan baik.
     </p>
 
     <div class="card card-peach mt-40">
@@ -386,48 +388,38 @@
       vs <span class="a">Yang Nggak.</span>
     </h1>
 
-    <!-- Side-by-side comparison table — two columns using editorial card tokens -->
+    <!-- Side-by-side — exact --ed-card-stone (#EDE7DA) and --ed-card-peach (#FBE9D9) -->
     <div style="display:grid; grid-template-columns:1fr 1fr; gap:16px; margin-top:40px;">
 
-      <!-- LEFT: Stuck column — card-stone -->
-      <div style="background:#E8D5C4; border-radius:24px; padding:28px 24px; display:flex; flex-direction:column; gap:0;">
-        <div style="font-family:'JetBrains Mono'; font-weight:600; font-size:22px; letter-spacing:.1em; text-transform:uppercase; color:#A48C7E; margin-bottom:20px;">Gaji Stuck</div>
-        <!-- Row 1 -->
-        <div style="padding:16px 0; border-top:1px solid rgba(110,75,62,.15);">
-          <div style="font-family:'Nunito'; font-weight:700; font-size:26px; color:#6E4B3E; line-height:1.3;">Kerja keras, diam-diam</div>
+      <div style="background:#EDE7DA; border-radius:24px; padding:28px 24px;">
+        <div style="font-family:'JetBrains Mono'; font-weight:500; font-size:24px; letter-spacing:.1em; text-transform:uppercase; color:#A48C7E; margin-bottom:16px;">Gaji Stuck</div>
+        <div style="padding:14px 0; border-top:1px solid rgba(110,75,62,.15);">
+          <div style="font-family:'Nunito'; font-weight:700; font-size:28px; color:#6E4B3E; line-height:1.3;">Kerja keras, diam-diam</div>
         </div>
-        <!-- Row 2 -->
-        <div style="padding:16px 0; border-top:1px solid rgba(110,75,62,.15);">
-          <div style="font-family:'Nunito'; font-weight:700; font-size:26px; color:#6E4B3E; line-height:1.3;">Tunggu dinilai manager</div>
+        <div style="padding:14px 0; border-top:1px solid rgba(110,75,62,.15);">
+          <div style="font-family:'Nunito'; font-weight:700; font-size:28px; color:#6E4B3E; line-height:1.3;">Tunggu dinilai manager</div>
         </div>
-        <!-- Row 3 -->
-        <div style="padding:16px 0; border-top:1px solid rgba(110,75,62,.15);">
-          <div style="font-family:'Nunito'; font-weight:700; font-size:26px; color:#6E4B3E; line-height:1.3;">Stay di 1 tempat 5+ thn</div>
+        <div style="padding:14px 0; border-top:1px solid rgba(110,75,62,.15);">
+          <div style="font-family:'Nunito'; font-weight:700; font-size:28px; color:#6E4B3E; line-height:1.3;">Stay di 1 tempat 5+ thn</div>
         </div>
-        <!-- Row 4 -->
-        <div style="padding:16px 0; border-top:1px solid rgba(110,75,62,.15);">
-          <div style="font-family:'Nunito'; font-weight:700; font-size:26px; color:#6E4B3E; line-height:1.3;">Nggak tau harga pasarnya</div>
+        <div style="padding:14px 0; border-top:1px solid rgba(110,75,62,.15);">
+          <div style="font-family:'Nunito'; font-weight:700; font-size:28px; color:#6E4B3E; line-height:1.3;">Nggak tau harga pasarnya</div>
         </div>
       </div>
 
-      <!-- RIGHT: Naik column — card-peach -->
-      <div style="background:#FDDEC8; border-radius:24px; padding:28px 24px; display:flex; flex-direction:column; gap:0;">
-        <div style="font-family:'JetBrains Mono'; font-weight:600; font-size:22px; letter-spacing:.1em; text-transform:uppercase; color:#E94B19; margin-bottom:20px;">Gaji Naik</div>
-        <!-- Row 1 -->
-        <div style="padding:16px 0; border-top:1px solid rgba(233,75,25,.15);">
-          <div style="font-family:'Nunito'; font-weight:700; font-size:26px; color:#3D1F15; line-height:1.3;">Kerja keras + dokumentasi</div>
+      <div style="background:#FBE9D9; border-radius:24px; padding:28px 24px;">
+        <div style="font-family:'JetBrains Mono'; font-weight:500; font-size:24px; letter-spacing:.1em; text-transform:uppercase; color:#E94B19; margin-bottom:16px;">Gaji Naik</div>
+        <div style="padding:14px 0; border-top:1px solid rgba(233,75,25,.15);">
+          <div style="font-family:'Nunito'; font-weight:700; font-size:28px; color:#3D1F15; line-height:1.3;">Kerja keras + dokumentasi</div>
         </div>
-        <!-- Row 2 -->
-        <div style="padding:16px 0; border-top:1px solid rgba(233,75,25,.15);">
-          <div style="font-family:'Nunito'; font-weight:700; font-size:26px; color:#3D1F15; line-height:1.3;">Kelola visibilitas sendiri</div>
+        <div style="padding:14px 0; border-top:1px solid rgba(233,75,25,.15);">
+          <div style="font-family:'Nunito'; font-weight:700; font-size:28px; color:#3D1F15; line-height:1.3;">Kelola visibilitas sendiri</div>
         </div>
-        <!-- Row 3 -->
-        <div style="padding:16px 0; border-top:1px solid rgba(233,75,25,.15);">
-          <div style="font-family:'Nunito'; font-weight:700; font-size:26px; color:#3D1F15; line-height:1.3;">Negotiate atau move strategis</div>
+        <div style="padding:14px 0; border-top:1px solid rgba(233,75,25,.15);">
+          <div style="font-family:'Nunito'; font-weight:700; font-size:28px; color:#3D1F15; line-height:1.3;">Negotiate atau move strategis</div>
         </div>
-        <!-- Row 4 -->
-        <div style="padding:16px 0; border-top:1px solid rgba(233,75,25,.15);">
-          <div style="font-family:'Nunito'; font-weight:700; font-size:26px; color:#3D1F15; line-height:1.3;">Cek benchmark tiap 6 bulan</div>
+        <div style="padding:14px 0; border-top:1px solid rgba(233,75,25,.15);">
+          <div style="font-family:'Nunito'; font-weight:700; font-size:28px; color:#3D1F15; line-height:1.3;">Cek benchmark tiap 6 bulan</div>
         </div>
       </div>
 
