@@ -23,7 +23,7 @@ jobs:
       - name: Checkout repo
         uses: actions/checkout@v4
         with:
-          fetch-depth: 2   # perlu HEAD^ buat diff, default checkout cuma ambil 1 commit
+          fetch-depth: 0   # ambil full history — perlu buat diff range before..after (push bisa multi-commit)
 
       - name: Setup Python
         uses: actions/setup-python@v5
@@ -39,9 +39,20 @@ jobs:
         id: target
         run: |
           if [ -n "${{ github.event.inputs.html_file }}" ]; then
+            # Manual dispatch dengan path eksplisit
             FILE="${{ github.event.inputs.html_file }}"
+          elif [ "${{ github.event_name }}" = "push" ]; then
+            # Diff seluruh range yang di-push (aman buat merge & multi-commit).
+            BEFORE="${{ github.event.before }}"
+            if [ -z "$BEFORE" ] || [ "$BEFORE" = "0000000000000000000000000000000000000000" ]; then
+              # Branch/commit baru tanpa parent — fallback ke commit terakhir
+              RANGE="HEAD^ HEAD"
+            else
+              RANGE="$BEFORE ${{ github.sha }}"
+            fi
+            FILE=$(git diff --name-only $RANGE -- 'carousels/**.html' | head -n 1)
           else
-            FILE=$(git diff --name-only HEAD^ HEAD -- 'carousels/*.html' | head -n 1)
+            FILE=$(git diff --name-only HEAD^ HEAD -- 'carousels/**.html' | head -n 1)
           fi
 
           if [ -z "$FILE" ]; then
