@@ -1,0 +1,4 @@
+playwright
+cloudinary
+requests
+beautifulsoup4
