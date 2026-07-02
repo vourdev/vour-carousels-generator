@@ -23,7 +23,12 @@ def upload_images(image_dir: str) -> list[str]:
     cloudinary.config(cloudinary_url=os.environ["CLOUDINARY_URL"])
     urls = []
     for f in sorted(Path(image_dir).glob("*.png")):
-        result = cloudinary.uploader.upload(str(f), folder="vourdev-carousels")
+        result = cloudinary.uploader.upload(
+            str(f),
+            folder="vourdev-carousels",
+            access_mode="public",      # eksplisit public supaya bisa diakses server eksternal
+            type="upload",             # pastikan tipe upload bukan private/authenticated
+        )
         urls.append(result["secure_url"])
         print(f"  uploaded: {f.name} → {result['secure_url']}")
     return urls
