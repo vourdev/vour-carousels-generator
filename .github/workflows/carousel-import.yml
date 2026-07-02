@@ -1,0 +1,89 @@
+name: Import Carousel from Claude
+
+# Dipanggil dari Claude via GitHub API repository_dispatch.
+# Claude kirim filename + content (base64 HTML) → workflow yang commit ke repo.
+# Commit ini lalu men-trigger export.yml otomatis (path: carousels/**.html).
+#
+# Cara trigger dari Claude:
+#   curl -X POST https://api.github.com/repos/vourdev/vour-carousels/dispatches \
+#     -H "Authorization: Bearer $TOKEN" \
+#     -H "Accept: application/vnd.github+json" \
+#     -d '{
+#           "event_type": "carousel-push",
+#           "client_payload": {
+#             "filename": "nama-file.html",
+#             "content":  "<base64-encoded HTML>"
+#           }
+#         }'
+#
+# Token yang dibutuhkan: fine-grained PAT dengan scope:
+#   - Repository: vour-carousels only
+#   - Permissions: Contents → Read and write
+# Simpan di GitHub Secrets sebagai CAROUSEL_DISPATCH_TOKEN.
+# Setelah setup, token tidak perlu di-paste di chat — Claude pakai secret-nya.
+
+on:
+  repository_dispatch:
+    types: [carousel-push]
+
+jobs:
+  import:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write   # GITHUB_TOKEN dipakai untuk commit — bukan token eksternal
+
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Validate payload
+        run: |
+          FILENAME="${{ github.event.client_payload.filename }}"
+          if [ -z "$FILENAME" ]; then
+            echo "❌ client_payload.filename kosong"
+            exit 1
+          fi
+          # Pastikan hanya masuk ke folder carousels/ dan harus .html
+          if [[ "$FILENAME" != *.html ]]; then
+            echo "❌ File harus berekstensi .html: $FILENAME"
+            exit 1
+          fi
+          echo "✓ filename: $FILENAME"
+
+      - name: Write HTML file
+        run: |
+          FILENAME="${{ github.event.client_payload.filename }}"
+          echo "${{ github.event.client_payload.content }}" | base64 -d > "carousels/$FILENAME"
+          echo "✓ File ditulis: carousels/$FILENAME ($(wc -c < "carousels/$FILENAME") bytes)"
+
+      - name: Verify #vourdev-meta present
+        run: |
+          FILENAME="${{ github.event.client_payload.filename }}"
+          if grep -q 'id="vourdev-meta"' "carousels/$FILENAME"; then
+            echo "✓ #vourdev-meta block ditemukan"
+            # Ekstrak title untuk commit message
+            TITLE=$(python3 -c "
+          import json, re
+          html = open('carousels/$FILENAME').read()
+          m = re.search(r'id=\"vourdev-meta\">(.*?)</script>', html, re.DOTALL)
+          if m:
+              data = json.loads(m.group(1))
+              print(data.get('title', '$FILENAME'))
+          else:
+              print('$FILENAME')
+          ")
+            echo "title=$TITLE" >> $GITHUB_ENV
+          else
+            echo "⚠️  #vourdev-meta tidak ditemukan — commit tetap dilanjut"
+            echo "title=$FILENAME" >> $GITHUB_ENV
+          fi
+
+      - name: Commit and push
+        run: |
+          git config user.name  "vourdev-bot"
+          git config user.email "bot@vourdev.id"
+          git add "carousels/${{ github.event.client_payload.filename }}"
+          git commit -m "feat(carousel): ${{ env.title }}" \
+                     -m "Imported via Claude carousel pipeline."
+          git push
+          echo "✓ Commit berhasil — export.yml akan berjalan otomatis"
