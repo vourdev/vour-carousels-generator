@@ -8,6 +8,7 @@ from pathlib import Path
 
 import cloudinary
 import cloudinary.uploader
+import cloudinary.utils
 import requests
 from bs4 import BeautifulSoup
 
@@ -23,14 +24,26 @@ def upload_images(image_dir: str) -> list[str]:
     cloudinary.config(cloudinary_url=os.environ["CLOUDINARY_URL"])
     urls = []
     for f in sorted(Path(image_dir).glob("*.png")):
+        # Upload dengan resource_type image, type upload (public delivery)
         result = cloudinary.uploader.upload(
             str(f),
             folder="vourdev-carousels",
-            access_mode="public",      # eksplisit public supaya bisa diakses server eksternal
-            type="upload",             # pastikan tipe upload bukan private/authenticated
+            resource_type="image",
+            type="upload",
+            access_mode="public",
         )
-        urls.append(result["secure_url"])
-        print(f"  uploaded: {f.name} → {result['secure_url']}")
+        public_id = result["public_id"]
+
+        # Generate signed URL berlaku 1 jam — bypass restricted image type
+        signed_url, _ = cloudinary.utils.cloudinary_url(
+            public_id,
+            resource_type="image",
+            type="upload",
+            sign_url=True,
+            expires_at=int(__import__("time").time()) + 3600,
+        )
+        urls.append(signed_url)
+        print(f"  uploaded: {f.name} → {signed_url}")
     return urls
 
 def main():
