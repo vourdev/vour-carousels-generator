@@ -67,7 +67,9 @@ jobs:
         run: |
           python scripts/export-slider-content.py "${{ steps.target.outputs.file }}" \
             --selector "section" \
-            --scale 1 \
+            --scale 2 \
+            --format jpg \
+            --quality 85 \
             --out ./output
 
       - name: Upload images & notify n8n
