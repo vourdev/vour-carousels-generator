@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
-"""Parse metadata dari HTML, upload gambar ke Cloudinary (arsip) + ImgBB (delivery ke Buffer)."""
+"""Parse metadata dari HTML dan upload gambar ke Cloudinary (untuk arsip & Buffer)."""
 
-import base64
 import json
 import os
 import sys
@@ -28,14 +27,15 @@ def get_images(image_dir: str) -> list[Path]:
     return sorted(images)
 
 
-def upload_to_cloudinary(image_dir: str) -> None:
-    """Upload ke Cloudinary untuk arsip — URL-nya tidak dipakai untuk Buffer."""
+def upload_to_cloudinary(image_dir: str) -> list[str]:
+    """Upload ke Cloudinary dan kumpulkan secure_url untuk dikirim ke n8n."""
     cloudinary.config(cloudinary_url=os.environ["CLOUDINARY_URL"])
+    urls = []
     
     images = get_images(image_dir)
     if not images:
-        print("❌ Error: Tidak ada gambar (JPG/PNG) yang ditemukan di folder output.")
-        return
+        print("❌ Error fatal: Tidak ada gambar (JPG/PNG) yang ditemukan di folder output.")
+        sys.exit(1)
 
     for f in images:
         result = cloudinary.uploader.upload(
@@ -44,33 +44,10 @@ def upload_to_cloudinary(image_dir: str) -> None:
             resource_type="image",
             type="upload",
         )
-        print(f"  cloudinary: {f.name} → {result['secure_url']}")
-
-
-def upload_to_imgbb(image_dir: str) -> list[str]:
-    """Upload ke ImgBB — URL ini yang dikirim ke Buffer (100% public)."""
-    api_key = os.environ["IMGBB_API_KEY"]
-    urls = []
-    
-    images = get_images(image_dir)
-    if not images:
-        print("❌ Error fatal: Gambar kosong, tidak ada yang bisa di-upload ke ImgBB.")
-        sys.exit(1) # Memaksa exit code 1 agar GitHub Actions gagal (merah)
-
-    for f in images:
-        with open(f, "rb") as img:
-            b64 = base64.b64encode(img.read()).decode("utf-8")
-
-        resp = requests.post(
-            "https://api.imgbb.com/1/upload",
-            data={"key": api_key, "image": b64, "name": f.stem},
-            timeout=60,
-        )
-        resp.raise_for_status()
-        data = resp.json()
-        url = data["data"]["url"]
-        urls.append(url)
-        print(f"  imgbb:      {f.name} → {url}")
+        secure_url = result['secure_url']
+        urls.append(secure_url)
+        print(f"  cloudinary: {f.name} → {secure_url}")
+        
     return urls
 
 
@@ -84,12 +61,10 @@ def main():
 
     meta = parse_meta(html_path)
 
-    # Upload ke Cloudinary untuk arsip
-    upload_to_cloudinary(image_dir)
+    # Upload ke Cloudinary dan simpan URL-nya
+    image_urls = upload_to_cloudinary(image_dir)
 
-    # Upload ke ImgBB untuk delivery ke Buffer
-    image_urls = upload_to_imgbb(image_dir)
-
+    # Kirim payload ke n8n menggunakan URL Cloudinary
     payload = {
         "images": image_urls,
         "title": meta.get("title", ""),
