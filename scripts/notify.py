@@ -22,10 +22,22 @@ def parse_meta(html_path: str) -> dict:
     return json.loads(tag.string)
 
 
+def get_images(image_dir: str) -> list[Path]:
+    """Mengambil semua file JPG dan PNG, lalu mengurutkannya."""
+    images = list(Path(image_dir).glob("*.jpg")) + list(Path(image_dir).glob("*.png"))
+    return sorted(images)
+
+
 def upload_to_cloudinary(image_dir: str) -> None:
     """Upload ke Cloudinary untuk arsip — URL-nya tidak dipakai untuk Buffer."""
     cloudinary.config(cloudinary_url=os.environ["CLOUDINARY_URL"])
-    for f in sorted(Path(image_dir).glob("*.png")):
+    
+    images = get_images(image_dir)
+    if not images:
+        print("❌ Error: Tidak ada gambar (JPG/PNG) yang ditemukan di folder output.")
+        return
+
+    for f in images:
         result = cloudinary.uploader.upload(
             str(f),
             folder="vourdev-carousels",
@@ -39,7 +51,13 @@ def upload_to_imgbb(image_dir: str) -> list[str]:
     """Upload ke ImgBB — URL ini yang dikirim ke Buffer (100% public)."""
     api_key = os.environ["IMGBB_API_KEY"]
     urls = []
-    for f in sorted(Path(image_dir).glob("*.png")):
+    
+    images = get_images(image_dir)
+    if not images:
+        print("❌ Error fatal: Gambar kosong, tidak ada yang bisa di-upload ke ImgBB.")
+        sys.exit(1) # Memaksa exit code 1 agar GitHub Actions gagal (merah)
+
+    for f in images:
         with open(f, "rb") as img:
             b64 = base64.b64encode(img.read()).decode("utf-8")
 
@@ -57,6 +75,10 @@ def upload_to_imgbb(image_dir: str) -> list[str]:
 
 
 def main():
+    if len(sys.argv) < 3:
+        print("❌ Penggunaan: python notify.py <path_html> <folder_gambar>")
+        sys.exit(1)
+
     html_path = sys.argv[1]
     image_dir = sys.argv[2]
 
