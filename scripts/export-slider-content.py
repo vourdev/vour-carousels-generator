@@ -79,7 +79,11 @@ def export_slides(
     with sync_playwright() as p:
         browser = p.chromium.launch(
             headless=True,
-            args=["--no-sandbox", "--disable-dev-shm-usage"],
+            args=[
+                    "--no-sandbox", 
+                    "--disable-dev-shm-usage",
+                    "--force-color-profile=srgb" 
+                ],
         )
 
         page = browser.new_page(
