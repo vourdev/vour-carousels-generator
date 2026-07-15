@@ -15,29 +15,36 @@ export function PreviewFrame({ html, slideCount }: { html: string; slideCount: n
   useEffect(() => {
     const el = ref.current;
     if (!el) return;
+    
+    // Set initial width
+    setWidth(el.getBoundingClientRect().width || el.offsetWidth || 540);
+    
     const ro = new ResizeObserver((entries) => {
-      setWidth(entries[0].contentRect.width);
+      const w = entries[0].contentRect.width;
+      if (w > 0) {
+        setWidth(w);
+      }
     });
     ro.observe(el);
     return () => ro.disconnect();
   }, []);
 
-  const scale = width ? width / SLIDE_W : 0;
+  const scale = width ? width / SLIDE_W : 0.5;
   const contentH = SLIDE_H * slideCount;
 
   return (
-    <Card>
+    <Card className="w-full max-w-[540px]">
       <CardContent className="p-4">
         <div
           ref={ref}
-          className="w-full overflow-hidden rounded-md border border-hairline"
+          className="w-full overflow-hidden rounded-md border border-hairline bg-white"
           style={
             scale
               ? { height: contentH * scale }
               : { aspectRatio: `${SLIDE_W} / ${contentH}` }
           }
         >
-          {scale > 0 && (
+          {width > 0 && (
             <iframe
               title="carousel preview"
               srcDoc={html}
