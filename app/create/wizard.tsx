@@ -23,7 +23,7 @@ import { toast } from "sonner";
 
 const modelDetails: Record<string, { label: string; icon: React.ReactNode }> = {
   gemini: {
-    label: "Gemini 2.5 Flash",
+    label: "Gemini Flash",
     icon: <Sparkles className="size-4 text-indigo-500 shrink-0" />,
   },
   deepseek: {

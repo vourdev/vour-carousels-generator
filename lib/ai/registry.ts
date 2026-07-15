@@ -27,8 +27,8 @@ export function resolveModel(id: ModelId): LanguageModel {
   switch (id) {
     case "gemini": {
       const google = createGoogleGenerativeAI({ apiKey: env.GOOGLE_GENERATIVE_AI_API_KEY });
-      // Use the latest stable Gemini model: gemini-2.5-flash.
-      return google(env.GEMINI_MODEL || "gemini-2.5-flash");
+      // Use gemini-flash-latest alias as gemini-2.5-flash gets sunset for new accounts.
+      return google(env.GEMINI_MODEL || "gemini-flash-latest");
     }
     case "deepseek": {
       const deepseek = createDeepSeek({ apiKey: env.DEEPSEEK_API_KEY });
