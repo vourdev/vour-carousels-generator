@@ -42,6 +42,35 @@ const modelDetails: Record<string, { label: string; icon: React.ReactNode }> = {
   },
 };
 
+function summarizeError(msg: string): string {
+  const lower = msg.toLowerCase();
+  
+  if (lower.includes("quota exceeded") || lower.includes("exceeded your current quota") || lower.includes("rate limit") || lower.includes("rate-limits")) {
+    return "Batas kuota API Gemini terlampaui (Rate Limit / Quota Exceeded). Silakan coba beberapa saat lagi.";
+  }
+  if (lower.includes("high demand") || lower.includes("experiencing high demand")) {
+    return "Server model sedang sibuk karena permintaan tinggi (High Demand). Silakan coba lagi nanti.";
+  }
+  if (lower.includes("invalid api key") || lower.includes("api key not valid") || lower.includes("api_key")) {
+    return "Konfigurasi API Key tidak valid. Silakan periksa kembali berkas .env Anda.";
+  }
+  if (lower.includes("no longer available") || lower.includes("not available")) {
+    return "Model yang dipilih sudah tidak tersedia atau tidak aktif.";
+  }
+  
+  if (msg.length > 120) {
+    const lastErrorIdx = msg.lastIndexOf("Last error: ");
+    if (lastErrorIdx !== -1) {
+      const sub = msg.substring(lastErrorIdx + "Last error: ".length);
+      const firstSentence = sub.split(".")[0] || sub;
+      return firstSentence.replace(/^AI_APICallError:\s*/i, "").trim();
+    }
+    return "Terjadi kesalahan pada sistem AI.";
+  }
+  
+  return msg;
+}
+
 export function Wizard({ models }: { models: ModelId[] }) {
   const [mounted, setMounted] = useState(false);
   const [step, setStep] = useState<number>(1);
@@ -186,7 +215,7 @@ export function Wizard({ models }: { models: ModelId[] }) {
       } catch (e) {
         const msg = e instanceof Error ? e.message : "failed";
         toast.error(msg);
-        addMessage("ai", `Gagal memproses: ${msg}`);
+        addMessage("ai", `Gagal memproses: ${summarizeError(msg)}`);
       }
     });
   }
@@ -205,7 +234,7 @@ export function Wizard({ models }: { models: ModelId[] }) {
       } catch (e) {
         const msg = e instanceof Error ? e.message : "failed";
         toast.error(msg);
-        addMessage("ai", `Gagal merender slide: ${msg}`);
+        addMessage("ai", `Gagal merender slide: ${summarizeError(msg)}`);
       }
     });
   }
@@ -234,7 +263,7 @@ export function Wizard({ models }: { models: ModelId[] }) {
       } catch (e) {
         const msg = e instanceof Error ? e.message : "failed";
         toast.error(msg);
-        addMessage("ai", `Revisi gagal: ${msg}`);
+        addMessage("ai", `Revisi gagal: ${summarizeError(msg)}`);
       }
     });
   }
