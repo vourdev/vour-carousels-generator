@@ -8,5 +8,6 @@ export default defineConfig({
   test: {
     environment: "node",
     include: ["test/**/*.test.ts", "test/**/*.test.tsx"],
+    globalSetup: ["./test/setup-db.ts"],
   },
 });
