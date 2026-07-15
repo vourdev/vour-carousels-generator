@@ -87,7 +87,9 @@ export function Wizard({ models }: { models: ModelId[] }) {
               <SelectTrigger className="w-56">
                 <div className="flex items-center gap-2">
                   {model && modelDetails[model]?.icon}
-                  <SelectValue placeholder="Model" />
+                  <SelectValue>
+                    {model ? modelDetails[model].label : "Model"}
+                  </SelectValue>
                 </div>
               </SelectTrigger>
               <SelectContent>
