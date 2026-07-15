@@ -4,18 +4,23 @@ import { resolve } from "node:path";
 
 const css = readFileSync(resolve(__dirname, "../app/globals.css"), "utf8");
 
-describe("brand theme tokens", () => {
-  it("defines the editorial palette from DESIGN.md", () => {
-    expect(css).toContain("--ed-paper: #FBF6EF");
-    expect(css).toContain("--ed-ink: #1F0904");
-    expect(css).toContain("--ed-orange: #E94B19");
+describe("app UI theme tokens (vercel-DESIGN.md)", () => {
+  it("defines the Vercel-inspired palette in @theme", () => {
+    expect(css).toContain("--color-canvas: #ffffff");
+    expect(css).toContain("--color-ink: #171717");
+    expect(css).toContain("--color-primary: #171717");
   });
-  it("defines the brand font families", () => {
-    expect(css).toContain("--font-display");
-    expect(css).toContain("--font-body");
+  it("defines the brand mesh-gradient stops", () => {
+    expect(css).toContain("--color-grad-develop-start: #007cf0");
+    expect(css).toContain("--color-grad-preview-end: #ff0080");
+  });
+  it("defines Geist sans + mono font families", () => {
+    expect(css).toContain("--font-sans");
     expect(css).toContain("--font-mono");
+    expect(css).toContain("Geist");
   });
-  it("does not keep the generic neutral background", () => {
-    expect(css).not.toContain("--background: #ffffff");
+  it("does not leak the Vour Dev carousel palette into the app UI", () => {
+    expect(css).not.toContain("--ed-paper");
+    expect(css).not.toContain("#E94B19");
   });
 });

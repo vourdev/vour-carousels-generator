@@ -11,7 +11,7 @@ export function LogoutButton() {
         await signOut();
         router.push("/login");
       }}
-      style={{ padding: "8px 16px", background: "var(--ed-ink)", color: "#fff", border: 0, borderRadius: 8 }}
+      className="h-8 rounded-pill border border-hairline bg-canvas px-3.5 text-sm font-medium text-ink"
     >
       Sign out
     </button>
