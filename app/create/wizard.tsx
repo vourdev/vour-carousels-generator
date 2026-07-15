@@ -201,7 +201,7 @@ export function Wizard({ models }: { models: ModelId[] }) {
   }
 
   return (
-    <div className="grid lg:grid-cols-[1.2fr_1fr] gap-8 items-stretch lg:h-[calc(100vh-130px)] lg:overflow-hidden relative pb-16 lg:pb-0">
+    <div className="grid lg:grid-cols-[1.2fr_1fr] gap-8 items-stretch lg:h-full lg:overflow-hidden relative pb-16 lg:pb-0 flex-1 min-h-0">
       
       {/* LEFT COLUMN: Workspace control and Chat input */}
       <div className="flex flex-col h-full gap-4 overflow-hidden min-h-0">
