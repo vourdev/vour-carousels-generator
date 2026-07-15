@@ -212,3 +212,39 @@ Each unit has one purpose, a typed interface, and is testable in isolation.
 4. **Chat-patched HTML can drift off-brand** → constrain with system prompt + re-validate tokens/canvas.
 5. **Buffer credentials** — needs Buffer app token + `channelId`; assets must be public URLs (Cloudinary); notification mode = manual final post.
 6. **Serverless Playwright fallback** heavy on Vercel (chromium size) — only if client export proves insufficient.
+
+---
+
+## 12 · Reference appendix (preserved from deleted legacy files)
+
+The legacy pipeline files were removed during the repo→web restructure. Their essential logic is captured here so Plans 3 & 5 remain self-sufficient.
+
+### Buffer GraphQL `createPost` mutation (from `query-buffer.js`)
+
+Plan 5 rebuilds this in a server route. Exact shape to replicate (interpolated values escaped):
+
+```graphql
+mutation CreatePost {
+  createPost(input: {
+    text: "${escapedCaption}"
+    channelId: "6a4f4219404834462887758b"      # from BUFFER_CHANNEL_ID env, not hardcoded
+    schedulingType: notification                 # Buffer reminds you to post manually
+    mode: customScheduled
+    dueAt: "${scheduleTime}"                      # ISO datetime
+    saveToDraft: false
+    assets: [${assets}]                           # Cloudinary secure_url[] as GraphQL string list
+    metadata: { tiktok: { title: "${escapedTitle}" } }
+  }) {
+    ... on PostActionSuccess { post { id text } }
+    ... on MutationError { message }
+  }
+}
+```
+
+### Cloudinary upload (from `notify.py`)
+
+Per image: `folder: "vourdev-carousels"`, `resource_type: "image"`, `type: "upload"`; collect each result's `secure_url` in slide order.
+
+### Export params (from `export-slider-content.py`)
+
+Already encoded in §6. Key: per-`<section>` screenshot, `device_scale_factor` (use `pixelRatio` ≥ 2), `--force-color-profile=srgb`, `networkidle` + ~1500ms font/icon wait, JPEG quality 85 (or PNG lossless).
