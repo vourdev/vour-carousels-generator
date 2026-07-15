@@ -16,10 +16,8 @@ GitHub Actions + Playwright + n8n pipeline at repo root.
 - Run `npm run db:migrate` and `npm run db:seed` against the Turso db once.
 
 ## Notes
-- `middleware.ts` runs a fast cookie-presence check (`better-auth/cookies`
-  `getSessionCookie`) at the edge/network boundary before any app route
-  renders; full session validation happens in `requireSession()` on the page
-  itself via `auth.api.getSession`. Next.js 16 deprecates the `middleware.ts`
-  file convention in favor of `proxy.ts`, but `middleware.ts` still works
-  (Node.js runtime) as of Next 16.2.10 — see `web/AGENTS.md`/upgrade docs if
-  you're migrating to `proxy.ts` later.
+- `proxy.ts` (Next.js 16's renamed `middleware` convention — runs on the
+  Node.js runtime) does a fast cookie-presence check (`better-auth/cookies`
+  `getSessionCookie`) before any app route renders; full session validation
+  happens in `requireSession()` on the page itself via `auth.api.getSession`.
+  The exported function is named `proxy` and `config.matcher` is unchanged.
