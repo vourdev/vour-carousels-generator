@@ -9,10 +9,10 @@ export default async function Home() {
   const session = await requireSession();
   
   return (
-    <div className="min-h-screen bg-canvas flex flex-col">
+    <div className="min-h-screen lg:h-screen lg:overflow-hidden bg-canvas flex flex-col">
       
       {/* Top Header Navbar */}
-      <header className="border-b border-border bg-card/50 backdrop-blur-md sticky top-0 z-50">
+      <header className="border-b border-border bg-card/50 backdrop-blur-md sticky top-0 z-50 shrink-0">
         <div className="mx-auto max-w-5xl px-6 h-16 flex items-center justify-between">
           <Link href="/" className="flex items-center gap-2 hover:opacity-90 transition-opacity">
             <span className="font-heading text-lg font-bold tracking-tight">
@@ -34,7 +34,7 @@ export default async function Home() {
       </header>
 
       {/* Main Workspace Launcher Content */}
-      <main className="flex-1 mx-auto max-w-5xl w-full px-6 py-12 flex flex-col justify-center gap-10">
+      <main className="flex-1 mx-auto max-w-5xl w-full px-6 py-6 lg:py-4 flex flex-col justify-center gap-8 lg:gap-6 min-h-0 overflow-y-auto">
         
         {/* Welcome Section */}
         <section className="text-center md:text-left flex flex-col gap-3 max-w-2xl">
@@ -130,7 +130,7 @@ export default async function Home() {
       </main>
 
       {/* Footer */}
-      <footer className="border-t border-border py-6 bg-card/30">
+      <footer className="border-t border-border py-6 bg-card/30 shrink-0">
         <div className="mx-auto max-w-5xl px-6 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-muted-foreground">
           <span>&copy; 2026 vourdev. All rights reserved.</span>
           <div className="flex items-center gap-4">
