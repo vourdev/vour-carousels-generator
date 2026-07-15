@@ -46,7 +46,7 @@ describe("generateBrief", () => {
       "Failed after 3 attempts. Last error: AI_APICallError: This model is currently experiencing high demand. Spikes in demand are usually temporary. Please try again later."
     );
     expect(callCount).toBe(3);
-  });
+  }, 12000);
 });
 
 describe("generateSlidePlan", () => {

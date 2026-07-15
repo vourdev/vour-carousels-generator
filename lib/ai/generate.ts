@@ -8,6 +8,8 @@ import {
   reviseUserPrompt,
 } from "@/lib/ai/prompts";
 
+const delay = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
+
 async function withRetry<T>(fn: () => Promise<T>, attempts = 3): Promise<T> {
   let lastError: any = null;
   for (let i = 0; i < attempts; i++) {
@@ -15,6 +17,10 @@ async function withRetry<T>(fn: () => Promise<T>, attempts = 3): Promise<T> {
       return await fn();
     } catch (err) {
       lastError = err;
+      if (i < attempts - 1) {
+        // Exponential backoff: 2.5s, 5s
+        await delay((i + 1) * 2500);
+      }
     }
   }
   const msg = lastError instanceof Error ? lastError.message : String(lastError);
