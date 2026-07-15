@@ -1,0 +1,48 @@
+<!-- @dsCard group="Slides" viewport="1080x1350" name="Editorial · Numbered steps" subtitle="Orange-badge cards stacked at gap 16" -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<link rel="stylesheet" href="../styles.css">
+<style>
+  html, body { width:1080px; height:1350px; }
+  body { margin:0; padding:96px 80px 80px; background:var(--bg-editorial); color:var(--ed-ink); font-family:var(--font-body); }
+  .counter { font-family:var(--font-mono); font-size:24px; color:var(--ed-ink-faint); letter-spacing:.04em; }
+  .eyebrow { font-family:var(--font-mono); font-weight:500; font-size:24px; letter-spacing:.18em; text-transform:uppercase; color:var(--ed-orange); margin-top:64px; }
+  h1 { font-family:var(--font-display); font-weight:800; font-size:104px; line-height:1.02; letter-spacing:-.025em; margin:24px 0 0; color:var(--ed-ink); }
+  .steps { margin-top:48px; display:flex; flex-direction:column; gap:16px; }
+  .step { background:var(--ed-card-peach); border-radius:20px; padding:32px; display:flex; gap:20px; align-items:flex-start; }
+  .badge { width:40px; height:40px; border-radius:50%; background:var(--ed-orange); color:#fff; display:flex; align-items:center; justify-content:center; font-family:var(--font-display); font-weight:700; font-size:22px; flex:none; }
+  .title { font-family:var(--font-display); font-weight:700; font-size:32px; color:var(--ed-ink); line-height:1.15; }
+  .body { font-family:var(--font-body); font-weight:500; font-size:28px; line-height:1.4; color:var(--ed-ink-soft); margin-top:4px; }
+</style>
+</head>
+<body>
+  <div class="counter">08 / 10</div>
+  <div class="eyebrow">For your projects</div>
+  <h1>How to start using<br>this for yourself</h1>
+  <div class="steps">
+    <div class="step">
+      <div class="badge">1</div>
+      <div>
+        <div class="title">Start minimal</div>
+        <div class="body">Your colors (with descriptions of when to use each), your fonts, and 3 hierarchy rules. Even that beats prompting from scratch.</div>
+      </div>
+    </div>
+    <div class="step">
+      <div class="badge">2</div>
+      <div>
+        <div class="title">Write what NOT to do</div>
+        <div class="body">Claude follows constraints better than instructions. "Don't use more than 2 font weights" works better than "use variety thoughtfully."</div>
+      </div>
+    </div>
+    <div class="step">
+      <div class="badge">3</div>
+      <div>
+        <div class="title">Swap and test</div>
+        <div class="body">Change the palette, type pairing, or radius scale and regenerate. Fastest way to explore visual directions.</div>
+      </div>
+    </div>
+  </div>
+</body>
+</html>

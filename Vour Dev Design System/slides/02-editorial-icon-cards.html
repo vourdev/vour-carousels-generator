@@ -1,0 +1,59 @@
+<!-- @dsCard group="Slides" viewport="1080x1350" name="Editorial · Icon cards (2×2)" subtitle="Opaque pastel cards with deep-tinted icon sub-tiles" -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<link rel="stylesheet" href="../styles.css">
+<script src="https://code.iconify.design/iconify-icon/2.1.0/iconify-icon.min.js"></script>
+<style>
+  html, body { width:1080px; height:1350px; }
+  body {
+    margin:0; padding:96px 80px 80px;
+    background: var(--bg-editorial);
+    color: var(--ed-ink);
+    font-family: var(--font-body);
+    display: flex; flex-direction: column;
+  }
+  .counter { font-family:var(--font-mono); font-size:24px; color:var(--ed-ink-faint); letter-spacing:.04em; }
+  .eyebrow {
+    font-family:var(--font-mono); font-weight:500; font-size:24px;
+    letter-spacing:.18em; text-transform:uppercase; color:var(--ed-orange);
+    margin-top:64px;
+  }
+  h1 {
+    font-family:var(--font-display); font-weight:800;
+    font-size:104px; line-height:1.02; letter-spacing:-.025em;
+    margin:24px 0 0; color:var(--ed-ink);
+  }
+  .grid { margin-top:48px; display:grid; grid-template-columns:1fr 1fr; gap:24px; }
+  .card { border-radius:24px; padding:32px; }
+  .head { display:flex; align-items:center; gap:16px; }
+  .ico { width:48px; height:48px; border-radius:12px; background:rgba(31,9,4,0.06); display:flex; align-items:center; justify-content:center; flex:none; }
+  .title { font-family:var(--font-display); font-weight:700; font-size:40px; line-height:1.15; color:var(--ed-ink); }
+  .body { font-family:var(--font-body); font-weight:500; font-size:28px; line-height:1.4; color:var(--ed-ink-soft); margin-top:16px; }
+</style>
+</head>
+<body>
+  <div class="counter">06 / 10</div>
+  <div class="eyebrow">What makes it work</div>
+  <h1>What I put in mine<br>that most skip.</h1>
+  <div class="grid">
+    <div class="card" style="background:var(--ed-card-peach)">
+      <div class="head"><div class="ico"><iconify-icon icon="lucide:file-text" style="font-size:24px;color:var(--ed-orange)"></iconify-icon></div><div class="title">Token rationale</div></div>
+      <div class="body">WHY and WHEN to use each color, not just the hex value.</div>
+    </div>
+    <div class="card" style="background:var(--ed-card-sky)">
+      <div class="head"><div class="ico"><iconify-icon icon="lucide:square-stack" style="font-size:24px;color:var(--ed-orange)"></iconify-icon></div><div class="title">Hierarchy rules</div></div>
+      <div class="body">"One CTA per viewport." "This color never goes on buttons."</div>
+    </div>
+    <div class="card" style="background:var(--ed-card-mint)">
+      <div class="head"><div class="ico"><iconify-icon icon="lucide:check-square" style="font-size:24px;color:var(--ed-orange)"></iconify-icon></div><div class="title">Do's and don'ts</div></div>
+      <div class="body">"Don't center-align body." "Don't round product images."</div>
+    </div>
+    <div class="card" style="background:var(--ed-card-pink)">
+      <div class="head"><div class="ico"><iconify-icon icon="lucide:users" style="font-size:24px;color:var(--ed-orange)"></iconify-icon></div><div class="title">Audience awareness</div></div>
+      <div class="body">Same industry + different users = completely different system.</div>
+    </div>
+  </div>
+</body>
+</html>

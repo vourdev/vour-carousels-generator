@@ -1,0 +1,24 @@
+<!-- @dsCard group="Brand" viewport="700x280" name="Brand mark" subtitle="The @vourdev logo — always the JPEG, never letters" -->
+<!DOCTYPE html>
+<html><head><meta charset="UTF-8"><link rel="stylesheet" href="../styles.css">
+<style>
+  body { margin:0; padding:30px; background:var(--bg-editorial); font-family:var(--font-body); color:var(--ed-ink); display:flex; align-items:center; justify-content:center; min-height:100vh; }
+  .row { display:flex; gap:36px; align-items:flex-end; }
+  .item { display:flex; flex-direction:column; align-items:center; gap:10px; }
+  .lbl { font-family:var(--font-mono); font-size:12px; color:var(--ed-ink-muted); }
+  .disc { border-radius:50%; overflow:hidden; background:#07070e; flex:none; }
+  .disc img { width:100%; height:100%; object-fit:cover; display:block; }
+  .header { display:flex; align-items:center; gap:16px; }
+  .wm { font-family:var(--font-body); font-weight:700; font-size:24px; color:var(--ed-ink); }
+</style></head>
+<body>
+<div class="row">
+  <div class="item"><div class="disc" style="width:72px;height:72px"><img src="../assets/vourdev-logo.jpeg" alt=""></div><div class="lbl">cover · 72</div></div>
+  <div class="item"><div class="disc" style="width:44px;height:44px"><img src="../assets/vourdev-logo.jpeg" alt=""></div><div class="lbl">inner · 44</div></div>
+  <div class="item"><div class="disc" style="width:40px;height:40px"><img src="../assets/vourdev-logo.jpeg" alt=""></div><div class="lbl">in-card · 40</div></div>
+  <div class="item">
+    <div class="header"><div class="disc" style="width:48px;height:48px"><img src="../assets/vourdev-logo.jpeg" alt=""></div><div class="wm">@vourdev</div></div>
+    <div class="lbl">BrandHeader</div>
+  </div>
+</div>
+</body></html>

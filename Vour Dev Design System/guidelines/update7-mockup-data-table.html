@@ -1,0 +1,51 @@
+<!-- @dsCard group="Mockups · Update 7" viewport="620x520" name="DataTable" subtitle="X vs ✓ 2-column comparison table — 'jangan bilang / bilang gini'" -->
+<!DOCTYPE html>
+<html><head><meta charset="UTF-8">
+<link rel="stylesheet" href="../styles.css">
+<script src="https://code.iconify.design/iconify-icon/2.1.0/iconify-icon.min.js"></script>
+<style>
+  body {
+    margin:0; padding:28px 28px 20px;
+    background: var(--bg-editorial); color: var(--ed-ink);
+    font-family: var(--font-body);
+    display:flex; flex-direction:column; gap:14px; overflow:hidden;
+  }
+  .hd { display:flex; align-items:center; justify-content:space-between; }
+  .lbl {
+    font-family: var(--font-mono); font-size:11px; font-weight:500;
+    letter-spacing:.18em; text-transform:uppercase; color: var(--ed-orange);
+  }
+  .note { font-family: var(--font-mono); font-size:11px; color: var(--ed-ink-faint); }
+  .stage { flex:1; display:flex; align-items:center; justify-content:center; }
+
+  .tbl { width: 100%; max-width: 560px; border-top: 1.25px solid var(--ed-ink); }
+  .th, .tr { display: grid; grid-template-columns: 1fr 1fr; border-bottom: 1.25px solid rgba(31,9,4,.14); }
+  .th > div { padding: 8px 10px; font-family: var(--font-mono); font-size:11px; letter-spacing:.10em; text-transform: uppercase; font-weight: 600; }
+  .th .no { color: var(--ed-line-red); }
+  .th .ok { color: var(--ed-line-mint); }
+  .tr > div { padding: 10px 10px; font-family: var(--font-body); font-weight:500; font-size:12px; line-height:1.45; color: var(--ed-ink-soft); border-left: 1.25px solid rgba(31,9,4,.14); }
+  .tr > div:first-child { border-left: none; }
+  .tr > div.rt { font-weight: 600; color: var(--ed-ink); }
+</style></head><body>
+  <div class="hd"><div class="lbl">DataTable</div><div class="note">X vs ✓ comparison</div></div>
+  <div class="stage">
+    <div class="tbl">
+      <div class="th">
+        <div class="no">✗  Jangan bilang</div>
+        <div class="ok">✓  Bilang gini</div>
+      </div>
+      <div class="tr">
+        <div>Bikin lebih profesional</div>
+        <div class="rt">Pastiin orang ngerti cuma dalam 5 detik</div>
+      </div>
+      <div class="tr">
+        <div>Perbaiki ini</div>
+        <div class="rt">Perbaiki pakai 3 kriteria: clarity, pacing, CTA</div>
+      </div>
+      <div class="tr">
+        <div>Bikin lebih pendek</div>
+        <div class="rt">Tulis sesuai gaya bicara gue, no jargon</div>
+      </div>
+    </div>
+  </div>
+</body></html>

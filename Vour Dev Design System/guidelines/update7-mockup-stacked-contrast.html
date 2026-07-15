@@ -1,0 +1,44 @@
+<!-- @dsCard group="Mockups · Update 7" viewport="620x520" name="StackedContrast" subtitle="Vertical 'before/after' or 'scraped/designed' info pair" -->
+<!DOCTYPE html>
+<html><head><meta charset="UTF-8">
+<link rel="stylesheet" href="../styles.css">
+<script src="https://code.iconify.design/iconify-icon/2.1.0/iconify-icon.min.js"></script>
+<style>
+  body {
+    margin:0; padding:28px 28px 20px;
+    background: var(--bg-editorial); color: var(--ed-ink);
+    font-family: var(--font-body);
+    display:flex; flex-direction:column; gap:14px; overflow:hidden;
+  }
+  .hd { display:flex; align-items:center; justify-content:space-between; }
+  .lbl {
+    font-family: var(--font-mono); font-size:11px; font-weight:500;
+    letter-spacing:.18em; text-transform:uppercase; color: var(--ed-orange);
+  }
+  .note { font-family: var(--font-mono); font-size:11px; color: var(--ed-ink-faint); }
+  .stage { flex:1; display:flex; align-items:center; justify-content:center; }
+
+  .pair { display: flex; flex-direction: column; gap: 10px; width: 100%; max-width: 540px; }
+  .card { border-radius: 12px; padding: 14px 16px; }
+  .card.scraped { background: var(--ed-card-stone); }
+  .card.designed { background: var(--ed-card-peach); }
+  .card .lbl-in { font-family: var(--font-mono); font-size:10px; font-weight:500; letter-spacing:.18em; text-transform:uppercase; color: var(--ed-ink-muted); }
+  .card.designed .lbl-in { color: var(--ed-orange); }
+  .card .k { font-family: var(--font-mono); font-size:14px; color: var(--ed-ink); margin-top:4px; }
+  .card .v { font-family: var(--font-body); font-weight:500; font-size:12px; line-height:1.45; color: var(--ed-ink-soft); margin-top:6px; }
+</style></head><body>
+  <div class="hd"><div class="lbl">StackedContrast</div><div class="note">Before / after</div></div>
+  <div class="stage">
+    <div class="pair">
+      <div class="card scraped">
+        <div class="lbl-in">Scraped</div>
+        <div class="k">primary: #C62828</div>
+      </div>
+      <div class="card designed">
+        <div class="lbl-in">Designed</div>
+        <div class="k">primary: #C62828</div>
+        <div class="v">Deep warm red. Reserved for purchase-path actions. Never used decoratively.</div>
+      </div>
+    </div>
+  </div>
+</body></html>

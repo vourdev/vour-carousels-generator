@@ -1,0 +1,82 @@
+<!-- @dsCard group="Slides" viewport="1080x1350" name="Update 7 · HistoryTimeline" subtitle="Two labeled date cards — history / then vs now" -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<link rel="stylesheet" href="../styles.css">
+<script src="https://code.iconify.design/iconify-icon/2.1.0/iconify-icon.min.js"></script>
+<script type="application/json" id="vourdev-meta">
+{"title":"Update 7 · HistoryTimeline","caption":"","hashtags":[]}
+</script>
+<style>
+  html, body { width:1080px; height:1350px; }
+  body {
+    margin:0; padding:96px 80px 80px;
+    background: var(--bg-editorial); color: var(--ed-ink);
+    font-family: var(--font-body);
+    display: flex; flex-direction: column; overflow: hidden;
+  }
+  .counter { font-family: var(--font-mono); font-size:24px; color: var(--ed-ink-faint); letter-spacing:.04em; }
+  .eyebrow {
+    font-family: var(--font-mono); font-weight:500; font-size:24px;
+    letter-spacing:.18em; text-transform:uppercase; color: var(--ed-orange);
+    margin-top: 48px;
+  }
+  h1 {
+    font-family: var(--font-display); font-weight:800;
+    font-size: 88px; line-height: 1.04; letter-spacing:-.025em;
+    margin: 24px 0 0; color: var(--ed-ink);
+  }
+  h1 .a { color: var(--ed-orange); }
+  .body-text {
+    font-family: var(--font-body); font-weight:500; font-size:30px;
+    line-height:1.4; color: var(--ed-ink-soft); margin: 24px 0 0;
+    max-width: 900px;
+  }
+  .body-text strong { color: var(--ed-ink); font-weight: 700; }
+  .diag-wrap {
+    flex: 1; min-height: 0;
+    display: flex; align-items: center; justify-content: center;
+    margin-top: 32px;
+  }
+  .catatan {
+    border: 1.5px solid var(--ed-orange); border-radius: 16px;
+    padding: 20px 28px; margin-top: 32px;
+  }
+  .catatan-label {
+    font-family: var(--font-mono); font-weight:500; font-size:22px;
+    letter-spacing:.18em; text-transform:uppercase; color: var(--ed-orange);
+  }
+  .catatan-body {
+    margin-top: 6px; font-family: var(--font-display); font-weight:700;
+    font-size: 28px; color: var(--ed-ink); line-height: 1.2;
+  }
+
+  h1 { font-size: 76px; line-height: 1.05; }
+  .tl { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; width: 100%; }
+  .tl .card { border-radius: 20px; padding: 36px 36px; display: flex; flex-direction: column; min-height: 320px; }
+  .tl .a-card { background: var(--ed-card-stone); }
+  .tl .b-card { background: var(--ed-card-peach); }
+  .tl .date { font-family: var(--font-mono); font-size:22px; letter-spacing:.18em; text-transform:uppercase; color: var(--ed-ink-muted); }
+  .tl .b-card .date { color: var(--ed-orange); }
+  .tl .t { font-family: var(--font-display); font-weight:700; font-size:36px; margin-top:16px; color: var(--ed-ink); line-height: 1.15; }
+  .tl .p { font-family: var(--font-body); font-weight:500; font-size:26px; line-height:1.45; color: var(--ed-ink-soft); margin-top:16px; }
+</style></head><body>
+  <div class="counter">03 / 10</div>
+  <div class="eyebrow">Quick history</div>
+  <h1>Stitch made the format.<br>Claude Design made it<br><span class="a">blow up.</span></h1>
+  <div class="diag-wrap" style="align-items:center;">
+    <div class="tl">
+      <div class="card a-card">
+        <div class="date">Earlier this year</div>
+        <div class="t">Google Stitch</div>
+        <div class="p">Introduced the DESIGN.md spec — a markdown file AI agents can read for visual consistency.</div>
+      </div>
+      <div class="card b-card">
+        <div class="date">April 17, 2026</div>
+        <div class="t">Claude Design</div>
+        <div class="p">Launched with native support. The format went viral within days.</div>
+      </div>
+    </div>
+  </div>
+</body></html>

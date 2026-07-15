@@ -1,0 +1,22 @@
+<!-- @dsCard group="Spacing" viewport="700x260" name="Edge padding presets" subtitle="Editorial 1080×1350 — canonical values" -->
+<!DOCTYPE html>
+<html><head><meta charset="UTF-8"><link rel="stylesheet" href="../styles.css">
+<style>
+  body { margin:0; padding:24px; background:var(--bg-editorial); font-family:var(--font-mono); color:var(--ed-ink); }
+  table { width:100%; border-collapse:collapse; }
+  td, th { text-align:left; padding:9px 12px; border-bottom:1px solid rgba(31,9,4,.08); font-size:13px; }
+  th { font-size:11px; color:var(--ed-ink-muted); text-transform:uppercase; letter-spacing:.12em; font-weight:500; }
+  .tk { color:var(--ed-ink-soft); }
+  .px { color:var(--ed-ink); }
+  .note { font-family:var(--font-body); color:var(--ed-ink-muted); font-size:12px; }
+</style></head>
+<body>
+<table>
+  <tr><th>Token</th><th>px</th><th>Use</th><th>Note</th></tr>
+  <tr><td class="tk">--pad-ig-x</td><td class="px">80</td><td>slide</td><td class="note">left + right edge</td></tr>
+  <tr><td class="tk">--pad-ig-top</td><td class="px">96</td><td>slide</td><td class="note">top edge</td></tr>
+  <tr><td class="tk">--pad-ig-bottom</td><td class="px">80</td><td>slide</td><td class="note">bottom edge</td></tr>
+  <tr><td class="tk">--pad-card</td><td class="px">32</td><td>card</td><td class="note">info card, numbered step</td></tr>
+  <tr><td class="tk">--pad-callout</td><td class="px">32</td><td>callout</td><td class="note">dark callout, terminal block</td></tr>
+</table>
+</body></html>

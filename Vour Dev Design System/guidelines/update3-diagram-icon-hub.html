@@ -1,0 +1,92 @@
+<!-- @dsCard group="Diagrams · Update 3" viewport="620x520" name="Icon hub" subtitle="Center → 4 line-art tool icons (Database/Sheet/Browser/Doc)" -->
+<!DOCTYPE html>
+<html><head><meta charset="UTF-8">
+<link rel="stylesheet" href="../styles.css">
+<style>
+  body {
+    margin:0; padding:32px; background: var(--bg-editorial); color: var(--ed-ink);
+    font-family: var(--font-body); display:flex; flex-direction:column; gap:16px; overflow:hidden;
+  }
+  .hd { display:flex; align-items:baseline; justify-content:space-between; }
+  .lbl { font-family: var(--font-mono); font-size:12px; letter-spacing:.18em; text-transform:uppercase; color: var(--ed-orange); }
+  .note { font-family: var(--font-mono); font-size:12px; color: var(--ed-ink-muted); }
+  .stage { flex:1; display:flex; align-items:center; justify-content:center; padding:12px 4px; }
+
+  .node.filled.big {
+    display:inline-flex; align-items:center; justify-content:center;
+    padding:14px 28px; min-height:60px; min-width:100px;
+    background: var(--ed-orange); border:1.5px solid var(--ed-orange); color:#fff;
+    border-radius: 16px;
+    font-family: var(--font-display); font-weight:700; font-size:26px; line-height:1;
+  }
+
+  .diag-icon-hub { position:relative; width:100%; max-width:560px; height:280px; }
+  .diag-icon-hub .center { position:absolute; top:0; left:50%; transform:translateX(-50%); z-index:2; }
+  .diag-icon-hub .tools { position:absolute; bottom:0; left:0; right:0; display:flex; justify-content:space-between; align-items:flex-end; }
+  .diag-icon-hub .tool { display:flex; flex-direction:column; align-items:center; gap:8px; width:22%; }
+  .diag-icon-hub .glyph { width:56px; height:56px; }
+  .diag-icon-hub .glyph svg { width:100%; height:100%; stroke:var(--ed-ink); stroke-width:1.5; fill:none; stroke-linecap:round; stroke-linejoin:round; }
+  .diag-icon-hub .label { font-family: var(--font-mono); font-size:12px; color: var(--ed-ink-muted); }
+  .diag-icon-hub svg.lines { position:absolute; inset:0; width:100%; height:100%; pointer-events:none; }
+  .diag-icon-hub svg.lines .stroke { stroke:var(--ed-orange); stroke-width:1.5; fill:none; stroke-dasharray:4 4; }
+  .diag-icon-hub svg.lines .head { fill:var(--ed-orange); }
+</style></head>
+<body>
+  <div class="hd">
+    <div class="lbl">ICON HUB</div>
+    <div class="note">Update 3</div>
+  </div>
+  <div class="stage">
+    <div class="diag-icon-hub">
+      <div class="center"><div class="node filled big">AI</div></div>
+      <svg class="lines" viewBox="0 0 560 280" preserveAspectRatio="none">
+        <path class="stroke" d="M 280 60 Q 280 160 56 230" />
+        <path class="stroke" d="M 280 60 Q 280 160 205 230" />
+        <path class="stroke" d="M 280 60 Q 280 160 355 230" />
+        <path class="stroke" d="M 280 60 Q 280 160 504 230" />
+        <polygon class="head" points="49,227 63,227 56,238" />
+        <polygon class="head" points="198,227 212,227 205,238" />
+        <polygon class="head" points="348,227 362,227 355,238" />
+        <polygon class="head" points="497,227 511,227 504,238" />
+      </svg>
+      <div class="tools">
+        <div class="tool">
+          <div class="glyph"><svg viewBox="0 0 60 60">
+            <ellipse cx="30" cy="14" rx="18" ry="5"/>
+            <path d="M12 14 v32 c0 3 8 5 18 5 s18 -2 18 -5 v-32"/>
+            <path d="M12 26 c0 3 8 5 18 5 s18 -2 18 -5"/>
+            <path d="M12 38 c0 3 8 5 18 5 s18 -2 18 -5"/>
+          </svg></div>
+          <div class="label">Database</div>
+        </div>
+        <div class="tool">
+          <div class="glyph"><svg viewBox="0 0 60 60">
+            <rect x="10" y="10" width="40" height="40" rx="3"/>
+            <line x1="10" y1="22" x2="50" y2="22"/><line x1="10" y1="34" x2="50" y2="34"/><line x1="10" y1="46" x2="50" y2="46"/>
+            <line x1="24" y1="10" x2="24" y2="50"/><line x1="38" y1="10" x2="38" y2="50"/>
+          </svg></div>
+          <div class="label">Sheet</div>
+        </div>
+        <div class="tool">
+          <div class="glyph"><svg viewBox="0 0 60 60">
+            <rect x="8" y="12" width="44" height="36" rx="3"/>
+            <line x1="8" y1="22" x2="52" y2="22"/>
+            <circle cx="14" cy="17" r="1.6" fill="currentColor" stroke="none"/>
+            <circle cx="20" cy="17" r="1.6" fill="currentColor" stroke="none"/>
+            <circle cx="26" cy="17" r="1.6" fill="currentColor" stroke="none"/>
+            <line x1="14" y1="30" x2="46" y2="30"/><line x1="14" y1="37" x2="46" y2="37"/><line x1="14" y1="44" x2="34" y2="44"/>
+          </svg></div>
+          <div class="label">Browser</div>
+        </div>
+        <div class="tool">
+          <div class="glyph"><svg viewBox="0 0 60 60">
+            <path d="M14 8 h22 l12 12 v34 a2 2 0 0 1 -2 2 h-32 a2 2 0 0 1 -2 -2 v-44 a2 2 0 0 1 2 -2 z"/>
+            <path d="M36 8 v12 h12"/>
+            <line x1="20" y1="30" x2="40" y2="30"/><line x1="20" y1="38" x2="40" y2="38"/><line x1="20" y1="46" x2="34" y2="46"/>
+          </svg></div>
+          <div class="label">Doc</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</body></html>

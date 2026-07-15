@@ -1,0 +1,26 @@
+<!-- @dsCard group="Spacing" viewport="700x360" name="Vertical rhythm" subtitle="The canonical stack — eyebrow 24 ↓ headline 32 ↓ body 40 ↓ cards 48 ↓ next" -->
+<!DOCTYPE html>
+<html><head><meta charset="UTF-8"><link rel="stylesheet" href="../styles.css">
+<style>
+  body { margin:0; padding:24px; background:var(--bg-editorial); font-family:var(--font-body); color:var(--ed-ink); }
+  .stack { display:flex; flex-direction:column; }
+  .block { background:#fff8; border:1px solid rgba(31,9,4,.05); border-radius:10px; padding:10px 14px; font-family:var(--font-mono); font-size:13px; color:var(--ed-ink); }
+  .gap { display:flex; align-items:center; gap:10px; padding:6px 0; font-family:var(--font-mono); font-size:11px; color:var(--ed-orange); }
+  .line { flex:1; border-top:1px dashed var(--ed-orange); }
+  .label { font-family:var(--font-mono); font-size:11px; color:var(--ed-ink-muted); }
+</style></head>
+<body>
+<div class="stack">
+  <div class="block">PageCounter <span class="label" style="float:right">--fs-counter · 24</span></div>
+  <div class="gap"><span>↓ 64</span><span class="line"></span><span>--gap-block</span></div>
+  <div class="block">Eyebrow <span class="label" style="float:right">--fs-eyebrow-ed · 24</span></div>
+  <div class="gap"><span>↓ 24</span><span class="line"></span><span>--gap-badge-headline</span></div>
+  <div class="block">Headline <span class="label" style="float:right">--fs-title · 104</span></div>
+  <div class="gap"><span>↓ 32</span><span class="line"></span><span>--gap-headline-body</span></div>
+  <div class="block">Body / lede <span class="label" style="float:right">--fs-lead · 40</span></div>
+  <div class="gap"><span>↓ 40</span><span class="line"></span><span>--gap-body-asset</span></div>
+  <div class="block">Row of cards / asset</div>
+  <div class="gap"><span>↓ 48</span><span class="line"></span><span>--gap-section</span></div>
+  <div class="block">Next section / footer</div>
+</div>
+</body></html>

@@ -1,0 +1,10 @@
+:root {
+  /* ── Editorial slide background — cream + soft corner halo, NO grid. ── */
+  --bg-editorial:
+    radial-gradient(55% 40% at 100% 0%, rgba(233,75,25,0.06), transparent 65%),
+    radial-gradient(60% 50% at 10% 100%, rgba(233,75,25,0.04), transparent 70%),
+    #FBF6EF;
+
+  /* ── App canvas (the DS tab itself). ── */
+  --bg-app: #FBF6EF;
+}

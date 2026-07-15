@@ -1,0 +1,59 @@
+<!-- @dsCard group="Brand" viewport="1080x780" name="Image insert — pattern rules" subtitle="How to place any screenshot on a slide" -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Image insert — pattern rules</title>
+<link rel="stylesheet" href="../styles.css">
+<style>
+  html, body { margin: 0; padding: 0; }
+  body { background: var(--ed-paper); font-family: var(--font-body); color: var(--ed-ink); padding: 48px; }
+  h1 { font-family: var(--font-display); font-weight: 800; font-size: 40px; letter-spacing: var(--tracking-display); margin: 0; }
+  .eyebrow { font-family: var(--font-mono); font-size: 18px; text-transform: uppercase; letter-spacing: var(--tracking-eyebrow); color: var(--ed-orange); font-weight: 500; margin-bottom: 12px; }
+  .lede { font-family: var(--font-body); font-size: 20px; color: var(--ed-ink-soft); margin: 16px 0 32px; max-width: 720px; line-height: 1.5; }
+  .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 32px; }
+  .card { background: rgba(31,9,4,0.03); border: 1px solid rgba(31,9,4,0.08); border-radius: var(--radius-lg); padding: 24px; }
+  .card h3 { font-family: var(--font-display); font-weight: 700; font-size: 22px; margin: 0 0 10px; color: var(--ed-ink); }
+  .card p { font-family: var(--font-body); font-size: 15px; line-height: 1.55; color: var(--ed-ink-soft); margin: 0; }
+  .card p + p { margin-top: 8px; }
+  code { font-family: var(--font-mono); font-size: 14px; background: rgba(31,9,4,0.06); padding: 1px 6px; border-radius: 4px; color: var(--ed-ink); }
+  .accent { color: var(--ed-orange); font-weight: 700; }
+</style>
+</head>
+<body>
+  <div class="eyebrow">[Component · ImagePlate]</div>
+  <h1>Any screenshot goes into an <span class="accent">ImagePlate</span>.</h1>
+  <p class="lede">
+    Cream paper + a raw image reads as pasted-in. Wrap every screenshot in an ImagePlate so it inherits the editorial ink outline and warm shadow — same visual weight as the diagram cards, so the slide reads as one composition.
+  </p>
+
+  <div class="grid">
+    <div class="card">
+      <h3>1 · Pick the variant by subject</h3>
+      <p><code>window-mac</code> — terminal / IDE / native app.</p>
+      <p><code>window-web</code> — browser-based web app. Pass <code>url=""</code> for the address pill.</p>
+      <p><code>phone</code> — iOS / Android screen.</p>
+      <p><code>framed</code> (default) — anything else with a real bounding rectangle.</p>
+      <p><code>plain</code> — logo / isolate with no natural frame; adds rounded corners + soft shadow only.</p>
+    </div>
+
+    <div class="card">
+      <h3>2 · Size the plate</h3>
+      <p>Inside a <code>.diag-wrap</code> on a mockup slide? Omit <code>ratio</code> — the plate fills the wrap and obeys the §14 proportion contract.</p>
+      <p>Inline on a text slide? Give it <code>ratio="16 / 10"</code> (or 4 / 3, 9 / 19 for phone) so it has a definite size.</p>
+    </div>
+
+    <div class="card">
+      <h3>3 · Fit</h3>
+      <p><code>fit="cover"</code> (default) — the image fills the plate and center-crops. Good for hero screenshots.</p>
+      <p><code>fit="contain"</code> — the whole image is visible against cream paper. Use for logos, charts, or screenshots where the edges matter.</p>
+    </div>
+
+    <div class="card">
+      <h3>4 · Caption</h3>
+      <p>Add a <code>captionEyebrow</code> (orange, ALL CAPS) + <code>caption</code> (mono, brown-ink) on any mockup slide. One line max. Say what the image IS, not what it means — the headline already said that.</p>
+      <p>Skip the caption on comparison pairs where the headline covers both.</p>
+    </div>
+  </div>
+</body>
+</html>

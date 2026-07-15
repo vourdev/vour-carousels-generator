@@ -1,0 +1,42 @@
+:root {
+  /* ────────────────────────────────────────────────────────
+     Update 3 · Line-diagram tokens
+     Warm, editorial-friendly accents for wireframe diagrams
+     (concept hubs, flow chains, comparison bars, icon hubs,
+     illustrated scenes, permission tables, terminals, recap
+     checklists). Editorial is the only surface.
+     ──────────────────────────────────────────────────────── */
+
+  /* Stroke colors (borders + arrow strokes + text on line nodes).
+     All chosen so a 1.5–2px stroke is legible on --ed-paper
+     without competing with --ed-orange headlines. */
+  --ed-line-ink:      #1F0904;   /* default node border / connector */
+  --ed-line-orange:   #E94B19;   /* highlighted node — same as --ed-orange */
+  --ed-line-mint:     #4E9E5C;   /* topic accent — success / RAG */
+  --ed-line-sky:      #2F6EBC;   /* topic accent — tooling / MCP */
+  --ed-line-amber:    #B98A0D;   /* topic accent — highlight */
+  --ed-line-pink:     #C1547B;   /* topic accent — design / content */
+  --ed-line-red:      #C13B1A;   /* topic accent — warning / loser */
+
+  /* Dashed / muted connectors + faint labels inside diagrams. */
+  --ed-line-muted:    #A48C7E;
+
+  /* Very-subtle node fills so a line-art node reads on cream. */
+  --ed-node-fill:     #FDFBF6;   /* off-white — near-invisible */
+  --ed-node-fill-dim: #F0EADF;   /* dimmed node (comparison "loser") */
+
+  /* Fill for a HIGHLIGHTED node — deep enough to stand out.
+     Text on top uses --ed-ink; border matches fill. */
+  --ed-node-fill-orange: #E94B19;
+  --ed-node-fill-ink:    #1F0904;
+
+  /* Stroke widths — pinned so nodes across the deck look uniform. */
+  --ed-stroke-node:    1.5px;
+  --ed-stroke-arrow:   1.5px;
+  --ed-stroke-emphatic: 2px;
+
+  /* Radii for line-art nodes. */
+  --ed-node-radius:      16px;    /* default node */
+  --ed-node-radius-lg:   20px;    /* larger central hub node */
+  --ed-node-radius-pill: 999px;   /* pill (rarely used) */
+}

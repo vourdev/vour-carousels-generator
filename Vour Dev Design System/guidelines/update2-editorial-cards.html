@@ -1,0 +1,48 @@
+<!-- @dsCard group="Brand · Update 2 fixes" viewport="700x380" name="★ Editorial card opacity" subtitle="Pick a card tone — never let the paper halo show through" -->
+<!DOCTYPE html>
+<html><head><meta charset="UTF-8"><link rel="stylesheet" href="../styles.css">
+<script src="https://code.iconify.design/iconify-icon/2.1.0/iconify-icon.min.js"></script>
+<style>
+  body { margin:0; padding:24px; background:var(--bg-editorial); font-family:var(--font-body); color:var(--ed-ink); }
+  .row { display:grid; grid-template-columns:repeat(3,1fr); gap:16px; }
+  .card { border-radius:20px; padding:20px; }
+  .head { display:flex; align-items:center; gap:12px; margin-bottom:8px; }
+  .ico { width:40px; height:40px; border-radius:10px; background:rgba(31,9,4,0.06); display:flex; align-items:center; justify-content:center; }
+  .title { font-family:var(--font-display); font-weight:700; font-size:18px; color:var(--ed-ink); }
+  .body { font-size:13px; color:var(--ed-ink-soft); line-height:1.4; }
+  .tag { font-family:var(--font-mono); font-size:10px; color:var(--ed-ink-muted); letter-spacing:.12em; text-transform:uppercase; margin-top:8px; }
+</style></head>
+<body>
+<div class="row">
+  <div class="card" style="background:var(--ed-card-peach)">
+    <div class="head"><div class="ico"><iconify-icon icon="lucide:file-text" style="font-size:24px;color:var(--ed-orange)"></iconify-icon></div><div class="title">Default</div></div>
+    <div class="body">Neutral story beats — eyebrows, framing, "what I did".</div>
+    <div class="tag">--ed-card-peach</div>
+  </div>
+  <div class="card" style="background:var(--ed-card-mint)">
+    <div class="head"><div class="ico"><iconify-icon icon="lucide:check" style="font-size:24px;color:var(--ed-orange)"></iconify-icon></div><div class="title">Success</div></div>
+    <div class="body">Wins, growth metrics, SEO, "yes" comparisons.</div>
+    <div class="tag">--ed-card-mint</div>
+  </div>
+  <div class="card" style="background:var(--ed-card-sky)">
+    <div class="head"><div class="ico"><iconify-icon icon="lucide:server" style="font-size:24px;color:var(--ed-orange)"></iconify-icon></div><div class="title">Tooling</div></div>
+    <div class="body">Info / infra cards. API references, registry, runtime.</div>
+    <div class="tag">--ed-card-sky</div>
+  </div>
+  <div class="card" style="background:var(--ed-card-pink)">
+    <div class="head"><div class="ico"><iconify-icon icon="lucide:palette" style="font-size:24px;color:var(--ed-orange)"></iconify-icon></div><div class="title">Design</div></div>
+    <div class="body">UI / content / brand cards.</div>
+    <div class="tag">--ed-card-pink</div>
+  </div>
+  <div class="card" style="background:var(--ed-card-amber)">
+    <div class="head"><div class="ico"><iconify-icon icon="lucide:zap" style="font-size:24px;color:var(--ed-orange)"></iconify-icon></div><div class="title">Highlight</div></div>
+    <div class="body">Perf, speed, energy, "important takeaway".</div>
+    <div class="tag">--ed-card-amber</div>
+  </div>
+  <div class="card" style="background:var(--ed-card-stone)">
+    <div class="head"><div class="ico"><iconify-icon icon="lucide:x" style="font-size:24px;color:var(--ed-ink-faint)"></iconify-icon></div><div class="title" style="color:var(--ed-ink-faint)">Scraped / loser</div></div>
+    <div class="body">The "what NOT to do" contrast card.</div>
+    <div class="tag">--ed-card-stone</div>
+  </div>
+</div>
+</body></html>

@@ -1,0 +1,44 @@
+<!-- @dsCard group="Mockups · Update 7" viewport="620x520" name="PromptCard" subtitle="Bordered COPY THIS prompt card — copy-paste snippet, editorial" -->
+<!DOCTYPE html>
+<html><head><meta charset="UTF-8">
+<link rel="stylesheet" href="../styles.css">
+<script src="https://code.iconify.design/iconify-icon/2.1.0/iconify-icon.min.js"></script>
+<style>
+  body {
+    margin:0; padding:28px 28px 20px;
+    background: var(--bg-editorial); color: var(--ed-ink);
+    font-family: var(--font-body);
+    display:flex; flex-direction:column; gap:14px; overflow:hidden;
+  }
+  .hd { display:flex; align-items:center; justify-content:space-between; }
+  .lbl {
+    font-family: var(--font-mono); font-size:11px; font-weight:500;
+    letter-spacing:.18em; text-transform:uppercase; color: var(--ed-orange);
+  }
+  .note { font-family: var(--font-mono); font-size:11px; color: var(--ed-ink-faint); }
+  .stage { flex:1; display:flex; align-items:center; justify-content:center; }
+
+  .card {
+    position: relative; width: 100%; max-width: 540px;
+    border: 1.75px solid var(--ed-orange); border-radius: 12px;
+    padding: 22px 20px 18px; background: var(--ed-paper);
+  }
+  .card .label {
+    position: absolute; top: -8px; left: 16px;
+    padding: 2px 8px; background: var(--ed-paper);
+    font-family: var(--font-mono); font-size: 10px; letter-spacing:.18em; text-transform: uppercase;
+    color: var(--ed-orange);
+  }
+  .card .body {
+    font-family: var(--font-mono); font-size: 13px; line-height: 1.55;
+    color: var(--ed-ink);
+  }
+</style></head><body>
+  <div class="hd"><div class="lbl">PromptCard</div><div class="note">COPY THIS block</div></div>
+  <div class="stage">
+    <div class="card">
+      <span class="label">Copy this</span>
+      <div class="body">Buatin gue 10 hook buat postingan tentang [TOPIK], masing-masing pake sudut pandang beda: takut, penasaran, klaim berani, pertanyaan, statistik, cerita.</div>
+    </div>
+  </div>
+</body></html>

@@ -1,0 +1,167 @@
+# Vour Dev Carousel Pack · v6 (editorial + strict intro contract + extended mockup catalog)
+
+> **For the receiving AI:** Read this file first. It tells you how to use this folder to produce on-brand @vourdev carousels with consistent results — including the required `vourdev-meta` automation block.
+
+## What changed in v6
+
+1. **Skill file is now a stub — no more rule duplication.** `SKILL.md` at the consumer end (in Claude Skills / Custom Instructions) is a thin pointer to `DESIGN.md`. All design rules live in one place. This kills the long-running "skill and design.md conflict" bug where two files stated the same rule differently.
+2. **Slide-introduction contract (`DESIGN.md §16`).** Every slide's intro block (eyebrow → headline → description) has HARD word / char / line caps by size. Descriptions cap at 100 chars on mockup slides, 140 chars on text-only slides. Includes the "conjunction check" heuristic (more than one `dan / atau / tapi / kalau / karena` conjunction and the sentence is almost certainly too long).
+3. **Single-mockup fills the full width (`DESIGN.md §17`).** ONE mockup → spans `.diag-wrap` (100% wide). TWO → 1fr / 1fr grid. THREE–FOUR → `MediaGrid` 2×2. Never a single mockup in a half column with empty space beside it.
+4. **Extended mockup catalog (`DESIGN.md §18`).** Five new mockup roles beyond terminals / cards / charts: full-bleed `ImagePlate`, before/after `ImagePlatePair`, `MediaGrid` (2×2 gallery), `BigStat` (metric), `PullQuote` (testimonial), `SplitPanel` (text + image side-by-side).
+5. **Content length caps in `MAKING_CAROUSELS.md §8`** are still in force, and the intro contract in §11 makes them mandatory-checked pre-flight.
+
+## What changed in v5 (still holds)
+
+1. **Mockup slide proportion contract.** Slides carrying a Terminal, Illustrated Scene, Permission Table, Comparison Bars, or any diagram role now follow a locked vertical stack (see `MAKING_CAROUSELS.md §7`). Title, eyebrow, description, and mock-screen never overlap. If copy doesn't fit, cut copy — don't touch the CSS.
+2. **Content length caps.** Explicit character/line budgets per element (see `MAKING_CAROUSELS.md §8`). Terminal body ≤ 8 lines / 44 chars per line. Mockup-slide description ≤ 2 lines / 120 chars. Cover headline ≤ 30 chars.
+3. **`vourdev-meta` automation block is required.** Every HTML file must include a `<script type="application/json" id="vourdev-meta">` block inside `<head>`, right after the Iconify script. The GitHub Actions → Buffer export pipeline reads it to name the file, queue the post body, and attach hashtags. See `MAKING_CAROUSELS.md §10` for the schema and worked example.
+4. **Mockup-role selection matrix.** Explicit topic→role mapping (database queries → Terminal; auth flow → Illustrated Scene; role matrix → Permission Table; bad-vs-good → Comparison Bars; "connects to" → Icon Hub; term glossary → Concept Hub; pipeline → Flow Chain).
+
+## What changed in v4 (still holds)
+
+1. **Synthwave surface fully retired.** Every `--vd-*` token, `IconTile`, `CtaCircle`, the TikTok 9:16 outro strip, `--fs-hero`, `--fs-title-tt`, and the `--pad-tt-*` tokens are gone. Editorial cream + `--ed-orange` is the only surface.
+2. **Type scale renamed.** `--fs-title-lg` (128) is the cover hero; `--fs-title` (104) inner; `--fs-title-sm` (88) compact / diagram slides. The old `--fs-hero` / `--fs-title-tt` are gone.
+3. **Mock-screen pattern redesigned.** The locked panel in the illustrated-scene role uses a dark `.mock-lock` pill (lucide lock + label) that sits centred on top of dimmed fields — no more overlap between the emoji and the fields behind it.
+
+## What was already true in v3 (still holds)
+
+1. **One canvas: 1080 × 1350.** Both Instagram AND TikTok photo carousels display at 4:5 in the feed. If you build at 1080×1920, TikTok crops the top and bottom.
+2. **Editorial surface only.** Warm cream + orange, no dark variant.
+
+## Files in this folder
+
+| File | Role | Read order |
+|---|---|---|
+| `README-FOR-AI.md` | This file. | 1 |
+| `DESIGN.md` | Design system spec (Update 4, editorial-only). Colors, type, spacing, brand mark as base64, component specs. | 2 |
+| `MAKING_CAROUSELS.md` | Build procedure — Markdown brief → carousel. | 3 |
+| `EXAMPLE-editorial.html` | Rendered 8-slide example carousel. **This is your ground truth.** | 4 |
+| `TEMPLATE-editorial.html` | Blank skeleton with every slide role pre-styled. **Copy this, replace placeholders.** | 5 |
+| `CUSTOM-INSTRUCTIONS.md` | Text to paste into Claude Project Settings → Custom Instructions. | (project setup) |
+
+## The procedure
+
+### Step 1 — Get or draft the brief
+
+- Topic only → write a brief in MAKING_CAROUSELS §1 format, get user approval.
+- Uploaded brief → use as-is, run §2 normalization if off-brand.
+
+### Step 2 — Confirm the platform
+
+Instagram, TikTok, or both. **All three answers use the same canvas: 1080 × 1350.** There is no reframe.
+
+### Step 3 — Copy the template
+
+Copy TEMPLATE-editorial.html in full. **Never write HTML from scratch.** The template contains:
+
+- Google Fonts + Iconify CDN
+- Editorial background gradient
+- Brand mark base64 inline
+- Every component class (.eyebrow, .counter, h1, .lede, .body-text, .card + tones, .highlight, .callout, .step, .badge, .brand-row)
+- One pre-styled section per slide role with placeholder content
+
+### Step 4 — Replace placeholders
+
+1. Update eyebrow text
+2. Update headline — wrap ONE word in `<span class="a">…</span>`
+3. Update body / lede
+4. Update icon slugs
+5. Update card tone class from the Accent Color mapping
+6. Update page counter format
+
+### Step 5 — If a slide uses a mock-screen, hold the proportion contract
+
+Terminal, Illustrated Scene, Permission Table, Comparison Bars, or any diagram role — follow the locked stack in `MAKING_CAROUSELS.md §7`:
+
+- Headline is `h1.compact` (88px), never 104 or 128.
+- Description is ≤ 2 lines / ~120 chars.
+- `.diag-wrap` keeps `flex:1` AND `min-height:0`.
+- Terminal body ≤ 8 lines, each ≤ 44 mono chars.
+- CATATAN, if present, is one line ≤ 60 chars.
+
+If it doesn't fit, cut copy. Never edit the CSS.
+
+### Step 6 — Match the deck spine
+
+```
+Slide 1 · Cover
+Slide 2 · Problem
+Slide 3..N-2 · Points
+Slide N-1 · Solution or Comparison
+Slide N   · Outro
+```
+
+Delete unused sections. Duplicate Point sections for more points. Don't invent material.
+
+### Step 7 — Wire the automation metadata block
+
+Inside `<head>`, right after the Iconify `<script>`, add:
+
+```html
+<script type="application/json" id="vourdev-meta">
+{
+  "title": "<Title from the brief>",
+  "caption": "<full # Caption block, \\n between lines>",
+  "hashtags": ["tag1", "tag2", "…"]
+}
+</script>
+```
+
+Rules:
+
+- Exactly one block. Inside `<head>`, never in `<body>`.
+- Valid JSON. Escape internal `"` as `\"`, newlines as `\n`.
+- Never omit a key: `""` for missing caption, `[]` for missing hashtags.
+- Never skip — the export pipeline sniffs every HTML file.
+
+See `MAKING_CAROUSELS.md §10` for the full schema and worked example.
+
+### Step 8 — Run DESIGN.md §10 checklist
+
+Triple-check canvas is 1080×1350, all icons on opaque cards, one accent span per headline, mockup slides pass the §7 proportion contract, `vourdev-meta` block is present and valid JSON. See DESIGN.md §10 for the full list.
+
+### Step 9 — Compare against EXAMPLE-editorial.html
+
+If your output visually differs, you probably removed a CSS class or added inline styles that override the class. Put it back.
+
+## Hard rules
+
+1. **`DESIGN.md` is the single source of truth.** Any rule stated only in a consumer skill file loses to a rule in `DESIGN.md`. If they conflict, `DESIGN.md` wins.
+2. **Canvas is 1080 × 1350.** Not 1080×1920. Both platforms crop to 4:5 in the feed.
+3. Editorial is the only surface. No dark variant.
+4. Every icon sits on an opaque `--ed-card-*` container.
+5. One `<span class="a">` accent word per headline.
+6. Pinned type sizes only — 128 / 104 / 88 / 56 / 40 / 32 / 28 / 24.
+7. No Inter / Poppins / Roboto. Only Sora + Nunito + JetBrains Mono.
+8. No emoji in body copy. Iconify only.
+9. Brand mark = §3a base64 in DESIGN.md.
+   **STRICT** · the blob is ~26,000 chars long and ends in `==`. Every `src="data:image/png;base64,…"` you write MUST contain the entire string — first char through closing `==`. Never truncate, never abbreviate with `…`. A half-pasted base64 renders as a half-filled disc. Pre-flight: length ≥ 25,900 chars, trailing `==` present. If short, refetch §3a in full.
+10. **Mockup slides pass the §7 proportion contract.** Title / eyebrow / description / mock-screen NEVER overlap. Cut copy if it doesn't fit.
+11. **Every file carries the `vourdev-meta` §10 block.** Never omit; use `""` / `[]` for missing fields.
+12. **Every slide's intro passes the §11 intro contract.** Eyebrow ≤ 3 words. Headline within its size's HARD cap. Description within the mockup-vs-text cap AND passes the conjunction check.
+13. **When a slide carries ONE mockup, it fills the full `.diag-wrap`** — §12 single-mockup rule. Never a solo mockup in a half column.
+14. **Pick the right mockup role from the extended catalog — §13.** Full-bleed image, `BigStat`, `PullQuote`, `SplitPanel`, `MediaGrid` are all valid mockup roles now; not just terminal + cards + charts.
+15. If user request conflicts, ASK before breaking.
+
+## What NOT to do
+
+- ❌ Write HTML from scratch — copy the template
+- ❌ Build at 1080×1920 for TikTok — use 1080×1350 always
+- ❌ Add a dark/synthwave variant — retired for good
+- ❌ Substitute fonts or colors
+- ❌ Add gradients beyond the background halo
+- ❌ Add animations
+- ❌ Add box-shadow to info cards (they're flat)
+- ❌ Reinterpret the design — copy structure, swap content
+- ❌ Use full-size headline (104 / 128) on a mockup slide — use `.compact` (88)
+- ❌ Let a Terminal body run past 8 lines or 44 chars per line — trim or split slides
+- ❌ Skip the `vourdev-meta` block — the pipeline breaks silently and posts don't ship
+- ❌ Shrink the font, negative-margin the mock, or delete `.diag-wrap` constraints to "make it fit" — cut copy instead
+
+## When in doubt
+
+Default: 8 slides, `.card-peach` tone, Amber or Violet accent, `.compact` headline whenever the slide carries a mock-screen. These are safest.
+
+---
+
+*Pack version 6 · 2026-07 · skill-file becomes a thin pointer to `DESIGN.md`; adds slide-introduction contract, single-mockup full-width rule, extended mockup catalog (`BigStat`, `PullQuote`, `SplitPanel`, `MediaGrid`, plus `ImagePlate` full-bleed / pair patterns).*

@@ -1,0 +1,45 @@
+<!-- @dsCard group="Mockups · Update 7" viewport="620x520" name="HistoryTimeline" subtitle="Two labeled date cards side-by-side — quick history / then vs now" -->
+<!DOCTYPE html>
+<html><head><meta charset="UTF-8">
+<link rel="stylesheet" href="../styles.css">
+<script src="https://code.iconify.design/iconify-icon/2.1.0/iconify-icon.min.js"></script>
+<style>
+  body {
+    margin:0; padding:28px 28px 20px;
+    background: var(--bg-editorial); color: var(--ed-ink);
+    font-family: var(--font-body);
+    display:flex; flex-direction:column; gap:14px; overflow:hidden;
+  }
+  .hd { display:flex; align-items:center; justify-content:space-between; }
+  .lbl {
+    font-family: var(--font-mono); font-size:11px; font-weight:500;
+    letter-spacing:.18em; text-transform:uppercase; color: var(--ed-orange);
+  }
+  .note { font-family: var(--font-mono); font-size:11px; color: var(--ed-ink-faint); }
+  .stage { flex:1; display:flex; align-items:center; justify-content:center; }
+
+  .tl { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; width: 100%; max-width: 560px; }
+  .tl .card { border-radius: 12px; padding: 14px 16px; }
+  .tl .a { background: var(--ed-card-stone); }
+  .tl .b { background: var(--ed-card-peach); }
+  .tl .date { font-family: var(--font-mono); font-size:10px; letter-spacing:.18em; text-transform:uppercase; color: var(--ed-ink-muted); }
+  .tl .b .date { color: var(--ed-orange); }
+  .tl .t { font-family: var(--font-display); font-weight:700; font-size:16px; margin-top:8px; color: var(--ed-ink); }
+  .tl .p { font-family: var(--font-body); font-weight:500; font-size:12px; line-height:1.45; color: var(--ed-ink-soft); margin-top:6px; }
+</style></head><body>
+  <div class="hd"><div class="lbl">HistoryTimeline</div><div class="note">2 dates side-by-side</div></div>
+  <div class="stage">
+    <div class="tl">
+      <div class="card a">
+        <div class="date">Earlier this year</div>
+        <div class="t">Google Stitch</div>
+        <div class="p">Introduced the DESIGN.md spec. A markdown file AI agents can read.</div>
+      </div>
+      <div class="card b">
+        <div class="date">April 17, 2026</div>
+        <div class="t">Claude Design</div>
+        <div class="p">Launched with native support. The format went viral within days.</div>
+      </div>
+    </div>
+  </div>
+</body></html>

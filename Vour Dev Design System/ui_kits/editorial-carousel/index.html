@@ -1,0 +1,178 @@
+<!-- @dsCard group="Decks" viewport="1080x1350" name="Editorial carousel (Update 2)" subtitle="The DESIGN.md story — 5 slides, all using opaque cards" -->
+<!-- @startingPoint section="Decks" subtitle="Editorial 5-slide carousel (Update 2)" viewport="1080x1350" -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Editorial carousel · Update 2</title>
+<link rel="stylesheet" href="../../styles.css">
+<script src="https://code.iconify.design/iconify-icon/2.1.0/iconify-icon.min.js"></script>
+<script src="../../deck-stage.js"></script>
+<style>
+  /* Each section IS one 1080×1350 slide. deck_stage scales the canvas. */
+  section {
+    width: 1080px; height: 1350px;
+    padding: 96px 80px 80px;
+    background: var(--bg-editorial);
+    color: var(--ed-ink);
+    font-family: var(--font-body);
+    box-sizing: border-box;
+    position: relative;
+    overflow: hidden;
+  }
+  .counter { font-family:var(--font-mono); font-size:24px; color:var(--ed-ink-faint); letter-spacing:.04em; }
+  .eyebrow { font-family:var(--font-mono); font-weight:500; font-size:24px; letter-spacing:.18em; text-transform:uppercase; color:var(--ed-orange); }
+  h1 { font-family:var(--font-display); font-weight:800; font-size:104px; line-height:1.02; letter-spacing:-.025em; margin:0; color:var(--ed-ink); }
+  h1.hero { font-size:144px; }
+  h1 .a { color:var(--ed-orange); }
+  .lede { font-family:var(--font-body); font-weight:500; font-size:40px; line-height:1.3; color:var(--ed-ink-soft); max-width:880px; margin:0; }
+  .grid { display:grid; grid-template-columns:1fr 1fr; gap:24px; }
+  .card { border-radius:24px; padding:32px; }
+  .ico-head { display:flex; align-items:center; gap:16px; }
+  .ico { width:48px; height:48px; border-radius:12px; background:rgba(31,9,4,0.06); display:flex; align-items:center; justify-content:center; flex:none; }
+  .title { font-family:var(--font-display); font-weight:700; font-size:40px; line-height:1.15; color:var(--ed-ink); }
+  .cbody { font-family:var(--font-body); font-weight:500; font-size:28px; line-height:1.4; color:var(--ed-ink-soft); margin-top:16px; }
+  .brand-row { display:flex; align-items:center; gap:16px; }
+  .disc { width:72px; height:72px; border-radius:50%; overflow:hidden; background:#07070e; flex:none; }
+  .disc.sm { width:48px; height:48px; }
+  .disc img { width:100%; height:100%; object-fit:cover; display:block; }
+  .handle { font-family:var(--font-body); font-weight:700; font-size:32px; color:var(--ed-ink); }
+  .head { display:flex; justify-content:space-between; align-items:center; }
+  .col { display:flex; flex-direction:column; height:100%; }
+  .v-center { flex:1; display:flex; flex-direction:column; justify-content:center; gap:32px; }
+  .pair { display:flex; flex-direction:column; gap:16px; }
+  .label { font-family:var(--font-mono); font-weight:500; font-size:24px; letter-spacing:.18em; text-transform:uppercase; margin-bottom:16px; }
+  .mono { font-family:var(--font-mono); font-weight:500; font-size:32px; }
+  .callout { background:var(--ed-callout-ink); color:#fff; border-radius:20px; padding:32px; display:flex; gap:16px; align-items:flex-start; font-size:28px; line-height:1.4; }
+  .callout .ico { background:rgba(255,255,255,0.08); }
+  .steps { display:flex; flex-direction:column; gap:16px; }
+  .step { background:var(--ed-card-peach); border-radius:20px; padding:32px; display:flex; gap:20px; align-items:flex-start; }
+  .badge { width:40px; height:40px; border-radius:50%; background:var(--ed-orange); color:#fff; display:flex; align-items:center; justify-content:center; font-family:var(--font-display); font-weight:700; font-size:22px; flex:none; }
+  .step-t { font-family:var(--font-display); font-weight:700; font-size:32px; color:var(--ed-ink); line-height:1.15; }
+  .step-b { font-family:var(--font-body); font-weight:500; font-size:28px; line-height:1.4; color:var(--ed-ink-soft); margin-top:4px; }
+  .panel { background:var(--ed-card-peach); border-radius:20px; padding:24px 28px; max-width:680px; }
+  .panel .strong { font-family:var(--font-display); font-weight:700; font-size:32px; line-height:1.2; color:var(--ed-orange); }
+  .panel .sub { font-family:var(--font-body); font-weight:500; font-size:26px; color:var(--ed-ink-soft); margin-top:8px; }
+  .foot { font-family:var(--font-mono); font-size:22px; color:var(--ed-ink-muted); position:absolute; bottom:80px; left:80px; }
+</style>
+</head>
+<body>
+<deck-stage width="1080" height="1350">
+
+<!-- 1 · Cover -->
+<section data-screen-label="01 · Cover" class="col">
+  <div class="head">
+    <div class="brand-row"><div class="disc sm"><img src="../../assets/vourdev-logo.jpeg" alt=""></div><span class="handle">@vourdev</span></div>
+    <div class="counter">01 / 05</div>
+  </div>
+  <div class="v-center">
+    <h1 class="hero">I dropped a<br>DESIGN.md into<br>Claude <span class="a">Design.</span></h1>
+    <p class="lede">Here's what they actually are, why most are made by devs not designers, and what you can do about it…</p>
+  </div>
+  <div class="foot">Geser →</div>
+</section>
+
+<!-- 2 · Icon cards -->
+<section data-screen-label="02 · Icon cards" class="col">
+  <div class="counter">02 / 05</div>
+  <div style="height:64px"></div>
+  <div class="eyebrow">What makes it work</div>
+  <h1 style="margin-top:24px">What I put in mine<br>that most skip.</h1>
+  <div style="height:48px"></div>
+  <div class="grid">
+    <div class="card" style="background:var(--ed-card-peach)">
+      <div class="ico-head"><div class="ico"><iconify-icon icon="lucide:file-text" style="font-size:24px;color:var(--ed-orange)"></iconify-icon></div><div class="title">Token rationale</div></div>
+      <div class="cbody">WHY and WHEN to use each color, not just the hex value.</div>
+    </div>
+    <div class="card" style="background:var(--ed-card-sky)">
+      <div class="ico-head"><div class="ico"><iconify-icon icon="lucide:square-stack" style="font-size:24px;color:var(--ed-orange)"></iconify-icon></div><div class="title">Hierarchy rules</div></div>
+      <div class="cbody">"One CTA per viewport." "This color never goes on buttons."</div>
+    </div>
+    <div class="card" style="background:var(--ed-card-mint)">
+      <div class="ico-head"><div class="ico"><iconify-icon icon="lucide:check-square" style="font-size:24px;color:var(--ed-orange)"></iconify-icon></div><div class="title">Do's and don'ts</div></div>
+      <div class="cbody">"Don't center-align body." "Don't round product images."</div>
+    </div>
+    <div class="card" style="background:var(--ed-card-pink)">
+      <div class="ico-head"><div class="ico"><iconify-icon icon="lucide:users" style="font-size:24px;color:var(--ed-orange)"></iconify-icon></div><div class="title">Audience awareness</div></div>
+      <div class="cbody">Same industry + different users = completely different system.</div>
+    </div>
+  </div>
+</section>
+
+<!-- 3 · Comparison -->
+<section data-screen-label="03 · Comparison" class="col">
+  <div class="counter">03 / 05</div>
+  <div style="height:64px"></div>
+  <div class="eyebrow">The key difference</div>
+  <h1 style="margin-top:24px">The WHAT without<br>the <span class="a">WHY.</span></h1>
+  <div style="height:48px"></div>
+  <div class="pair">
+    <div class="card" style="background:var(--ed-card-stone)">
+      <div class="label" style="color:var(--ed-ink-faint)">Scraped</div>
+      <div class="mono" style="color:var(--ed-ink-faint)">primary: #C62828</div>
+    </div>
+    <div class="card" style="background:var(--ed-card-peach)">
+      <div class="label" style="color:var(--ed-orange)">Designed</div>
+      <div class="mono" style="color:var(--ed-ink)">primary: #C62828</div>
+      <div class="cbody">Deep warm red. Reserved exclusively for purchase-path actions: Add to Cart, Buy Now, Checkout. Never used decoratively.</div>
+    </div>
+  </div>
+  <div style="height:40px"></div>
+  <div class="callout">
+    <div class="ico"><iconify-icon icon="lucide:check-circle" style="font-size:24px;color:var(--ed-orange)"></iconify-icon></div>
+    <div>Claude reads that description and actually respects the constraint.</div>
+  </div>
+</section>
+
+<!-- 4 · Numbered -->
+<section data-screen-label="04 · Numbered" class="col">
+  <div class="counter">04 / 05</div>
+  <div style="height:64px"></div>
+  <div class="eyebrow">For your projects</div>
+  <h1 style="margin-top:24px">How to start using<br>this for yourself</h1>
+  <div style="height:48px"></div>
+  <div class="steps">
+    <div class="step">
+      <div class="badge">1</div>
+      <div>
+        <div class="step-t">Start minimal</div>
+        <div class="step-b">Your colors (with descriptions of when to use each), your fonts, and 3 hierarchy rules. Even that beats prompting from scratch.</div>
+      </div>
+    </div>
+    <div class="step">
+      <div class="badge">2</div>
+      <div>
+        <div class="step-t">Write what NOT to do</div>
+        <div class="step-b">Claude follows constraints better than instructions. "Don't use more than 2 font weights" works better than "use variety thoughtfully."</div>
+      </div>
+    </div>
+    <div class="step">
+      <div class="badge">3</div>
+      <div>
+        <div class="step-t">Swap and test</div>
+        <div class="step-b">Change the palette, type pairing, or radius scale and regenerate. Fastest way to explore visual directions.</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- 5 · Outro -->
+<section data-screen-label="05 · Outro" class="col">
+  <div class="counter">05 / 05</div>
+  <div class="v-center">
+    <h1 class="hero">I'm building <span class="a">100+</span><br>DESIGN.md files.</h1>
+    <p class="lede">Crafted by a product designer with 10 years of experience.<br>Not scraped from CSS.<br>Different industries, audiences, and platforms.</p>
+    <div class="panel">
+      <div class="strong">I'll be sharing them with everyone.</div>
+      <div class="sub">Follow for early access.</div>
+    </div>
+  </div>
+  <div class="brand-row" style="margin-top:auto">
+    <div class="disc"><img src="../../assets/vourdev-logo.jpeg" alt=""></div>
+    <span class="handle">@vourdev</span>
+  </div>
+</section>
+
+</deck-stage>
+</body>
+</html>

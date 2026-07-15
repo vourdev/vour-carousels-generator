@@ -1,0 +1,19 @@
+<!-- @dsCard group="Type" viewport="700x220" name="Type families" subtitle="Sora display + Nunito body + JetBrains Mono utility" -->
+<!DOCTYPE html>
+<html><head><meta charset="UTF-8"><link rel="stylesheet" href="../styles.css">
+<style>
+  body { margin:0; padding:24px; background:var(--bg-editorial); color:var(--ed-ink); }
+  .row { display:grid; grid-template-columns:repeat(3,1fr); gap:16px; }
+  .cell { padding:16px; border-radius:14px; background:#fff8; border:1px solid rgba(31,9,4,0.05); }
+  .lbl { font-family:var(--font-mono); font-size:12px; color:var(--ed-ink-muted); margin-bottom:8px; }
+  .sample-disp { font-family:var(--font-display); font-weight:800; font-size:42px; line-height:.95; letter-spacing:-.02em; }
+  .sample-body { font-family:var(--font-body); font-weight:500; font-size:22px; line-height:1.35; color:var(--ed-ink-soft); }
+  .sample-mono { font-family:var(--font-mono); font-weight:500; font-size:18px; color:var(--ed-orange); letter-spacing:.18em; text-transform:uppercase; }
+</style></head>
+<body>
+<div class="row">
+  <div class="cell"><div class="lbl">--font-display · Sora · 700/800</div><div class="sample-disp">Aa Bb 01</div></div>
+  <div class="cell"><div class="lbl">--font-body · Nunito · 500/700</div><div class="sample-body">Saya pakai framework ini setiap hari untuk membangun web yang cepat.</div></div>
+  <div class="cell"><div class="lbl">--font-mono · JetBrains · 400/500</div><div class="sample-mono">What is it</div><div class="sample-mono" style="margin-top:8px;color:var(--ed-ink-muted);text-transform:none;letter-spacing:.04em;">01 / 10</div></div>
+</div>
+</body></html>

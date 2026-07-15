@@ -1,0 +1,41 @@
+:root {
+  /* ── Families ── */
+  --font-display: "Sora", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-body:    "Nunito", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-mono:    "JetBrains Mono", ui-monospace, "SF Mono", Menlo, monospace;
+
+  /* ── Type scale — single fixed values, no ranges.
+     Built for the 1080×1350 editorial carousel format. */
+  --fs-title:      104px;  /* Inner headline */
+  --fs-title-lg:   128px;  /* Cover / big-number headline */
+  --fs-title-sm:    88px;  /* Compact headline (long titles, diagram slides) */
+  --fs-h2:          56px;  /* Card / row heading */
+  --fs-h3:          40px;  /* Small heading, checklist row */
+  --fs-lead:        40px;  /* Lede under hero */
+  --fs-body-lg:     32px;  /* Slide body copy */
+  --fs-body:        28px;  /* Card body, bullet body */
+  --fs-eyebrow:     24px;  /* Editorial mono eyebrow (ALL CAPS, tracking 0.18em) */
+  --fs-counter:     24px;  /* Page counter "01 / 10" */
+  --fs-caption:     22px;  /* Sources, micro-meta */
+
+  /* ── Weight ── */
+  --fw-medium:   500; /* @kind font */
+  --fw-bold:     700; /* @kind font */
+  --fw-black:    800; /* @kind font */
+
+  /* ── Line height ── */
+  --lh-title:    1.02; /* @kind font */
+  --lh-title-sm: 1.04; /* @kind font */
+  --lh-h2:       1.10; /* @kind font */
+  --lh-h3:       1.15; /* @kind font */
+  --lh-lead:     1.30; /* @kind font */
+  --lh-body:     1.40; /* @kind font */
+  --lh-body-sm:  1.45; /* @kind font */
+  --lh-flat:     1.0;  /* @kind font */
+
+  /* ── Letter spacing ── */
+  --tracking-display:    -0.025em; /* @kind font */
+  --tracking-tight:      -0.01em;  /* @kind font */
+  --tracking-normal:      0;       /* @kind font */
+  --tracking-eyebrow:     0.18em;  /* @kind font */
+}

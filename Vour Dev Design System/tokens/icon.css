@@ -1,0 +1,12 @@
+:root {
+  /* ── Icon container sizes (editorial-only) ── */
+  --icon-ed-card:      48px;     /* Editorial card icon container */
+  --icon-ed-glyph:     24px;     /* Glyph inside editorial card */
+
+  --icon-callout:      40px;     /* Editorial dark callout icon container */
+  --icon-step-badge:   40px;     /* Editorial numbered step badge */
+
+  --icon-brand-cover:  72px;     /* Brand mark on cover */
+  --icon-brand-inner:  44px;     /* Brand mark inside inner slide */
+  --icon-brand-card:   40px;     /* Brand mark inside a card */
+}

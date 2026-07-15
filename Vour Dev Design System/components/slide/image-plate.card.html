@@ -1,0 +1,86 @@
+<!-- @dsCard group="Components" viewport="1080x760" name="Image plate" subtitle="Editorial frame for screenshots, app shots, logos" -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Image plate</title>
+<link rel="stylesheet" href="../../styles.css">
+<script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+<script src="../../_ds_bundle.js"></script>
+<style>
+  html, body { margin:0; padding:0; }
+  body { background: var(--ed-paper); padding: 48px; font-family: var(--font-body); color: var(--ed-ink); }
+  .wrap { max-width: 984px; margin: 0 auto; display: grid; gap: 40px; }
+  .row { display: grid; grid-template-columns: 1fr 1fr; gap: 32px; align-items: start; }
+  .row.three { grid-template-columns: 1fr 1fr 1fr; }
+  .label { font-family: var(--font-mono); font-size: 14px; text-transform: uppercase; letter-spacing: 0.18em; color: var(--ed-ink-muted); margin-bottom: 12px; }
+  h2 { font-family: var(--font-display); font-weight: 700; font-size: 28px; letter-spacing: -0.01em; color: var(--ed-ink); margin: 0 0 4px; }
+  p.hint { font-family: var(--font-body); font-size: 15px; color: var(--ed-ink-muted); margin: 0 0 20px; line-height: 1.5; }
+</style>
+</head>
+<body>
+<div id="root"></div>
+<script type="text/babel">
+const { ImagePlate, ImagePlatePair } = window.VourDevDesignSystemUpdate2_f6a5de;
+const MIMO = "../../assets/example-mimocode.png";
+
+function App() {
+  return (
+    <div className="wrap">
+
+      <div>
+        <h2>window-mac · terminal / IDE / native app</h2>
+        <p className="hint">Traffic-light dots + optional title bar. Use for terminal or code editor shots — like the MiMoCode example.</p>
+        <div className="row">
+          <div>
+            <div className="label">variant="window-mac"</div>
+            <ImagePlate
+              src={MIMO}
+              variant="window-mac"
+              chromeLabel="MiMoCode"
+              ratio="4 / 3"
+              captionEyebrow="[mockup]"
+              caption="Kalau tinggal ketik, kenapa masih buka editor?"
+            />
+          </div>
+          <div>
+            <div className="label">variant="window-web"</div>
+            <ImagePlate
+              variant="window-web"
+              url="app.example.com/dashboard"
+              ratio="4 / 3"
+              captionEyebrow="[placeholder]"
+              caption="Web-app screenshot goes here"
+            />
+          </div>
+        </div>
+      </div>
+
+      <div>
+        <h2>framed (default) · phone · plain</h2>
+        <p className="hint">Framed is the default — any screenshot. Phone for mobile. Plain for logos + isolates.</p>
+        <div className="row three">
+          <div>
+            <div className="label">variant="framed"</div>
+            <ImagePlate src={MIMO} ratio="4 / 3" caption="default framed plate" />
+          </div>
+          <div>
+            <div className="label">variant="phone"</div>
+            <ImagePlate variant="phone" ratio="9 / 19" caption="iOS / Android" />
+          </div>
+          <div>
+            <div className="label">variant="plain"</div>
+            <ImagePlate variant="plain" fit="contain" ratio="1 / 1" caption="logo / isolate" />
+          </div>
+        </div>
+      </div>
+
+    </div>
+  );
+}
+ReactDOM.createRoot(document.getElementById('root')).render(<App />);
+</script>
+</body>
+</html>

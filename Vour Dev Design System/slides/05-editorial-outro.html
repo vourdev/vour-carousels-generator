@@ -1,0 +1,39 @@
+<!-- @dsCard group="Slides" viewport="1080x1350" name="Editorial · Outro" subtitle="Big claim + highlight panel + brand footer" -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<link rel="stylesheet" href="../styles.css">
+<style>
+  html, body { width:1080px; height:1350px; }
+  body { margin:0; padding:96px 80px 80px; background:var(--bg-editorial); color:var(--ed-ink); font-family:var(--font-body); display:flex; flex-direction:column; }
+  .counter { font-family:var(--font-mono); font-size:24px; color:var(--ed-ink-faint); letter-spacing:.04em; }
+  .body { flex:1; display:flex; flex-direction:column; justify-content:center; }
+  h1 { font-family:var(--font-display); font-weight:800; font-size:104px; line-height:1.02; letter-spacing:-.025em; margin:0; color:var(--ed-ink); }
+  h1 .a { color:var(--ed-orange); }
+  .body p { font-family:var(--font-body); font-weight:500; font-size:32px; line-height:1.5; color:var(--ed-ink-soft); margin:32px 0 0; max-width:880px; }
+  .panel { margin-top:40px; background:var(--ed-card-peach); border-radius:20px; padding:24px 28px; max-width:680px; }
+  .panel .strong { font-family:var(--font-display); font-weight:700; font-size:32px; line-height:1.2; color:var(--ed-orange); }
+  .panel .sub { font-family:var(--font-body); font-weight:500; font-size:26px; color:var(--ed-ink-soft); margin-top:8px; }
+  .foot { display:flex; align-items:center; gap:16px; }
+  .disc { width:72px; height:72px; border-radius:50%; overflow:hidden; background:#07070e; flex:none; }
+  .disc img { width:100%; height:100%; object-fit:cover; display:block; }
+  .handle { font-family:var(--font-body); font-weight:700; font-size:32px; color:var(--ed-ink); }
+</style>
+</head>
+<body>
+  <div class="counter">10 / 10</div>
+  <div class="body">
+    <h1>I'm building <span class="a">100+</span><br>DESIGN.md files.</h1>
+    <p>Crafted by a product designer with 10 years of experience.<br>Not scraped from CSS.<br>Different industries, audiences, and platforms.</p>
+    <div class="panel">
+      <div class="strong">I'll be sharing them with everyone.</div>
+      <div class="sub">Follow for early access.</div>
+    </div>
+  </div>
+  <div class="foot">
+    <div class="disc"><img src="../assets/vourdev-logo.jpeg" alt=""></div>
+    <span class="handle">@vourdev</span>
+  </div>
+</body>
+</html>

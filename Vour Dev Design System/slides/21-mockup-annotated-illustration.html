@@ -1,0 +1,107 @@
+<!-- @dsCard group="Slides" viewport="1080x1350" name="Update 7 · AnnotatedIllustration" subtitle="Hero SVG + dashed label pins" -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<link rel="stylesheet" href="../styles.css">
+<script src="https://code.iconify.design/iconify-icon/2.1.0/iconify-icon.min.js"></script>
+<script type="application/json" id="vourdev-meta">
+{"title":"Update 7 · AnnotatedIllustration","caption":"","hashtags":[]}
+</script>
+<style>
+  html, body { width:1080px; height:1350px; }
+  body {
+    margin:0; padding:96px 80px 80px;
+    background: var(--bg-editorial); color: var(--ed-ink);
+    font-family: var(--font-body);
+    display: flex; flex-direction: column; overflow: hidden;
+  }
+  .counter { font-family: var(--font-mono); font-size:24px; color: var(--ed-ink-faint); letter-spacing:.04em; }
+  .eyebrow {
+    font-family: var(--font-mono); font-weight:500; font-size:24px;
+    letter-spacing:.18em; text-transform:uppercase; color: var(--ed-orange);
+    margin-top: 48px;
+  }
+  h1 {
+    font-family: var(--font-display); font-weight:800;
+    font-size: 76px; line-height: 1.05; letter-spacing:-.025em;
+    margin: 24px 0 0; color: var(--ed-ink);
+  }
+  h1 .a { color: var(--ed-orange); }
+  .diag-wrap {
+    flex: 1; min-height: 0;
+    display: flex; align-items: center; justify-content: center;
+    margin-top: 40px;
+  }
+  .illus-w {
+    width: 100%; height: 100%;
+    position: relative;
+  }
+  .illus-w svg.scene {
+    position: absolute; inset: 0;
+    width: 100%; height: 100%;
+    display: block;
+  }
+  .illus-w svg.scene .stroke { stroke: var(--ed-ink); stroke-width: 2.5; fill: none; stroke-linecap: round; stroke-linejoin: round; }
+  .illus-w svg.scene .stroke-thin { stroke: var(--ed-ink); stroke-width: 1.75; fill: none; stroke-linecap: round; stroke-linejoin: round; }
+  .illus-w svg.scene .lead { stroke: var(--ed-ink); stroke-width: 1.75; stroke-dasharray: 6 6; fill: none; opacity: .55; }
+  .pin {
+    position: absolute;
+    display: inline-flex; align-items: center; gap: 12px;
+    padding: 12px 22px; border: 1.5px solid var(--ed-ink); background: var(--ed-paper);
+    border-radius: 999px;
+    font-family: var(--font-mono); font-size: 22px; letter-spacing:.10em; text-transform: uppercase; color: var(--ed-ink);
+    white-space: nowrap;
+  }
+  .pin.ok { border-color: var(--ed-line-mint); color: var(--ed-line-mint); }
+  .pin.no { border-color: var(--ed-line-red); color: var(--ed-line-red); }
+  .pin .dot { width: 24px; height: 24px; border-radius: 999px; display: inline-flex; align-items: center; justify-content: center; }
+  .pin.ok .dot { background: var(--ed-line-mint); color: #fff; }
+  .pin.no .dot { background: var(--ed-line-red); color: #fff; }
+  .pin .dot iconify-icon { font-size: 14px; color: #fff; }
+  .pin.p1 { top: 60px;  left: 0; }
+  .pin.p2 { top: 60px;  right: 0; }
+  .pin.p3 { bottom: 90px; left: 0; }
+  .pin.p4 { bottom: 90px; right: 0; }
+</style></head><body>
+  <div class="counter">02 / 07</div>
+  <div class="eyebrow">Anatomy of auth</div>
+  <h1>Login bukan berarti<br>lo boleh <span class="a">akses semua.</span></h1>
+  <div class="diag-wrap">
+    <div class="illus-w">
+      <!-- Pins -->
+      <div class="pin p1 ok"><span class="dot"><iconify-icon icon="lucide:check"></iconify-icon></span> Auth OK</div>
+      <div class="pin p2 no"><span class="dot"><iconify-icon icon="lucide:x"></iconify-icon></span> No admin</div>
+      <div class="pin p3">Session token</div>
+      <div class="pin p4">Role &amp; scope</div>
+      <!-- Scene -->
+      <svg class="scene" viewBox="0 0 900 640" preserveAspectRatio="xMidYMid meet">
+        <!-- Leader lines to specific parts of the illustration -->
+        <path class="lead" d="M 160 68 C 240 120, 320 160, 380 220"/>
+        <path class="lead" d="M 740 68 C 660 120, 580 160, 520 220"/>
+        <path class="lead" d="M 160 570 C 240 520, 320 480, 380 430"/>
+        <path class="lead" d="M 740 570 C 660 520, 580 480, 520 430"/>
+
+        <!-- Door frame -->
+        <rect class="stroke" x="340" y="140" width="220" height="380" rx="10"/>
+        <!-- Door -->
+        <rect class="stroke" x="360" y="160" width="180" height="340" rx="6"/>
+        <!-- Door handle -->
+        <circle class="stroke" cx="516" cy="330" r="7"/>
+        <!-- Person -->
+        <circle class="stroke" cx="450" cy="270" r="30"/>
+        <path class="stroke" d="M 400 380 c 8 -42 40 -66 50 -66 s 42 24 50 66"/>
+        <!-- Check badge -->
+        <circle cx="490" cy="255" r="20" fill="var(--ed-orange)"/>
+        <path stroke="#fff" stroke-width="3.5" fill="none" stroke-linecap="round" stroke-linejoin="round" d="M 482 255 l 6 6 l 12 -12"/>
+        <!-- Ground line -->
+        <line class="stroke-thin" x1="220" y1="520" x2="680" y2="520"/>
+        <!-- Small side keys -->
+        <rect class="stroke-thin" x="250" y="440" width="52" height="30" rx="6"/>
+        <path class="stroke-thin" d="M 276 470 v 20"/>
+        <rect class="stroke-thin" x="598" y="440" width="52" height="30" rx="6"/>
+        <path class="stroke-thin" d="M 624 470 v 20"/>
+      </svg>
+    </div>
+  </div>
+</body></html>

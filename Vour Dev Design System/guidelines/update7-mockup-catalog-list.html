@@ -1,0 +1,49 @@
+<!-- @dsCard group="Mockups · Update 7" viewport="620x520" name="CatalogList" subtitle="Numbered-box rows — title + one-line description (plugin / catalog)" -->
+<!DOCTYPE html>
+<html><head><meta charset="UTF-8">
+<link rel="stylesheet" href="../styles.css">
+<script src="https://code.iconify.design/iconify-icon/2.1.0/iconify-icon.min.js"></script>
+<style>
+  body {
+    margin:0; padding:28px 28px 20px;
+    background: var(--bg-editorial); color: var(--ed-ink);
+    font-family: var(--font-body);
+    display:flex; flex-direction:column; gap:14px; overflow:hidden;
+  }
+  .hd { display:flex; align-items:center; justify-content:space-between; }
+  .lbl {
+    font-family: var(--font-mono); font-size:11px; font-weight:500;
+    letter-spacing:.18em; text-transform:uppercase; color: var(--ed-orange);
+  }
+  .note { font-family: var(--font-mono); font-size:11px; color: var(--ed-ink-faint); }
+  .stage { flex:1; display:flex; align-items:center; justify-content:center; }
+
+  .list { width: 100%; max-width: 540px; display: flex; flex-direction: column; gap: 12px; }
+  .row { display: flex; gap: 12px; align-items: flex-start; padding: 8px 4px; border-bottom: 1px solid rgba(31,9,4,.10); }
+  .row:last-child { border-bottom: none; }
+  .num { flex: none; width: 26px; height: 26px; border: 1.25px solid var(--ed-ink); border-radius: 4px; display: flex; align-items: center; justify-content: center; font-family: var(--font-mono); font-weight: 600; font-size: 11px; color: var(--ed-ink); }
+  .t { font-family: var(--font-display); font-weight: 700; font-size: 15px; color: var(--ed-orange); line-height: 1.15; }
+  .d { font-family: var(--font-body); font-weight: 500; font-size: 12px; color: var(--ed-ink-soft); margin-top: 3px; line-height: 1.4; }
+</style></head><body>
+  <div class="hd"><div class="lbl">CatalogList</div><div class="note">Numbered rows</div></div>
+  <div class="stage">
+    <div class="list">
+      <div class="row">
+        <div class="num">01</div>
+        <div><div class="t">marketingskills</div><div class="d">40 tools — CRO, copywriting, SEO, growth</div></div>
+      </div>
+      <div class="row">
+        <div class="num">02</div>
+        <div><div class="t">claude-for-legal</div><div class="d">12 plugin legal — kontrak, privasi, IP</div></div>
+      </div>
+      <div class="row">
+        <div class="num">03</div>
+        <div><div class="t">claude-skills</div><div class="d">263+ skill lintas platform</div></div>
+      </div>
+      <div class="row">
+        <div class="num">04</div>
+        <div><div class="t">gstack</div><div class="d">23 tools dev — full dev team di CLI lo</div></div>
+      </div>
+    </div>
+  </div>
+</body></html>

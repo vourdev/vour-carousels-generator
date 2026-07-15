@@ -1,0 +1,80 @@
+<!-- @dsCard group="Slides" viewport="1080x1350" name="Image insert · terminal (MiMoCode)" subtitle="ImagePlate window-mac inside a mockup slide" -->
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<title>Image insert — terminal example</title>
+<link rel="stylesheet" href="../styles.css">
+<script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+<script src="../_ds_bundle.js"></script>
+<style>
+  html, body { margin: 0; padding: 0; }
+  body { background: var(--ed-paper); font-family: var(--font-body); color: var(--ed-ink); }
+  .slide {
+    width: 1080px; height: 1350px;
+    padding: var(--pad-ig-top) var(--pad-ig-x) var(--pad-ig-bottom);
+    box-sizing: border-box;
+    display: flex; flex-direction: column;
+    background:
+      var(--halo-editorial-1),
+      var(--halo-editorial-2),
+      var(--ed-paper);
+    position: relative;
+  }
+  .head { display: flex; align-items: center; justify-content: space-between; }
+  .brand-row { display: flex; align-items: center; gap: 16px; }
+  .brand-disc { width: 44px; height: 44px; border-radius: 50%; overflow: hidden; background: #07070e; flex: none; }
+  .brand-disc img { width: 100%; height: 100%; object-fit: cover; display: block; }
+  .handle { font-family: var(--font-body); font-weight: 700; font-size: 28px; }
+  .counter { font-family: var(--font-mono); font-size: var(--fs-counter); color: var(--ed-ink-muted); letter-spacing: 0.06em; }
+  .eyebrow { margin-top: 48px; font-family: var(--font-mono); font-size: var(--fs-eyebrow); text-transform: uppercase; letter-spacing: var(--tracking-eyebrow); color: var(--ed-orange); font-weight: 500; }
+  h1.compact { font-family: var(--font-display); font-weight: 800; font-size: var(--fs-title-sm); line-height: var(--lh-title-sm); letter-spacing: var(--tracking-display); color: var(--ed-ink); margin: 24px 0 0; }
+  h1.compact .a { color: var(--ed-orange); }
+  .body { font-family: var(--font-body); font-size: var(--fs-body-lg); line-height: var(--lh-body); color: var(--ed-ink-soft); margin-top: 32px; max-width: 900px; }
+  .diag-wrap { flex: 1; min-height: 0; margin-top: 40px; display: flex; align-items: stretch; }
+</style>
+</head>
+<body>
+<div id="root"></div>
+<script type="text/babel">
+const { ImagePlate } = window.VourDevDesignSystemUpdate2_f6a5de;
+function App() {
+  return (
+    <div className="slide">
+      <div className="head">
+        <div className="brand-row">
+          <div className="brand-disc"><img src="../assets/vourdev-logo.jpeg" alt="@vourdev" /></div>
+          <span className="handle">@vourdev</span>
+        </div>
+        <div className="counter">04 / 08</div>
+      </div>
+
+      <div className="eyebrow">[Mockup]</div>
+      <h1 className="compact">
+        Kalau tinggal ketik,<br />
+        <span className="a">kenapa masih buka editor?</span>
+      </h1>
+      <p className="body">
+        MiMoCode duduk di terminal — bukan tab lain, bukan IDE lain.
+        Satu prompt, satu balasan, langsung ke build.
+      </p>
+
+      <div className="diag-wrap">
+        <ImagePlate
+          src="../assets/example-mimocode.png"
+          alt="MiMoCode terminal home screen"
+          variant="window-mac"
+          chromeLabel="MiMoCode — ~/status"
+          captionEyebrow="[terminal · v0.1.5]"
+          caption="Xiaomi MiMoCode, MiMo-V2.5 (limited-time free)"
+        />
+      </div>
+    </div>
+  );
+}
+ReactDOM.createRoot(document.getElementById('root')).render(<App />);
+</script>
+</body>
+</html>

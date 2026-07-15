@@ -1,0 +1,34 @@
+:root {
+  /* ── Editorial palette (Update 3+ — editorial is the only surface) ── */
+  --ed-paper:        #FBF6EF;
+  --ed-paper-tint:   #F4ECDE;
+  --ed-ink:          #1F0904;
+  --ed-ink-soft:     #3D1F15;
+  --ed-ink-muted:    #6E4B3E;
+  --ed-ink-faint:    #A48C7E;
+  --ed-orange:       #E94B19;
+  --ed-orange-soft:  #F2825D;
+  --ed-callout-ink:  #1F0904;
+
+  --ed-card-peach:   #FBE9D9;
+  --ed-card-stone:   #EDE7DA;
+  --ed-card-mint:    #E3F1E1;
+  --ed-card-sky:     #DEEAF7;
+  --ed-card-pink:    #F7DDE6;
+  --ed-card-amber:   #FBE7B0;
+
+  /* Editorial icon sub-tile fill (deeper tint inside an info card).
+     Opaque enough that no paper halo bleeds through. */
+  --ed-icon-tile-bg: rgba(31,9,4,0.06);
+
+  /* ── Semantic aliases (editorial defaults) ─────────────── */
+  --bg-canvas:        var(--ed-paper);
+  --text-display:     var(--ed-ink);
+  --text-body:        var(--ed-ink-soft);
+  --text-muted:       var(--ed-ink-muted);
+  --text-faint:       var(--ed-ink-faint);
+  --border-subtle:    rgba(31,9,4,0.12);
+
+  --brand-primary:    var(--ed-orange);
+  --brand-accent:     var(--ed-orange-soft);
+}

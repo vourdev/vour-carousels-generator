@@ -1,0 +1,11 @@
+:root {
+  /* Container radii. */
+  --radius-pill:     999px;
+  --radius-disc:     50%;
+  --radius-xl:       32px;   /* IconTile */
+  --radius-lg:       24px;   /* Info card */
+  --radius-md:       20px;   /* Callout, terminal */
+  --radius-sm:       14px;   /* Pill labels */
+  --radius-xs:       12px;   /* Editorial icon sub-tile */
+  --radius-xxs:      10px;   /* Tiny chip */
+}

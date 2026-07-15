@@ -1,0 +1,69 @@
+<!-- @dsCard group="Mockups · Update 7" viewport="620x520" name="AnnotatedIllustration" subtitle="Hero SVG with dashed connectors to orange label pills" -->
+<!DOCTYPE html>
+<html><head><meta charset="UTF-8">
+<link rel="stylesheet" href="../styles.css">
+<script src="https://code.iconify.design/iconify-icon/2.1.0/iconify-icon.min.js"></script>
+<style>
+  body {
+    margin:0; padding:28px 28px 20px;
+    background: var(--bg-editorial); color: var(--ed-ink);
+    font-family: var(--font-body);
+    display:flex; flex-direction:column; gap:14px; overflow:hidden;
+  }
+  .hd { display:flex; align-items:center; justify-content:space-between; }
+  .lbl {
+    font-family: var(--font-mono); font-size:11px; font-weight:500;
+    letter-spacing:.18em; text-transform:uppercase; color: var(--ed-orange);
+  }
+  .note { font-family: var(--font-mono); font-size:11px; color: var(--ed-ink-faint); }
+  .stage { flex:1; display:flex; align-items:center; justify-content:center; }
+
+  .illus { position: relative; width: 100%; max-width: 540px; height: 320px; }
+  .illus svg.hero { width: 100%; height: 100%; display: block; }
+  .illus svg.hero .stroke { stroke: var(--ed-ink); stroke-width: 1.75; fill: none; stroke-linecap: round; stroke-linejoin: round; }
+  .pin {
+    position: absolute; display: inline-flex; align-items: center; gap: 8px;
+    padding: 6px 12px; border: 1.5px solid var(--ed-ink); background: var(--ed-paper);
+    border-radius: 999px;
+    font-family: var(--font-mono); font-size: 11px; letter-spacing:.10em; text-transform: uppercase; color: var(--ed-ink);
+  }
+  .pin.ok { border-color: var(--ed-line-mint); color: var(--ed-line-mint); }
+  .pin.no { border-color: var(--ed-line-red); color: var(--ed-line-red); }
+  .pin .dot { width: 12px; height: 12px; border-radius: 999px; display: inline-flex; align-items: center; justify-content: center; }
+  .pin.ok .dot { background: var(--ed-line-mint); color: #fff; }
+  .pin.no .dot { background: var(--ed-line-red); color: #fff; }
+  .pin .dot iconify-icon { font-size: 8px; color:#fff; }
+  .lead { position:absolute; }
+  .lead line { stroke: var(--ed-ink); stroke-width: 1.25; stroke-dasharray: 4 5; }
+</style></head><body>
+  <div class="hd"><div class="lbl">AnnotatedIllustration</div><div class="note">SVG + dashed label pins</div></div>
+  <div class="stage">
+    <div class="illus">
+      <!-- Door illustration -->
+      <svg class="hero" viewBox="0 0 540 320" preserveAspectRatio="xMidYMid meet">
+        <!-- door frame -->
+        <rect class="stroke" x="200" y="80" width="140" height="220" rx="4"/>
+        <!-- door open -->
+        <path class="stroke" d="M 200 80 L 130 100 L 130 288 L 200 300"/>
+        <!-- interior floor -->
+        <line class="stroke" x1="200" y1="300" x2="340" y2="300"/>
+        <!-- knob -->
+        <circle class="stroke" cx="185" cy="200" r="5"/>
+        <!-- person inside -->
+        <circle class="stroke" cx="270" cy="150" r="16"/>
+        <path class="stroke" d="M 246 210 c 4 -20 20 -30 24 -30 s 20 10 24 30"/>
+      </svg>
+      <!-- pins -->
+      <div class="pin ok" style="top:18px; left:60px;">
+        <span class="dot"><iconify-icon icon="lucide:check"></iconify-icon></span> Login OK
+      </div>
+      <div class="pin no" style="top:18px; right:40px;">
+        <span class="dot"><iconify-icon icon="lucide:x"></iconify-icon></span> Access denied
+      </div>
+      <svg class="lead" style="inset:0; width:100%; height:100%;" viewBox="0 0 540 320" preserveAspectRatio="none">
+        <line x1="130" y1="42" x2="160" y2="90"/>
+        <line x1="440" y1="42" x2="340" y2="100"/>
+      </svg>
+    </div>
+  </div>
+</body></html>

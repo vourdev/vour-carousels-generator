@@ -1,0 +1,127 @@
+<!-- @dsCard group="Slides" viewport="1080x1350" name="Update 7 · BrowserMockup" subtitle="Realistic browser chrome with product grid" -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<link rel="stylesheet" href="../styles.css">
+<script src="https://code.iconify.design/iconify-icon/2.1.0/iconify-icon.min.js"></script>
+<script type="application/json" id="vourdev-meta">
+{"title":"Update 7 · BrowserMockup","caption":"","hashtags":[]}
+</script>
+<style>
+  html, body { width:1080px; height:1350px; }
+  body {
+    margin:0; padding:96px 80px 80px;
+    background: var(--bg-editorial); color: var(--ed-ink);
+    font-family: var(--font-body);
+    display: flex; flex-direction: column; overflow: hidden;
+  }
+  .counter { font-family: var(--font-mono); font-size:24px; color: var(--ed-ink-faint); letter-spacing:.04em; }
+  .eyebrow {
+    font-family: var(--font-mono); font-weight:500; font-size:24px;
+    letter-spacing:.18em; text-transform:uppercase; color: var(--ed-orange);
+    margin-top: 48px;
+  }
+  h1 {
+    font-family: var(--font-display); font-weight:800;
+    font-size: 88px; line-height: 1.04; letter-spacing:-.025em;
+    margin: 24px 0 0; color: var(--ed-ink);
+  }
+  h1 .a { color: var(--ed-orange); }
+  .body-text {
+    font-family: var(--font-body); font-weight:500; font-size:30px;
+    line-height:1.4; color: var(--ed-ink-soft); margin: 24px 0 0;
+    max-width: 900px;
+  }
+  .body-text strong { color: var(--ed-ink); font-weight: 700; }
+  .diag-wrap {
+    flex: 1; min-height: 0;
+    display: flex; align-items: center; justify-content: center;
+    margin-top: 32px;
+  }
+  .catatan {
+    border: 1.5px solid var(--ed-orange); border-radius: 16px;
+    padding: 20px 28px; margin-top: 32px;
+  }
+  .catatan-label {
+    font-family: var(--font-mono); font-weight:500; font-size:22px;
+    letter-spacing:.18em; text-transform:uppercase; color: var(--ed-orange);
+  }
+  .catatan-body {
+    margin-top: 6px; font-family: var(--font-display); font-weight:700;
+    font-size: 28px; color: var(--ed-ink); line-height: 1.2;
+  }
+
+  .win {
+    width: 100%; height: 100%; background: #fff;
+    border-radius: 22px; border: 2px solid var(--ed-ink);
+    overflow: hidden;
+    box-shadow: 0 20px 48px rgba(31,9,4,.10);
+    display: flex; flex-direction: column;
+  }
+  .chrome {
+    display: flex; align-items: center; gap: 12px;
+    padding: 16px 20px; border-bottom: 1.5px solid rgba(31,9,4,.10);
+    background: #FAF4EA; flex: none;
+  }
+  .dots { display: flex; gap: 8px; }
+  .dot { width: 12px; height: 12px; border-radius: 999px; background: rgba(31,9,4,.15); }
+  .url {
+    flex: 1; margin: 0 8px; padding: 8px 16px;
+    border-radius: 10px; background: rgba(31,9,4,.06);
+    font-family: var(--font-mono); font-size: 18px; color: var(--ed-ink-muted);
+  }
+  .app { flex: 1; min-height: 0; display: grid; grid-template-columns: 240px 1fr; }
+  .side { padding: 24px 18px; border-right: 1.5px solid rgba(31,9,4,.10); background: #FBF6EF; overflow: hidden; }
+  .side-label { font-family: var(--font-mono); font-size: 15px; letter-spacing:.16em; text-transform: uppercase; color: var(--ed-ink-faint); margin-bottom: 14px; }
+  .side .row {
+    font-family: var(--font-body); font-weight:500; font-size: 20px;
+    color: var(--ed-ink-muted); padding: 12px 14px;
+    border-radius: 8px; margin: 4px 0;
+  }
+  .side .row.on { background: #FBE9D9; color: var(--ed-ink); font-weight:700; }
+  .main { padding: 24px; background: #fff; display: flex; flex-direction: column; gap: 16px; min-height: 0; }
+  .chips { display: flex; gap: 8px; flex: none; }
+  .chip { padding: 8px 16px; border-radius: 999px; font-family: var(--font-body); font-size: 18px; background: rgba(31,9,4,.06); color: var(--ed-ink-soft); }
+  .chip.on { background: var(--ed-ink); color: #fff; }
+  .prod-grid { display: grid; grid-template-columns: 1fr 1fr; grid-template-rows: 1fr 1fr; gap: 16px; flex: 1; min-height: 0; }
+  .prod { background: #F0EADF; border-radius: 14px; position: relative; overflow: hidden; }
+  .prod.b { background: #E6DED2; }
+  .prod.c { background: #EEE6D8; }
+  .prod.d { background: #E9E1D3; }
+  .prod .tag { position: absolute; top: 12px; left: 12px; font-family: var(--font-mono); font-size: 13px; font-weight: 600; letter-spacing:.08em; padding: 4px 10px; border-radius: 6px; background: var(--ed-orange); color: #fff; }
+  .prod .name { position: absolute; bottom: 40px; left: 14px; right: 14px; font-family: var(--font-body); font-weight:500; font-size: 17px; color: var(--ed-ink-soft); line-height:1.25; }
+  .prod .price { position: absolute; bottom: 12px; left: 14px; font-family: var(--font-display); font-weight:700; font-size: 22px; color: var(--ed-ink); }
+</style></head><body>
+  <div class="counter">07 / 10</div>
+  <div class="eyebrow">Real example</div>
+  <h1>Preview of<br>one <span class="a">I built.</span></h1>
+  <div class="diag-wrap">
+    <div class="win">
+      <div class="chrome">
+        <div class="dots"><span class="dot"></span><span class="dot"></span><span class="dot"></span></div>
+        <div class="url">yummylabs.com/products</div>
+      </div>
+      <div class="app">
+        <div class="side">
+          <div class="side-label">Personality</div>
+          <div class="row on">Bold &amp; energetic</div>
+          <div class="row">Minimal</div>
+          <div class="row">Premium</div>
+          <div class="row">Playful</div>
+        </div>
+        <div class="main">
+          <div class="chips">
+            <span class="chip on">All</span><span class="chip">Tops</span><span class="chip">Bottoms</span>
+          </div>
+          <div class="prod-grid">
+            <div class="prod"><span class="tag">NEW</span><span class="name">Heavyweight Crew</span><span class="price">$68</span></div>
+            <div class="prod b"><span class="tag" style="background: var(--ed-line-red)">-30%</span><span class="name">Relaxed Pant</span><span class="price">$84</span></div>
+            <div class="prod c"><span class="tag" style="background: var(--ed-ink)">STAFF</span><span class="name">Boxy Tee · Ecru</span><span class="price">$42</span></div>
+            <div class="prod d"><span class="tag">NEW</span><span class="name">Longsleeve Rugby</span><span class="price">$96</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</body></html>

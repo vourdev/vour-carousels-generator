@@ -1,0 +1,60 @@
+<!-- @dsCard group="Mockups · Update 7" viewport="620x520" name="BrowserMockup" subtitle="Realistic browser chrome — tab, URL bar, full app content" -->
+<!DOCTYPE html>
+<html><head><meta charset="UTF-8">
+<link rel="stylesheet" href="../styles.css">
+<script src="https://code.iconify.design/iconify-icon/2.1.0/iconify-icon.min.js"></script>
+<style>
+  body {
+    margin:0; padding:28px 28px 20px;
+    background: var(--bg-editorial); color: var(--ed-ink);
+    font-family: var(--font-body);
+    display:flex; flex-direction:column; gap:14px; overflow:hidden;
+  }
+  .hd { display:flex; align-items:center; justify-content:space-between; }
+  .lbl {
+    font-family: var(--font-mono); font-size:11px; font-weight:500;
+    letter-spacing:.18em; text-transform:uppercase; color: var(--ed-orange);
+  }
+  .note { font-family: var(--font-mono); font-size:11px; color: var(--ed-ink-faint); }
+  .stage { flex:1; display:flex; align-items:center; justify-content:center; }
+
+  .win { width:100%; max-width:540px; background: #fff; border-radius: 14px; border:1.5px solid var(--ed-ink); overflow:hidden; box-shadow: 0 8px 24px rgba(31,9,4,.06); }
+  .chrome { display:flex; align-items:center; gap:8px; padding: 10px 12px; border-bottom:1px solid rgba(31,9,4,.10); background: #FAF4EA; }
+  .dots { display:flex; gap:6px; }
+  .dot { width:10px; height:10px; border-radius:999px; background: rgba(31,9,4,.15); }
+  .url { flex:1; margin: 0 8px; padding:5px 10px; border-radius:8px; background: rgba(31,9,4,.06); font-family: var(--font-mono); font-size:10px; color: var(--ed-ink-muted); }
+  .app { display: grid; grid-template-columns: 130px 1fr; min-height: 180px; }
+  .side { padding: 10px 12px; border-right:1px solid rgba(31,9,4,.10); background: #FBF6EF; }
+  .side .row { font-family: var(--font-body); font-size:10px; color: var(--ed-ink-muted); padding: 5px 8px; border-radius: 6px; margin: 2px 0; }
+  .side .row.on { background: #FBE9D9; color: var(--ed-ink); }
+  .main { padding: 10px 12px; background: #fff; }
+  .chips { display: flex; gap: 4px; margin-bottom: 8px; }
+  .chip { padding: 3px 8px; border-radius: 999px; font-family: var(--font-body); font-size: 9px; background: rgba(31,9,4,.06); color: var(--ed-ink-soft); }
+  .chip.on { background: var(--ed-ink); color: #fff; }
+  .prod-grid { display: grid; grid-template-columns: 1fr 1fr 1fr 1fr; gap: 6px; }
+  .prod { background: #F0EADF; border-radius: 4px; aspect-ratio: 1; display: flex; align-items: center; justify-content: center; color: var(--ed-ink-faint); font-family: var(--font-mono); font-size: 9px; }
+</style></head><body>
+  <div class="hd"><div class="lbl">BrowserMockup</div><div class="note">Real app chrome</div></div>
+  <div class="stage">
+    <div class="win">
+      <div class="chrome">
+        <div class="dots"><span class="dot"></span><span class="dot"></span><span class="dot"></span></div>
+        <div class="url">yummylabs.com/products</div>
+      </div>
+      <div class="app">
+        <div class="side">
+          <div class="row on">Bold & energetic</div>
+          <div class="row">Minimal</div>
+          <div class="row">Premium</div>
+          <div class="row">Playful</div>
+        </div>
+        <div class="main">
+          <div class="chips"><span class="chip on">All</span><span class="chip">Tops</span><span class="chip">Bottoms</span></div>
+          <div class="prod-grid">
+            <div class="prod">▢</div><div class="prod">▢</div><div class="prod">▢</div><div class="prod">▢</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</body></html>

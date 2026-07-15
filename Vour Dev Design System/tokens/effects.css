@@ -1,0 +1,14 @@
+:root {
+  /* ── Shadow / glow primitives ── */
+
+  /* Editorial info cards are flat — no shadow. */
+  --shadow-flat: none;
+
+  /* Soft lift for lock-badge chips and pop overlays inside a mock-screen. */
+  --shadow-lift:
+    0 12px 32px rgba(31,9,4,0.28);
+
+  /* Editorial halo for the corner gradient (used in background tokens). */
+  --halo-editorial-1: radial-gradient(55% 40% at 100% 0%, rgba(233,75,25,0.06), transparent 65%); /* @kind other */
+  --halo-editorial-2: radial-gradient(60% 50% at 10% 100%, rgba(233,75,25,0.04), transparent 70%); /* @kind other */
+}

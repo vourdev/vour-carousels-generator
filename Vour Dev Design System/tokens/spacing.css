@@ -1,0 +1,32 @@
+:root {
+  /* ── Core 8px grid ── */
+  --space-1:   8px;
+  --space-2:   16px;
+  --space-3:   24px;
+  --space-4:   32px;
+  --space-5:   40px;
+  --space-6:   48px;
+  --space-8:   64px;
+  --space-10:  80px;
+  --space-12:  96px;
+  --space-16:  128px;
+  --space-20:  160px;
+
+  /* ── Canonical gap tokens (single fixed values) ── */
+  --gap-tight:           8px;
+  --gap-small:           16px;
+  --gap-badge-headline:  24px;   /* ★ eyebrow → headline */
+  --gap-headline-body:   32px;   /* ★ headline → body */
+  --gap-body-asset:      40px;   /* body → asset/cards */
+  --gap-section:         48px;   /* section → section */
+  --gap-block:           64px;   /* header → main */
+  --gap-icon-text:       16px;   /* icon → label */
+
+  /* ── Canonical padding tokens (editorial 1080×1350 only) ── */
+  --pad-ig-x:        80px;       /* L + R */
+  --pad-ig-top:      96px;       /* top */
+  --pad-ig-bottom:   80px;       /* bottom */
+
+  --pad-card:        32px;       /* info card, numbered step */
+  --pad-callout:     32px;       /* editorial dark callout */
+}

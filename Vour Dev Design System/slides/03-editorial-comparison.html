@@ -1,0 +1,43 @@
+<!-- @dsCard group="Slides" viewport="1080x1350" name="Editorial · Comparison" subtitle="SCRAPED vs DESIGNED stacked pair + dark callout" -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<link rel="stylesheet" href="../styles.css">
+<script src="https://code.iconify.design/iconify-icon/2.1.0/iconify-icon.min.js"></script>
+<style>
+  html, body { width:1080px; height:1350px; }
+  body { margin:0; padding:96px 80px 80px; background:var(--bg-editorial); color:var(--ed-ink); font-family:var(--font-body); }
+  .counter { font-family:var(--font-mono); font-size:24px; color:var(--ed-ink-faint); letter-spacing:.04em; }
+  .eyebrow { font-family:var(--font-mono); font-weight:500; font-size:24px; letter-spacing:.18em; text-transform:uppercase; color:var(--ed-orange); margin-top:64px; }
+  h1 { font-family:var(--font-display); font-weight:800; font-size:104px; line-height:1.02; letter-spacing:-.025em; margin:24px 0 0; color:var(--ed-ink); }
+  .pair { margin-top:48px; display:flex; flex-direction:column; gap:16px; }
+  .card { border-radius:24px; padding:32px; }
+  .label { font-family:var(--font-mono); font-weight:500; font-size:24px; letter-spacing:.18em; text-transform:uppercase; margin-bottom:16px; }
+  .mono { font-family:var(--font-mono); font-weight:500; font-size:32px; }
+  .body { font-family:var(--font-body); font-weight:500; font-size:28px; line-height:1.4; color:var(--ed-ink-soft); margin-top:12px; }
+  .callout { margin-top:40px; background:var(--ed-callout-ink); color:#fff; border-radius:20px; padding:32px; display:flex; gap:16px; align-items:flex-start; font-size:28px; line-height:1.4; }
+  .callout .ico { width:40px; height:40px; border-radius:10px; background:rgba(255,255,255,0.08); display:flex; align-items:center; justify-content:center; flex:none; }
+</style>
+</head>
+<body>
+  <div class="counter">05 / 10</div>
+  <div class="eyebrow">The key difference</div>
+  <h1>The WHAT without<br>the <span style="color:var(--ed-orange)">WHY.</span></h1>
+  <div class="pair">
+    <div class="card" style="background:var(--ed-card-stone)">
+      <div class="label" style="color:var(--ed-ink-faint)">Scraped</div>
+      <div class="mono" style="color:var(--ed-ink-faint)">primary: #C62828</div>
+    </div>
+    <div class="card" style="background:var(--ed-card-peach)">
+      <div class="label" style="color:var(--ed-orange)">Designed</div>
+      <div class="mono" style="color:var(--ed-ink)">primary: #C62828</div>
+      <div class="body">Deep warm red. Reserved exclusively for purchase-path actions: Add to Cart, Buy Now, Checkout. Never used decoratively.</div>
+    </div>
+  </div>
+  <div class="callout">
+    <div class="ico"><iconify-icon icon="lucide:check-circle" style="font-size:24px;color:var(--ed-orange)"></iconify-icon></div>
+    <div>Claude reads that description and actually respects the constraint.</div>
+  </div>
+</body>
+</html>
