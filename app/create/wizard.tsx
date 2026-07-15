@@ -18,7 +18,23 @@ import { ExportButton } from "@/app/preview/export-button";
 import type { ModelId } from "@/lib/ai/registry";
 import type { SlidePlan } from "@/lib/ds/schema";
 import { briefAction, planAction, reviseAction } from "./actions";
+import { Sparkles, Brain, Zap } from "lucide-react";
 import { toast } from "sonner";
+
+const modelDetails: Record<string, { label: string; icon: React.ReactNode }> = {
+  gemini: {
+    label: "Gemini 2.5 Flash",
+    icon: <Sparkles className="size-4 text-indigo-500 shrink-0" />,
+  },
+  deepseek: {
+    label: "DeepSeek Chat",
+    icon: <Brain className="size-4 text-cyan-500 shrink-0" />,
+  },
+  mimo: {
+    label: "MIMO",
+    icon: <Zap className="size-4 text-amber-500 shrink-0" />,
+  },
+};
 
 export function Wizard({ models }: { models: ModelId[] }) {
   const [model, setModel] = useState<ModelId | "">(models[0] ?? "");
@@ -68,13 +84,19 @@ export function Wizard({ models }: { models: ModelId[] }) {
           />
           <div className="flex items-center gap-3">
             <Select value={model} onValueChange={(v) => setModel(v as ModelId)}>
-              <SelectTrigger className="w-40">
-                <SelectValue placeholder="Model" />
+              <SelectTrigger className="w-56">
+                <div className="flex items-center gap-2">
+                  {model && modelDetails[model]?.icon}
+                  <SelectValue placeholder="Model" />
+                </div>
               </SelectTrigger>
               <SelectContent>
                 {models.map((m) => (
                   <SelectItem key={m} value={m}>
-                    {m}
+                    <div className="flex items-center gap-2">
+                      {modelDetails[m]?.icon}
+                      <span>{modelDetails[m]?.label}</span>
+                    </div>
                   </SelectItem>
                 ))}
               </SelectContent>
