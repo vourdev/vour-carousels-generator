@@ -1,6 +1,6 @@
 # Vour Carousels SaaS — Plan 4: AI Generation + Brief/HTML Gates
 
-> **For agentic workers:** Steps use checkbox (`- [ ]`) syntax. Execution is INLINE (no subagents) per user preference.
+> **For agentic workers:** Steps use checkbox (`- [x]`) syntax. Execution is INLINE (no subagents) per user preference.
 
 **Goal:** Turn a content idea into an approved on-brand carousel entirely in-app: idea → AI Markdown brief (gate 1, revisable) → AI `slidePlan` → rendered HTML (gate 2, chat-revisable), multi-model with per-provider keys (Gemini free default; DeepSeek/MIMO opt-in). No export/publish (export shipped in Plan 3; publish is Plan 5).
 
@@ -30,9 +30,9 @@
 - `export function defaultModel(env?: NodeJS.ProcessEnv): ModelId | null` — Gemini if available, else the first available, else null.
 - `export function resolveModel(id: ModelId): LanguageModel` — returns the AI SDK model instance (throws if its key is missing).
 
-- [ ] **Step 1: Install deps** — `npm install ai @ai-sdk/google @ai-sdk/deepseek @ai-sdk/openai-compatible`
+- [x] **Step 1: Install deps** — `npm install ai @ai-sdk/google @ai-sdk/deepseek @ai-sdk/openai-compatible`
 
-- [ ] **Step 2: Write failing test** `test/ai/registry.test.ts`
+- [x] **Step 2: Write failing test** `test/ai/registry.test.ts`
 
 ```ts
 import { describe, it, expect } from "vitest";
@@ -71,9 +71,9 @@ describe("defaultModel", () => {
 });
 ```
 
-- [ ] **Step 3: Run → FAIL** — `npx vitest run test/ai/registry.test.ts`.
+- [x] **Step 3: Run → FAIL** — `npx vitest run test/ai/registry.test.ts`.
 
-- [ ] **Step 4: Implement** `lib/ai/registry.ts`
+- [x] **Step 4: Implement** `lib/ai/registry.ts`
 
 ```ts
 import type { LanguageModel } from "ai";
@@ -125,8 +125,8 @@ export function resolveModel(id: ModelId): LanguageModel {
 
 Note: verify the exact `@ai-sdk/*` factory names against the installed versions (`createGoogleGenerativeAI`, `createDeepSeek`, `createOpenAICompatible`); adjust import names if the installed package differs, keeping the exported registry API identical.
 
-- [ ] **Step 5: Run → PASS.**
-- [ ] **Step 6: Commit** — `git add lib/ai/registry.ts test/ai/registry.test.ts package.json package-lock.json && git commit -m "feat(ai): env-gated multi-model provider registry"`
+- [x] **Step 5: Run → PASS.**
+- [x] **Step 6: Commit** — `git add lib/ai/registry.ts test/ai/registry.test.ts package.json package-lock.json && git commit -m "feat(ai): env-gated multi-model provider registry"`
 
 ---
 
@@ -141,7 +141,7 @@ Note: verify the exact `@ai-sdk/*` factory names against the installed versions 
 - `export function planUserPrompt(brief: string): string`
 - `export function reviseUserPrompt(planJson: string, message: string): string`
 
-- [ ] **Step 1: Failing test** `test/ai/prompts.test.ts`
+- [x] **Step 1: Failing test** `test/ai/prompts.test.ts`
 
 ```ts
 import { describe, it, expect } from "vitest";
@@ -171,9 +171,9 @@ describe("prompt builders", () => {
 });
 ```
 
-- [ ] **Step 2: Run → FAIL.**
+- [x] **Step 2: Run → FAIL.**
 
-- [ ] **Step 3: Implement** `lib/ai/prompts.ts`
+- [x] **Step 3: Implement** `lib/ai/prompts.ts`
 
 ```ts
 export const briefSystem = `You write short-form carousel briefs for @vourdev, an Indonesian backend/dev-education brand.
@@ -212,8 +212,8 @@ export function reviseUserPrompt(planJson: string, message: string): string {
 }
 ```
 
-- [ ] **Step 4: Run → PASS.**
-- [ ] **Step 5: Commit** — `git add lib/ai/prompts.ts test/ai/prompts.test.ts && git commit -m "feat(ai): brief/plan/revise prompt builders"`
+- [x] **Step 4: Run → PASS.**
+- [x] **Step 5: Commit** — `git add lib/ai/prompts.ts test/ai/prompts.test.ts && git commit -m "feat(ai): brief/plan/revise prompt builders"`
 
 ---
 
@@ -228,7 +228,7 @@ export function reviseUserPrompt(planJson: string, message: string): string {
 
 Each accepts a resolved `LanguageModel` (so tests inject a mock; the action layer resolves the id). `generateSlidePlan`/`reviseSlidePlan` use `generateObject({ model, schema: slidePlanSchema, ... })` and return `result.object` (already schema-valid).
 
-- [ ] **Step 1: Failing test** `test/ai/generate.test.ts` (mock model via `ai/test`)
+- [x] **Step 1: Failing test** `test/ai/generate.test.ts` (mock model via `ai/test`)
 
 ```ts
 import { describe, it, expect } from "vitest";
@@ -275,9 +275,9 @@ describe("generateSlidePlan", () => {
 });
 ```
 
-- [ ] **Step 2: Run → FAIL.**
+- [x] **Step 2: Run → FAIL.**
 
-- [ ] **Step 3: Implement** `lib/ai/generate.ts`
+- [x] **Step 3: Implement** `lib/ai/generate.ts`
 
 ```ts
 import { generateText, generateObject, type LanguageModel } from "ai";
@@ -318,9 +318,9 @@ export async function reviseSlidePlan(
 }
 ```
 
-- [ ] **Step 4: Run → PASS.** If the installed `ai` version's `MockLanguageModelV2` shape differs (e.g. `doGenerate` return fields), adjust the mock in the test to match its types — the implementation stays as above. Verify via context7 if needed.
+- [x] **Step 4: Run → PASS.** If the installed `ai` version's `MockLanguageModelV2` shape differs (e.g. `doGenerate` return fields), adjust the mock in the test to match its types — the implementation stays as above. Verify via context7 if needed.
 
-- [ ] **Step 5: Commit** — `git add lib/ai/generate.ts test/ai/generate.test.ts && git commit -m "feat(ai): brief + slidePlan generate/revise wrappers"`
+- [x] **Step 5: Commit** — `git add lib/ai/generate.ts test/ai/generate.test.ts && git commit -m "feat(ai): brief + slidePlan generate/revise wrappers"`
 
 ---
 
@@ -334,7 +334,7 @@ export async function reviseSlidePlan(
 - `export async function planAction(brief: string, id: ModelId): Promise<SlidePlan>`
 - `export async function reviseAction(plan: SlidePlan, message: string, id: ModelId): Promise<SlidePlan>`
 
-- [ ] **Step 1: Implement** `app/create/actions.ts`
+- [x] **Step 1: Implement** `app/create/actions.ts`
 
 ```ts
 "use server";
@@ -371,8 +371,8 @@ export async function reviseAction(plan: SlidePlan, message: string, id: ModelId
 }
 ```
 
-- [ ] **Step 2: Typecheck + build** — `npx tsc --noEmit` clean; `npm run build` succeeds.
-- [ ] **Step 3: Commit** — `git add app/create/actions.ts && git commit -m "feat(ai): auth-gated server actions for brief/plan/revise"`
+- [x] **Step 2: Typecheck + build** — `npx tsc --noEmit` clean; `npm run build` succeeds.
+- [x] **Step 3: Commit** — `git add app/create/actions.ts && git commit -m "feat(ai): auth-gated server actions for brief/plan/revise"`
 
 ---
 
@@ -382,9 +382,9 @@ export async function reviseAction(plan: SlidePlan, message: string, id: ModelId
 
 **Interfaces:** `wizard.tsx` exports `Wizard({ models }: { models: ModelId[] })` — a client component holding the wizard state; step ① idea textarea + model `Select`; step ② brief shown in an editable `Textarea` inside a Card with **Approve** and a revise input. Uses the Server Actions from Task 4 with `useTransition` for pending state.
 
-- [ ] **Step 1: Ensure shadcn primitives exist** — `npx shadcn@latest add textarea select` (skip any already present). Confirm `components/ui/textarea.tsx` + `components/ui/select.tsx`.
+- [x] **Step 1: Ensure shadcn primitives exist** — `npx shadcn@latest add textarea select` (skip any already present). Confirm `components/ui/textarea.tsx` + `components/ui/select.tsx`.
 
-- [ ] **Step 2: Implement** `app/create/wizard.tsx`
+- [x] **Step 2: Implement** `app/create/wizard.tsx`
 
 ```tsx
 "use client";
@@ -472,7 +472,7 @@ export function Wizard({ models }: { models: ModelId[] }) {
 }
 ```
 
-- [ ] **Step 3: Implement** `app/create/page.tsx`
+- [x] **Step 3: Implement** `app/create/page.tsx`
 
 ```tsx
 import { requireSession } from "@/lib/session";
@@ -493,7 +493,7 @@ export default async function CreatePage() {
 }
 ```
 
-- [ ] **Step 4: Append AI keys to `.env.example`**
+- [x] **Step 4: Append AI keys to `.env.example`**
 
 ```bash
 # AI models (Gemini free tier is the default; others optional/paid)
@@ -504,9 +504,9 @@ MIMO_BASE_URL=""
 MIMO_MODEL=""
 ```
 
-- [ ] **Step 5: Build** — `npm run build` succeeds; `/create` routes. Full suite green.
-- [ ] **Step 6: Manual verify** — with `GOOGLE_GENERATIVE_AI_API_KEY` set, `npm run dev`, sign in, open `/create`, type an idea, pick Gemini, **Generate brief** → a Markdown brief appears and is editable.
-- [ ] **Step 7: Commit** — `git add app/create .env.example components/ui && git commit -m "feat(create): wizard idea + model + brief gate"`
+- [x] **Step 5: Build** — `npm run build` succeeds; `/create` routes. Full suite green.
+- [x] **Step 6: Manual verify** — with `GOOGLE_GENERATIVE_AI_API_KEY` set, `npm run dev`, sign in, open `/create`, type an idea, pick Gemini, **Generate brief** → a Markdown brief appears and is editable.
+- [x] **Step 7: Commit** — `git add app/create .env.example components/ui && git commit -m "feat(create): wizard idea + model + brief gate"`
 
 ---
 
@@ -516,7 +516,7 @@ MIMO_MODEL=""
 
 **Interfaces:** After brief approval, call `planAction(brief, model)` → `SlidePlan`; render `assembleCarousel(plan)` in the scaled preview frame (reuse `app/preview/preview-frame.tsx`'s `PreviewFrame`, or extract it to `components/preview-frame.tsx` if cleaner). A revise input calls `reviseAction(plan, message, model)` → new plan → re-render. An **Approve HTML** button reveals the existing **Export** button (Plan 3) fed by `assembleCarousel(approvedPlan)`.
 
-- [ ] **Step 1: Add step ③ to `wizard.tsx`**
+- [x] **Step 1: Add step ③ to `wizard.tsx`**
 
 Add state `plan: SlidePlan | null`, `html` derived via `assembleCarousel(plan)` (client — `assembleCarousel` is pure), a **Approve brief → generate HTML** button calling `planAction`, a `<PreviewFrame html slideCount={plan.slides.length} />`, a revise `Input` + button calling `reviseAction`, and on **Approve HTML** render `<ExportButton html={html} />`. Import:
 ```ts
@@ -528,10 +528,10 @@ import type { SlidePlan } from "@/lib/ds/schema";
 ```
 Wire each async call with the existing `useTransition` + error handling pattern. Guard: revise/plan buttons disabled while pending.
 
-- [ ] **Step 2: Typecheck + build** — `npx tsc --noEmit` clean; `npm run build` succeeds.
-- [ ] **Step 3: Manual verify** — `/create`: idea → brief → **generate HTML** → carousel renders in the preview; a revise instruction ("perpendek slide 2") re-renders; **Approve HTML** shows Export → downloads JPEGs.
-- [ ] **Step 4: react-best-practices pass** — review the wizard TSX (client boundaries, no inline component definitions, `useTransition` for pending, stable handlers); fix any findings.
-- [ ] **Step 5: Commit** — `git add app/create && git commit -m "feat(create): HTML gate with preview + chat revise + export handoff"`
+- [x] **Step 2: Typecheck + build** — `npx tsc --noEmit` clean; `npm run build` succeeds.
+- [x] **Step 3: Manual verify** — `/create`: idea → brief → **generate HTML** → carousel renders in the preview; a revise instruction ("perpendek slide 2") re-renders; **Approve HTML** shows Export → downloads JPEGs.
+- [x] **Step 4: react-best-practices pass** — review the wizard TSX (client boundaries, no inline component definitions, `useTransition` for pending, stable handlers); fix any findings.
+- [x] **Step 5: Commit** — `git add app/create && git commit -m "feat(create): HTML gate with preview + chat revise + export handoff"`
 
 ---
 
