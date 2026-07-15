@@ -11,7 +11,6 @@ const SLIDE_H = 1350;
     slide fully visible, no clipping. Scale = containerWidth / 1080. */
 export function PreviewFrame({ html, slideCount }: { html: string; slideCount: number }) {
   const ref = useRef<HTMLDivElement>(null);
-  const iframeRef = useRef<HTMLIFrameElement>(null);
   const [width, setWidth] = useState(0);
   const [currentSlide, setCurrentSlide] = useState(0);
 
@@ -32,32 +31,12 @@ export function PreviewFrame({ html, slideCount }: { html: string; slideCount: n
     return () => ro.disconnect();
   }, []);
 
-  // Scroll to slide on change
-  useEffect(() => {
-    const iframe = iframeRef.current;
-    if (!iframe || !iframe.contentWindow) return;
-    try {
-      iframe.contentWindow.scrollTo({
-        top: currentSlide * SLIDE_H,
-        behavior: "smooth"
-      });
-    } catch (e) {
-      console.error(e);
-    }
-  }, [currentSlide, html]);
-
   // Adjust scroll when slide count changes to avoid out of bounds
   useEffect(() => {
     if (currentSlide >= slideCount && slideCount > 0) {
       setCurrentSlide(slideCount - 1);
     }
   }, [slideCount, currentSlide]);
-
-  const handleIframeLoad = () => {
-    const iframe = iframeRef.current;
-    if (!iframe || !iframe.contentWindow) return;
-    iframe.contentWindow.scrollTo(0, currentSlide * SLIDE_H);
-  };
 
   const scale = width ? width / SLIDE_W : 0.5;
   const viewportH = SLIDE_H * scale;
@@ -77,17 +56,16 @@ export function PreviewFrame({ html, slideCount }: { html: string; slideCount: n
         >
           {width > 0 && (
             <iframe
-              ref={iframeRef}
-              onLoad={handleIframeLoad}
               title="carousel preview"
               srcDoc={html}
               style={{
                 width: SLIDE_W,
                 height: SLIDE_H * slideCount,
                 border: 0,
-                transform: `scale(${scale})`,
+                transform: `scale(${scale}) translateY(-${currentSlide * SLIDE_H}px)`,
                 transformOrigin: "top left",
-                overflow: "hidden"
+                overflow: "hidden",
+                transition: "transform 0.3s ease-in-out"
               }}
             />
           )}
