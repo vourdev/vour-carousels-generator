@@ -8,23 +8,40 @@ import {
   reviseUserPrompt,
 } from "@/lib/ai/prompts";
 
+async function withRetry<T>(fn: () => Promise<T>, attempts = 3): Promise<T> {
+  let lastError: any = null;
+  for (let i = 0; i < attempts; i++) {
+    try {
+      return await fn();
+    } catch (err) {
+      lastError = err;
+    }
+  }
+  const msg = lastError instanceof Error ? lastError.message : String(lastError);
+  throw new Error(`Failed after ${attempts} attempts. Last error: ${msg}`);
+}
+
 export async function generateBrief(idea: string, model: LanguageModel): Promise<string> {
-  const { text } = await generateText({
-    model,
-    system: briefSystem,
-    prompt: briefUserPrompt(idea),
+  return withRetry(async () => {
+    const { text } = await generateText({
+      model,
+      system: briefSystem,
+      prompt: briefUserPrompt(idea),
+    });
+    return text;
   });
-  return text;
 }
 
 export async function generateSlidePlan(brief: string, model: LanguageModel): Promise<SlidePlan> {
-  const { object } = await generateObject({
-    model,
-    schema: slidePlanSchema,
-    system: planSystem,
-    prompt: planUserPrompt(brief),
+  return withRetry(async () => {
+    const { object } = await generateObject({
+      model,
+      schema: slidePlanSchema,
+      system: planSystem,
+      prompt: planUserPrompt(brief),
+    });
+    return object;
   });
-  return object;
 }
 
 export async function reviseSlidePlan(
@@ -32,11 +49,13 @@ export async function reviseSlidePlan(
   message: string,
   model: LanguageModel
 ): Promise<SlidePlan> {
-  const { object } = await generateObject({
-    model,
-    schema: slidePlanSchema,
-    system: planSystem,
-    prompt: reviseUserPrompt(JSON.stringify(plan), message),
+  return withRetry(async () => {
+    const { object } = await generateObject({
+      model,
+      schema: slidePlanSchema,
+      system: planSystem,
+      prompt: reviseUserPrompt(JSON.stringify(plan), message),
+    });
+    return object;
   });
-  return object;
 }

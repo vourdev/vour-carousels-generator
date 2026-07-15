@@ -32,6 +32,21 @@ describe("generateBrief", () => {
   it("returns the model text", async () => {
     expect(await generateBrief("idea", textModel)).toContain("# Carousel Content");
   });
+
+  it("retries 3 times and formats the error", async () => {
+    let callCount = 0;
+    const failingModel = new MockLanguageModelV4({
+      doGenerate: async () => {
+        callCount++;
+        throw new Error("AI_APICallError: This model is currently experiencing high demand. Spikes in demand are usually temporary. Please try again later.");
+      },
+    });
+
+    await expect(generateBrief("idea", failingModel)).rejects.toThrow(
+      "Failed after 3 attempts. Last error: AI_APICallError: This model is currently experiencing high demand. Spikes in demand are usually temporary. Please try again later."
+    );
+    expect(callCount).toBe(3);
+  });
 });
 
 describe("generateSlidePlan", () => {

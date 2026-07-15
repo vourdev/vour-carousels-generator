@@ -18,6 +18,7 @@ import { ExportButton } from "@/app/preview/export-button";
 import type { ModelId } from "@/lib/ai/registry";
 import type { SlidePlan } from "@/lib/ds/schema";
 import { briefAction, planAction, reviseAction } from "./actions";
+import { toast } from "sonner";
 
 export function Wizard({ models }: { models: ModelId[] }) {
   const [model, setModel] = useState<ModelId | "">(models[0] ?? "");
@@ -37,7 +38,9 @@ export function Wizard({ models }: { models: ModelId[] }) {
       try {
         await fn();
       } catch (e) {
-        setError(e instanceof Error ? e.message : "failed");
+        const msg = e instanceof Error ? e.message : "failed";
+        setError(msg);
+        toast.error(msg);
       }
     });
   }
