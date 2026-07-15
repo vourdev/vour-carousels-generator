@@ -17,7 +17,7 @@ export default async function PreviewPage() {
         </h1>
         <ExportButton html={sampleHtml} />
       </div>
-      <PreviewFrame html={sampleHtml} />
+      <PreviewFrame html={sampleHtml} slideCount={samplePlan.slides.length} />
     </main>
   );
 }
