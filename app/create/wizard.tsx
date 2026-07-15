@@ -43,19 +43,16 @@ export function Wizard({ models }: { models: ModelId[] }) {
   const [plan, setPlan] = useState<SlidePlan | null>(null);
   const [approved, setApproved] = useState(false);
   const [revision, setRevision] = useState("");
-  const [error, setError] = useState("");
   const [pending, start] = useTransition();
 
   const html = useMemo(() => (plan ? assembleCarousel(plan) : ""), [plan]);
 
   function run(fn: () => Promise<void>) {
-    setError("");
     start(async () => {
       try {
         await fn();
       } catch (e) {
         const msg = e instanceof Error ? e.message : "failed";
-        setError(msg);
         toast.error(msg);
       }
     });
@@ -178,7 +175,6 @@ export function Wizard({ models }: { models: ModelId[] }) {
         </Card>
       )}
 
-      {error && <p className="text-sm text-destructive">{error}</p>}
     </div>
   );
 }
