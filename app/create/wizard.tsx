@@ -18,7 +18,7 @@ import { ExportButton } from "@/app/preview/export-button";
 import type { ModelId } from "@/lib/ai/registry";
 import type { SlidePlan } from "@/lib/ds/schema";
 import { briefAction, planAction, reviseAction } from "./actions";
-import { Sparkles, Brain, Zap, RotateCcw, Check, Send, Eye, FileText, LayoutGrid, User } from "lucide-react";
+import { Sparkles, Brain, Zap, RotateCcw, Check, Send, Eye, FileText, LayoutGrid, User, Upload } from "lucide-react";
 import { toast } from "sonner";
 
 interface Message {
@@ -71,6 +71,70 @@ function summarizeError(msg: string): string {
   return msg;
 }
 
+// Simple React Markdown Renderer
+function renderMarkdown(md: string) {
+  if (!md) return <p className="text-muted-foreground italic text-xs">Brief outline kosong...</p>;
+  
+  const lines = md.split("\n");
+  const elements: React.ReactNode[] = [];
+  
+  lines.forEach((line, idx) => {
+    const trimmed = line.trim();
+    if (trimmed.startsWith("# ")) {
+      elements.push(
+        <h1 key={idx} className="text-xl font-bold tracking-tight text-foreground border-b pb-1 mt-4 mb-2 first:mt-0 font-heading">
+          {trimmed.substring(2)}
+        </h1>
+      );
+    } else if (trimmed.startsWith("## ")) {
+      const text = trimmed.substring(3);
+      const isSlide = text.toLowerCase().includes("slide");
+      elements.push(
+        <h2 key={idx} className={`text-sm font-semibold tracking-tight mt-4 mb-1.5 font-heading ${
+          isSlide 
+            ? "text-primary border-l-2 border-primary pl-2 bg-primary/5 py-0.5 rounded-r" 
+            : "text-foreground border-b pb-0.5"
+        }`}>
+          {text}
+        </h2>
+      );
+    } else if (trimmed.startsWith("### ")) {
+      elements.push(
+        <h3 key={idx} className="text-xs font-semibold text-muted-foreground mt-3 mb-1">
+          {trimmed.substring(4)}
+        </h3>
+      );
+    } else if (trimmed.startsWith("- ")) {
+      elements.push(
+        <li key={idx} className="text-xs list-disc ml-4 my-0.5 text-muted-foreground">
+          {trimmed.substring(2)}
+        </li>
+      );
+    } else if (trimmed.startsWith("* ")) {
+      elements.push(
+        <li key={idx} className="text-xs list-disc ml-4 my-0.5 text-muted-foreground">
+          {trimmed.substring(2)}
+        </li>
+      );
+    } else if (trimmed === "") {
+      elements.push(<div key={idx} className="h-1" />);
+    } else {
+      let content: React.ReactNode = trimmed;
+      if (trimmed.includes("**")) {
+        const parts = trimmed.split("**");
+        content = parts.map((part, i) => i % 2 === 1 ? <strong key={i} className="font-bold text-foreground">{part}</strong> : part);
+      }
+      elements.push(
+        <p key={idx} className="text-xs text-muted-foreground leading-relaxed my-0.5">
+          {content}
+        </p>
+      );
+    }
+  });
+
+  return <div className="space-y-0.5">{elements}</div>;
+}
+
 export function Wizard({ models }: { models: ModelId[] }) {
   const [mounted, setMounted] = useState(false);
   const [step, setStep] = useState<number>(1);
@@ -83,6 +147,7 @@ export function Wizard({ models }: { models: ModelId[] }) {
   const [revision, setRevision] = useState("");
   const [isTyping, setIsTyping] = useState(false);
   const [activeTab, setActiveTab] = useState<"brief" | "preview">("brief");
+  const [mdMode, setMdMode] = useState<"split" | "editor" | "preview">("split");
   const [messages, setMessages] = useState<Message[]>([
     {
       sender: "ai",
@@ -94,6 +159,7 @@ export function Wizard({ models }: { models: ModelId[] }) {
   const [pending, start] = useTransition();
   const typewriterIntervalRef = useRef<NodeJS.Timeout | null>(null);
   const chatEndRef = useRef<HTMLDivElement | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const html = useMemo(() => (plan ? assembleCarousel(plan) : ""), [plan]);
 
@@ -114,6 +180,7 @@ export function Wizard({ models }: { models: ModelId[] }) {
         if (parsed.approved) setApproved(parsed.approved);
         if (parsed.activeTab) setActiveTab(parsed.activeTab);
         if (parsed.messages) setMessages(parsed.messages);
+        if (parsed.mdMode) setMdMode(parsed.mdMode);
       } catch (e) {
         console.error("Failed to parse saved draft", e);
       }
@@ -124,9 +191,9 @@ export function Wizard({ models }: { models: ModelId[] }) {
   // Save state to local storage
   useEffect(() => {
     if (!mounted) return;
-    const draft = { step, idea, model, brief, plan, approved, activeTab, messages };
+    const draft = { step, idea, model, brief, plan, approved, activeTab, messages, mdMode };
     localStorage.setItem("vour_carousel_draft", JSON.stringify(draft));
-  }, [step, idea, model, brief, plan, approved, activeTab, messages, mounted]);
+  }, [step, idea, model, brief, plan, approved, activeTab, messages, mdMode, mounted]);
 
   // Auto-scroll chat feed to bottom
   useEffect(() => {
@@ -155,10 +222,11 @@ export function Wizard({ models }: { models: ModelId[] }) {
     setRevision("");
     setIsTyping(false);
     setActiveTab("brief");
+    setMdMode("split");
     setMessages([
       {
         sender: "ai",
-        text: "Draft dibersihkan. Silakan masukkan ide konten baru untuk memulai.",
+        text: "Draft dibersihkan. Silakan masukkan ide konten baru atau upload file md untuk memulai.",
         timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
       }
     ]);
@@ -175,6 +243,26 @@ export function Wizard({ models }: { models: ModelId[] }) {
         timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
       }
     ]);
+  }
+
+  function handleFileUpload(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      const text = event.target?.result as string;
+      if (text) {
+        setBrief(text);
+        setFinalBrief(text);
+        setStep(2);
+        setActiveTab("brief");
+        setMdMode("split");
+        addMessage("user", `Upload file markdown: ${file.name}`);
+        addMessage("ai", `Markdown berhasil dimuat. Anda berada pada langkah 2. Silakan tinjau dan edit outline brief Anda, lalu klik "Approve & Render Slide" jika sudah siap.`);
+        toast.success(`File ${file.name} loaded successfully`);
+      }
+    };
+    reader.readAsText(file);
   }
 
   function handleBriefGeneration() {
@@ -335,6 +423,37 @@ export function Wizard({ models }: { models: ModelId[] }) {
           </CardContent>
         </Card>
 
+        {/* Dynamic step instructions & workspace controls / alternative imports */}
+        {step === 1 && (
+          <Card className="shadow-sm shrink-0">
+            <CardContent className="p-4 flex flex-col gap-3">
+              <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Alternative Import</span>
+              <div className="flex flex-col gap-2">
+                <Input
+                  type="file"
+                  accept=".md"
+                  ref={fileInputRef}
+                  onChange={handleFileUpload}
+                  className="hidden"
+                  id="md-file-upload"
+                />
+                <Button 
+                  type="button" 
+                  variant="outline" 
+                  className="w-full h-8 text-xs gap-1.5"
+                  onClick={() => fileInputRef.current?.click()}
+                >
+                  <Upload className="size-3.5" />
+                  Upload Markdown (.md)
+                </Button>
+                <p className="text-[10px] text-muted-foreground text-center">
+                  Atau langsung paste teks markdown ke dalam panel kanan.
+                </p>
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
         {/* Chat Console Feed */}
         <div className="flex-1 overflow-y-auto pr-1 flex flex-col gap-3 min-h-0 p-3 bg-canvas-soft border border-hairline rounded-xl">
           {messages.map((msg, index) => (
@@ -432,11 +551,10 @@ export function Wizard({ models }: { models: ModelId[] }) {
           <div className="flex items-center gap-1.5 p-0.5 bg-muted/50 rounded-lg border border-hairline">
             <button
               onClick={() => setActiveTab("brief")}
-              disabled={step < 2}
               className={`flex items-center gap-1.5 px-3 py-1 rounded-md text-xs font-medium transition-colors ${
                 activeTab === "brief"
                   ? "bg-card text-foreground shadow-xs"
-                  : "text-muted-foreground hover:text-foreground disabled:opacity-40 disabled:cursor-not-allowed"
+                  : "text-muted-foreground hover:text-foreground"
               }`}
             >
               <FileText className="size-3.5" />
@@ -458,6 +576,20 @@ export function Wizard({ models }: { models: ModelId[] }) {
 
           {/* Contextual Action Button based on current step */}
           <div className="flex items-center gap-2">
+            {(step === 1 && brief.trim().length > 0) && (
+              <Button
+                size="sm"
+                onClick={() => {
+                  setStep(2);
+                  addMessage("user", "Proceed with pasted/imported brief outline.");
+                  addMessage("ai", "Brief outline berhasil diimpor ke langkah 2! Silakan tinjau, edit lebih lanjut, lalu klik 'Approve & Render Slide' jika sudah siap.");
+                }}
+                className="h-7 text-xs font-medium gap-1 px-3"
+              >
+                <Check className="size-3.5" />
+                Import Brief
+              </Button>
+            )}
             {step === 2 && (
               <Button
                 size="sm"
@@ -492,22 +624,87 @@ export function Wizard({ models }: { models: ModelId[] }) {
         {/* Workspace Canvas Main Content area */}
         <div className="flex-1 min-h-0 relative bg-canvas-soft">
           {activeTab === "brief" ? (
-            <div className="h-full relative flex flex-col p-4">
-              <Textarea
-                value={brief}
-                onChange={(e) => {
-                  if (!isTyping) {
-                    setBrief(e.target.value);
-                    setFinalBrief(e.target.value);
-                  }
-                }}
-                disabled={isTyping || step < 2}
-                placeholder="Tulis ide di panel kiri untuk menjabarkan outline brief di sini..."
-                className="w-full h-full border-0 resize-none focus-visible:ring-0 font-mono text-sm leading-relaxed p-4 bg-transparent outline-none flex-1 min-h-0"
-              />
+            <div className="h-full relative flex flex-col">
+              
+              {/* Sub-header for Markdown format view toggles */}
+              <div className="flex items-center justify-between border-b px-4 py-1.5 bg-muted/10 shrink-0">
+                <span className="text-[10px] text-muted-foreground uppercase font-semibold">Outline Format View</span>
+                <div className="flex items-center gap-1 bg-muted/40 p-0.5 rounded-md border border-hairline">
+                  <button
+                    onClick={() => setMdMode("editor")}
+                    className={`px-2 py-0.5 rounded text-[10px] font-medium transition-colors ${
+                      mdMode === "editor" ? "bg-card text-foreground shadow-xs" : "text-muted-foreground hover:text-foreground"
+                    }`}
+                  >
+                    Raw Markdown
+                  </button>
+                  <button
+                    onClick={() => setMdMode("preview")}
+                    className={`px-2 py-0.5 rounded text-[10px] font-medium transition-colors ${
+                      mdMode === "preview" ? "bg-card text-foreground shadow-xs" : "text-muted-foreground hover:text-foreground"
+                    }`}
+                  >
+                    Formatted Preview
+                  </button>
+                  <button
+                    onClick={() => setMdMode("split")}
+                    className={`px-2 py-0.5 rounded text-[10px] font-medium transition-colors ${
+                      mdMode === "split" ? "bg-card text-foreground shadow-xs" : "text-muted-foreground hover:text-foreground"
+                    }`}
+                  >
+                    Split Screen
+                  </button>
+                </div>
+              </div>
+
+              {/* Main edit and preview display wrapper */}
+              <div className="flex-1 min-h-0">
+                {mdMode === "editor" && (
+                  <Textarea
+                    value={brief}
+                    onChange={(e) => {
+                      if (!isTyping) {
+                        setBrief(e.target.value);
+                        setFinalBrief(e.target.value);
+                      }
+                    }}
+                    disabled={isTyping}
+                    placeholder="Tulis ide di panel kiri untuk menjabarkan outline brief di sini... Atau langsung upload/paste teks markdown Anda di sini."
+                    className="w-full h-full border-0 resize-none focus-visible:ring-0 font-mono text-sm leading-relaxed p-4 bg-transparent outline-none overflow-y-auto"
+                  />
+                )}
+
+                {mdMode === "preview" && (
+                  <div className="w-full h-full p-6 overflow-y-auto bg-card max-w-none">
+                    {renderMarkdown(brief)}
+                  </div>
+                )}
+
+                {mdMode === "split" && (
+                  <div className="grid grid-cols-2 divide-x divide-border h-full">
+                    <div className="h-full overflow-hidden">
+                      <Textarea
+                        value={brief}
+                        onChange={(e) => {
+                          if (!isTyping) {
+                            setBrief(e.target.value);
+                            setFinalBrief(e.target.value);
+                          }
+                        }}
+                        disabled={isTyping}
+                        placeholder="Tulis ide di panel kiri untuk menjabarkan outline brief di sini... Atau langsung upload/paste teks markdown Anda di sini."
+                        className="w-full h-full border-0 resize-none focus-visible:ring-0 font-mono text-sm leading-relaxed p-4 bg-transparent outline-none overflow-y-auto"
+                      />
+                    </div>
+                    <div className="h-full overflow-y-auto p-6 bg-card max-w-none">
+                      {renderMarkdown(brief)}
+                    </div>
+                  </div>
+                )}
+              </div>
               
               {isTyping && (
-                <div className="absolute bottom-6 right-6 flex items-center gap-1.5 text-[11px] font-mono text-muted-foreground select-none pointer-events-none bg-card/85 p-2 rounded-lg border border-hairline shadow-sm backdrop-blur-xs">
+                <div className="absolute bottom-6 right-6 flex items-center gap-1.5 text-[11px] font-mono text-muted-foreground select-none pointer-events-none bg-card/85 p-2 rounded-lg border border-hairline shadow-sm backdrop-blur-xs z-10">
                   <div className="size-1.5 rounded-full bg-primary animate-ping" />
                   Streaming brief outline...
                 </div>
