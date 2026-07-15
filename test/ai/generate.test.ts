@@ -1,16 +1,20 @@
 import { describe, it, expect } from "vitest";
 import { MockLanguageModelV4 } from "ai/test";
+import type { LanguageModelV4GenerateResult } from "@ai-sdk/provider";
 import { generateBrief, generateSlidePlan } from "@/lib/ai/generate";
 
-const usage = { inputTokens: 1, outputTokens: 1, totalTokens: 2 };
+// Minimal generate result for the mock. Cast to the SDK type — the runtime
+// only reads content/finishReason/usage; the full nested shape isn't needed.
+const result = (text: string) =>
+  ({
+    finishReason: { unified: "stop" },
+    usage: { inputTokens: { total: 1 }, outputTokens: { total: 1 } },
+    content: [{ type: "text", text }],
+    warnings: [],
+  }) as unknown as LanguageModelV4GenerateResult;
 
 const textModel = new MockLanguageModelV4({
-  doGenerate: async () => ({
-    finishReason: "stop",
-    usage,
-    content: [{ type: "text", text: "# Carousel Content — Test" }],
-    warnings: [],
-  }),
+  doGenerate: async () => result("# Carousel Content — Test"),
 });
 
 const planObject = {
@@ -21,12 +25,7 @@ const planObject = {
 };
 
 const objectModel = new MockLanguageModelV4({
-  doGenerate: async () => ({
-    finishReason: "stop",
-    usage,
-    content: [{ type: "text", text: JSON.stringify(planObject) }],
-    warnings: [],
-  }),
+  doGenerate: async () => result(JSON.stringify(planObject)),
 });
 
 describe("generateBrief", () => {
