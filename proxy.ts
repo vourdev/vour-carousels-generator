@@ -3,12 +3,22 @@ import { getSessionCookie } from "better-auth/cookies";
 
 export function proxy(request: NextRequest) {
   const cookie = getSessionCookie(request);
-  if (!cookie) {
-    return NextResponse.redirect(new URL("/login", request.url));
+  const { pathname } = request.nextUrl;
+
+  if (cookie) {
+    if (pathname === "/login") {
+      return NextResponse.redirect(new URL("/", request.url));
+    }
+  } else {
+    if (pathname !== "/login") {
+      return NextResponse.redirect(new URL("/login", request.url));
+    }
   }
+
   return NextResponse.next();
 }
 
 export const config = {
-  matcher: ["/((?!login|api/auth|_next/static|_next/image|favicon.ico).*)"],
+  matcher: ["/((?!api/auth|_next/static|_next/image|favicon.ico|.*\\..*$).*)"],
 };
+
