@@ -1,4 +1,5 @@
 import { describe, it, expect } from "vitest";
+import type { SlidePlan } from "@/lib/ds/schema";
 import { assembleCarousel } from "@/lib/ds/assemble";
 
 const plan = {
@@ -13,14 +14,14 @@ const plan = {
 
 describe("assembleCarousel", () => {
   it("produces one document with a section per slide", () => {
-    const html = assembleCarousel(plan);
+    const html = assembleCarousel(plan as unknown as SlidePlan);
     expect(html).toContain("<!DOCTYPE html>");
     expect((html.match(/<section\s/g) ?? []).length).toBe(2);
     expect(html).toContain("<style>");
     expect(html).toContain("width: 1080px");
   });
   it("embeds a valid vourdev-meta JSON block", () => {
-    const html = assembleCarousel(plan);
+    const html = assembleCarousel(plan as unknown as SlidePlan);
     const m = html.match(/<script type="application\/json" id="vourdev-meta">([\s\S]*?)<\/script>/);
     expect(m).not.toBeNull();
     const meta = JSON.parse(m![1]);

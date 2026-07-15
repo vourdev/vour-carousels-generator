@@ -2,8 +2,8 @@ import type { SlidePlan } from "@/lib/ds/schema";
 import { renderSlide } from "@/lib/ds/render-slide";
 import { carouselCss } from "@/lib/ds/carousel-css";
 
-export function assembleCarousel(plan: any): string {
-  const { title, caption, hashtags, slides } = plan as SlidePlan;
+export function assembleCarousel(plan: SlidePlan): string {
+  const { title, caption, hashtags, slides } = plan;
   const meta = JSON.stringify(
     { title, caption, hashtags },
     null,
