@@ -4,7 +4,7 @@ import { useMemo, useState, useTransition, useEffect, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import {
   Select,
   SelectContent,
@@ -18,8 +18,14 @@ import { ExportButton } from "@/app/preview/export-button";
 import type { ModelId } from "@/lib/ai/registry";
 import type { SlidePlan } from "@/lib/ds/schema";
 import { briefAction, planAction, reviseAction } from "./actions";
-import { Sparkles, Brain, Zap, RotateCcw, Check, Send, Sparkle, Eye, FileText, LayoutGrid } from "lucide-react";
+import { Sparkles, Brain, Zap, RotateCcw, Check, Send, Eye, FileText, LayoutGrid, User } from "lucide-react";
 import { toast } from "sonner";
+
+interface Message {
+  sender: "user" | "ai";
+  text: string;
+  timestamp: string;
+}
 
 const modelDetails: Record<string, { label: string; icon: React.ReactNode }> = {
   gemini: {
@@ -47,13 +53,22 @@ export function Wizard({ models }: { models: ModelId[] }) {
   const [approved, setApproved] = useState(false);
   const [revision, setRevision] = useState("");
   const [isTyping, setIsTyping] = useState(false);
+  const [activeTab, setActiveTab] = useState<"brief" | "preview">("brief");
+  const [messages, setMessages] = useState<Message[]>([
+    {
+      sender: "ai",
+      text: "Halo! Saya asisten pembuat carousel @vourdev. Silakan pilih AI provider di atas, lalu ketik ide konten Anda di kolom chat bawah untuk memulai.",
+      timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+    }
+  ]);
+  
   const [pending, start] = useTransition();
-
   const typewriterIntervalRef = useRef<NodeJS.Timeout | null>(null);
+  const chatEndRef = useRef<HTMLDivElement | null>(null);
 
   const html = useMemo(() => (plan ? assembleCarousel(plan) : ""), [plan]);
 
-  // Load from local storage
+  // Load state from local storage
   useEffect(() => {
     const saved = localStorage.getItem("vour_carousel_draft");
     if (saved) {
@@ -68,6 +83,8 @@ export function Wizard({ models }: { models: ModelId[] }) {
         }
         if (parsed.plan) setPlan(parsed.plan);
         if (parsed.approved) setApproved(parsed.approved);
+        if (parsed.activeTab) setActiveTab(parsed.activeTab);
+        if (parsed.messages) setMessages(parsed.messages);
       } catch (e) {
         console.error("Failed to parse saved draft", e);
       }
@@ -75,12 +92,17 @@ export function Wizard({ models }: { models: ModelId[] }) {
     setMounted(true);
   }, []);
 
-  // Save to local storage
+  // Save state to local storage
   useEffect(() => {
     if (!mounted) return;
-    const draft = { step, idea, model, brief, plan, approved };
+    const draft = { step, idea, model, brief, plan, approved, activeTab, messages };
     localStorage.setItem("vour_carousel_draft", JSON.stringify(draft));
-  }, [step, idea, model, brief, plan, approved, mounted]);
+  }, [step, idea, model, brief, plan, approved, activeTab, messages, mounted]);
+
+  // Auto-scroll chat feed to bottom
+  useEffect(() => {
+    chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [messages, pending, isTyping]);
 
   // Cleanup typewriter interval on unmount
   useEffect(() => {
@@ -103,19 +125,43 @@ export function Wizard({ models }: { models: ModelId[] }) {
     setApproved(false);
     setRevision("");
     setIsTyping(false);
+    setActiveTab("brief");
+    setMessages([
+      {
+        sender: "ai",
+        text: "Draft dibersihkan. Silakan masukkan ide konten baru untuk memulai.",
+        timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+      }
+    ]);
     localStorage.removeItem("vour_carousel_draft");
     toast.success("Draft reset successfully");
   }
 
+  function addMessage(sender: "user" | "ai", text: string) {
+    setMessages((prev) => [
+      ...prev,
+      {
+        sender,
+        text,
+        timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+      }
+    ]);
+  }
+
   function handleBriefGeneration() {
     if (!idea.trim() || !model) return;
-    setErrorState("");
+    const currentIdea = idea;
+    addMessage("user", currentIdea);
+    setIdea("");
+    
     start(async () => {
       try {
-        const res = await briefAction(idea, model as ModelId);
+        const res = await briefAction(currentIdea, model as ModelId);
         setFinalBrief(res);
         setIsTyping(true);
         setStep(2);
+        setActiveTab("brief");
+        addMessage("ai", "Brief outline berhasil dibuat! Silakan tinjau draf markdown di panel kanan. Anda bisa langsung mengedit teksnya atau ketik revisi di kolom chat.");
 
         if (typewriterIntervalRef.current) {
           clearInterval(typewriterIntervalRef.current);
@@ -140,53 +186,58 @@ export function Wizard({ models }: { models: ModelId[] }) {
       } catch (e) {
         const msg = e instanceof Error ? e.message : "failed";
         toast.error(msg);
+        addMessage("ai", `Gagal memproses: ${msg}`);
       }
     });
   }
 
   function handlePlanGeneration() {
     if (!brief) return;
-    setErrorState("");
+    addMessage("user", "Approve brief outline & generate Slide design.");
     start(async () => {
       try {
         const generatedPlan = await planAction(brief, model as ModelId);
         setPlan(generatedPlan);
         setApproved(false);
         setStep(3);
+        setActiveTab("preview");
+        addMessage("ai", "Slide deck HTML berhasil dirender! Anda sekarang dapat meninjau visualnya pada tab 'Live Design Preview'. Jika butuh penyesuaian, ketik revisi Anda di kolom chat.");
       } catch (e) {
         const msg = e instanceof Error ? e.message : "failed";
         toast.error(msg);
+        addMessage("ai", `Gagal merender slide: ${msg}`);
       }
     });
   }
 
   function handleRevisionSend() {
     if (!revision.trim()) return;
-    setErrorState("");
+    const currentRevision = revision;
+    addMessage("user", currentRevision);
+    setRevision("");
+    
     start(async () => {
       try {
         if (step === 2) {
-          // If in step 2, revision targets the brief outline
-          const res = await briefAction(`Current brief:\n${brief}\n\nRevision request:\n${revision}`, model as ModelId);
+          addMessage("ai", "Merevisi brief outline berdasarkan instruksi Anda...");
+          const res = await briefAction(`Current brief:\n${brief}\n\nRevision request:\n${currentRevision}`, model as ModelId);
           setFinalBrief(res);
           setBrief(res);
-          setRevision("");
+          addMessage("ai", "Brief outline berhasil diperbarui.");
         } else if (step === 3 && plan) {
-          // If in step 3, revision targets the HTML slide layout plan
-          const updatedPlan = await reviseAction(plan, revision, model as ModelId);
+          addMessage("ai", "Merevisi rancangan slide berdasarkan instruksi Anda...");
+          const updatedPlan = await reviseAction(plan, currentRevision, model as ModelId);
           setPlan(updatedPlan);
-          setRevision("");
           setApproved(false);
+          addMessage("ai", "Rancangan slide berhasil disesuaikan. Silakan cek preview terbaru.");
         }
       } catch (e) {
         const msg = e instanceof Error ? e.message : "failed";
         toast.error(msg);
+        addMessage("ai", `Revisi gagal: ${msg}`);
       }
     });
   }
-
-  // Dummy target to satisfy compiler / typings if needed internally
-  const setErrorState = (_val: string) => {};
 
   if (models.length === 0) {
     return (
@@ -201,149 +252,109 @@ export function Wizard({ models }: { models: ModelId[] }) {
   }
 
   return (
-    <div className="grid lg:grid-cols-[1.2fr_1fr] gap-8 items-stretch lg:h-full lg:overflow-hidden relative pb-16 lg:pb-0 flex-1 min-h-0">
+    <div className="grid lg:grid-cols-[400px_1fr] gap-6 items-stretch lg:h-full lg:overflow-hidden relative pb-16 lg:pb-0 flex-1 min-h-0">
       
-      {/* LEFT COLUMN: Workspace control and Chat input */}
+      {/* LEFT COLUMN: Workspace sidebar & Chat console */}
       <div className="flex flex-col h-full gap-4 overflow-hidden min-h-0">
         
-        {/* Stepper Header */}
+        {/* Workspace controls & Stepper */}
         <Card className="shadow-sm shrink-0">
-          <CardContent className="p-4 flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <span className={`flex items-center justify-center size-6 rounded-full text-xs font-semibold ${step >= 1 ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground"}`}>1</span>
-              <span className={`text-sm ${step === 1 ? "font-semibold text-foreground" : "text-muted-foreground"}`}>Concept</span>
-              
-              <span className="text-muted-foreground text-xs mx-1">→</span>
-              
-              <span className={`flex items-center justify-center size-6 rounded-full text-xs font-semibold ${step >= 2 ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground"}`}>2</span>
-              <span className={`text-sm ${step === 2 ? "font-semibold text-foreground" : "text-muted-foreground"}`}>Brief</span>
-              
-              <span className="text-muted-foreground text-xs mx-1">→</span>
-              
-              <span className={`flex items-center justify-center size-6 rounded-full text-xs font-semibold ${step >= 3 ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground"}`}>3</span>
-              <span className={`text-sm ${step === 3 ? "font-semibold text-foreground" : "text-muted-foreground"}`}>Carousel</span>
+          <CardContent className="p-4 flex flex-col gap-3">
+            
+            {/* Model Selector */}
+            <div className="flex items-center justify-between gap-3 border-b pb-3">
+              <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Provider</span>
+              <Select value={model} onValueChange={(v) => setModel(v as ModelId)}>
+                <SelectTrigger className="w-40 h-8 text-xs">
+                  <div className="flex items-center gap-1.5">
+                    {model && modelDetails[model]?.icon}
+                    <SelectValue placeholder="Model" />
+                  </div>
+                </SelectTrigger>
+                <SelectContent>
+                  {models.map((m) => (
+                    <SelectItem key={m} value={m} className="text-xs">
+                      <div className="flex items-center gap-1.5">
+                        {modelDetails[m]?.icon}
+                        <span>{modelDetails[m]?.label}</span>
+                      </div>
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
 
-            <Button variant="ghost" size="sm" onClick={handleReset} className="h-8 gap-1.5 text-muted-foreground hover:text-foreground">
-              <RotateCcw className="size-3.5" />
-              Reset Draft
-            </Button>
+            {/* Visual Stepper */}
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-1">
+                <span className={`flex items-center justify-center size-5 rounded-full text-[10px] font-semibold ${step >= 1 ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground"}`}>1</span>
+                <span className={`text-xs ${step === 1 ? "font-semibold text-foreground" : "text-muted-foreground"}`}>Concept</span>
+                <span className="text-muted-foreground/40 text-[10px] mx-0.5">→</span>
+                <span className={`flex items-center justify-center size-5 rounded-full text-[10px] font-semibold ${step >= 2 ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground"}`}>2</span>
+                <span className={`text-xs ${step === 2 ? "font-semibold text-foreground" : "text-muted-foreground"}`}>Brief</span>
+                <span className="text-muted-foreground/40 text-[10px] mx-0.5">→</span>
+                <span className={`flex items-center justify-center size-5 rounded-full text-[10px] font-semibold ${step >= 3 ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground"}`}>3</span>
+                <span className={`text-xs ${step === 3 ? "font-semibold text-foreground" : "text-muted-foreground"}`}>Carousel</span>
+              </div>
+
+              <Button variant="ghost" size="sm" onClick={handleReset} className="h-7 text-[10px] gap-1 px-2 text-muted-foreground hover:text-foreground shrink-0">
+                <RotateCcw className="size-3" />
+                Clear
+              </Button>
+            </div>
+
           </CardContent>
         </Card>
 
-        {/* Dynamic step instructions & workspace controls */}
-        <div className="flex-1 overflow-y-auto pr-1 grid gap-4 min-h-0">
-          {step === 1 && (
-            <Card className="shadow-sm">
-              <CardHeader>
-                <CardTitle className="text-lg flex items-center gap-2">
-                  <Sparkle className="size-4 text-indigo-500" />
-                  Start Your Content Journey
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="grid gap-4">
-                <p className="text-sm text-muted-foreground">
-                  Enter your core topic, programming concept, or tutorial idea below. The AI will outline the flow and structure in the next step.
-                </p>
-                
-                <div className="grid gap-2">
-                  <label className="text-xs font-semibold text-muted-foreground">SELECT AI PROVIDER</label>
-                  <Select value={model} onValueChange={(v) => setModel(v as ModelId)}>
-                    <SelectTrigger className="w-full">
-                      <div className="flex items-center gap-2">
-                        {model && modelDetails[model]?.icon}
-                        <SelectValue placeholder="Model" />
-                      </div>
-                    </SelectTrigger>
-                    <SelectContent>
-                      {models.map((m) => (
-                        <SelectItem key={m} value={m}>
-                          <div className="flex items-center gap-2">
-                            {modelDetails[m]?.icon}
-                            <span>{modelDetails[m]?.label}</span>
-                          </div>
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+        {/* Chat Console Feed */}
+        <div className="flex-1 overflow-y-auto pr-1 flex flex-col gap-3 min-h-0 p-3 bg-canvas-soft border border-hairline rounded-xl">
+          {messages.map((msg, index) => (
+            <div
+              key={index}
+              className={`flex gap-2 max-w-[85%] ${msg.sender === "user" ? "self-end flex-row-reverse" : "self-start"}`}
+            >
+              {/* Profile Icon */}
+              <div className={`size-6 rounded-full shrink-0 flex items-center justify-center text-xs ${msg.sender === "user" ? "bg-muted text-muted-foreground border border-hairline" : "bg-primary/10 text-primary border border-primary/20"}`}>
+                {msg.sender === "user" ? <User className="size-3.5" /> : <Sparkles className="size-3.5 text-indigo-500 animate-pulse" />}
+              </div>
+
+              {/* Message Bubble */}
+              <div className="flex flex-col gap-0.5">
+                <div className={`p-3 rounded-2xl text-xs leading-relaxed shadow-sm ${
+                  msg.sender === "user" 
+                    ? "bg-primary text-primary-foreground rounded-tr-none" 
+                    : "bg-card text-card-foreground rounded-tl-none border border-hairline"
+                }`}>
+                  {msg.text}
                 </div>
-              </CardContent>
-            </Card>
+                <span className="text-[9px] text-muted-foreground px-1 self-end">{msg.timestamp}</span>
+              </div>
+            </div>
+          ))}
+          {pending && (
+            <div className="flex gap-2 self-start max-w-[85%] animate-pulse">
+              <div className="size-6 rounded-full bg-primary/10 border border-primary/20 flex items-center justify-center">
+                <Sparkles className="size-3.5 text-indigo-500 animate-spin" />
+              </div>
+              <div className="p-3 bg-card border border-hairline rounded-2xl rounded-tl-none text-xs text-muted-foreground flex items-center gap-1.5">
+                <div className="size-1.5 rounded-full bg-primary animate-bounce delay-75" />
+                <div className="size-1.5 rounded-full bg-primary animate-bounce delay-150" />
+                <div className="size-1.5 rounded-full bg-primary animate-bounce delay-300" />
+              </div>
+            </div>
           )}
-
-          {step === 2 && (
-            <Card className="shadow-sm">
-              <CardHeader>
-                <CardTitle className="text-lg flex items-center gap-2">
-                  <FileText className="size-4 text-blue-500" />
-                  Refine Content Brief
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="grid gap-4">
-                <p className="text-sm text-muted-foreground">
-                  Read, edit, or revise the generated outline on the right. Once it covers all key takeaways, approve it to render the design.
-                </p>
-
-                <div className="flex items-center gap-2">
-                  <Button 
-                    disabled={pending || isTyping} 
-                    onClick={handlePlanGeneration}
-                    className="w-full"
-                  >
-                    <Check className="size-4 mr-2" />
-                    Approve & Create Slide HTML
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
-          )}
-
-          {step === 3 && plan && (
-            <Card className="shadow-sm">
-              <CardHeader>
-                <CardTitle className="text-lg flex items-center gap-2">
-                  <LayoutGrid className="size-4 text-emerald-500" />
-                  Design Deck & Export
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="grid gap-4">
-                <p className="text-sm text-muted-foreground">
-                  Review slide visuals on the right. You can request copy updates, layout modifications, or tone adjustments using the chat below.
-                </p>
-
-                <div className="border-t pt-4 grid gap-2">
-                  {approved ? (
-                    <div className="grid gap-2 animate-in fade-in zoom-in-95 duration-200">
-                      <p className="text-xs text-emerald-500 font-medium flex items-center gap-1.5">
-                        <Check className="size-3.5" /> Carousel Approved!
-                      </p>
-                      <ExportButton html={html} />
-                    </div>
-                  ) : (
-                    <Button 
-                      disabled={pending} 
-                      onClick={() => setApproved(true)}
-                      className="w-full"
-                    >
-                      <Eye className="size-4 mr-2" />
-                      Approve Slide Design
-                    </Button>
-                  )}
-                </div>
-              </CardContent>
-            </Card>
-          )}
+          <div ref={chatEndRef} />
         </div>
 
         {/* BOTTOM CHAT COMPOSER */}
-        <div className="p-4 bg-card border border-border rounded-xl shadow-sm flex items-center gap-3 shrink-0">
+        <div className="p-3 bg-card border border-hairline rounded-xl shadow-sm flex items-center gap-2 shrink-0">
           {step === 1 ? (
             <div className="flex-1 relative flex items-center">
               <Input
                 value={idea}
                 onChange={(e) => setIdea(e.target.value)}
-                placeholder="Type your content idea here... (e.g., idempotency di API)"
-                className="pr-12 h-11"
+                placeholder="Ketik ide konten di sini... (e.g. idempotency di API)"
+                className="pr-10 h-10 text-xs"
                 disabled={pending}
                 onKeyDown={(e) => {
                   if (e.key === "Enter") handleBriefGeneration();
@@ -351,7 +362,7 @@ export function Wizard({ models }: { models: ModelId[] }) {
               />
               <Button 
                 size="icon" 
-                className="absolute right-1.5 size-8" 
+                className="absolute right-1 size-8" 
                 disabled={pending || !idea.trim() || !model}
                 onClick={handleBriefGeneration}
               >
@@ -363,8 +374,8 @@ export function Wizard({ models }: { models: ModelId[] }) {
               <Input
                 value={revision}
                 onChange={(e) => setRevision(e.target.value)}
-                placeholder={step === 2 ? "Ask AI to revise the brief outline..." : "Ask AI to change slides... (e.g. perpendek slide 2)"}
-                className="pr-12 h-11"
+                placeholder={step === 2 ? "Ketik instruksi revisi outline..." : "Ketik instruksi revisi slide..."}
+                className="pr-10 h-10 text-xs"
                 disabled={pending || isTyping}
                 onKeyDown={(e) => {
                   if (e.key === "Enter") handleRevisionSend();
@@ -372,7 +383,7 @@ export function Wizard({ models }: { models: ModelId[] }) {
               />
               <Button 
                 size="icon" 
-                className="absolute right-1.5 size-8" 
+                className="absolute right-1 size-8" 
                 disabled={pending || !revision.trim() || isTyping}
                 onClick={handleRevisionSend}
               >
@@ -380,34 +391,79 @@ export function Wizard({ models }: { models: ModelId[] }) {
               </Button>
             </div>
           )}
-          
-          {pending && (
-            <div className="text-xs text-muted-foreground animate-pulse shrink-0 flex items-center gap-1.5 font-mono">
-              <div className="size-2 rounded-full bg-primary animate-ping" />
-              WORKING...
-            </div>
-          )}
         </div>
 
       </div>
 
-      {/* RIGHT COLUMN: Output display (Markdown Brief with Typewriter OR Carousel HTML Iframe) */}
-      <div className="flex flex-col h-full overflow-hidden min-h-0">
+      {/* RIGHT COLUMN: Output display workspace canvas */}
+      <div className="flex flex-col h-full overflow-hidden min-h-0 border border-hairline rounded-xl bg-card shadow-sm">
         
-        {step < 3 ? (
-          <Card className="flex-1 flex flex-col shadow-sm h-full overflow-hidden min-h-0">
-            <CardHeader className="border-b bg-muted/20 py-3 flex flex-row items-center justify-between shrink-0">
-              <CardTitle className="text-sm font-semibold tracking-wider uppercase text-muted-foreground flex items-center gap-1.5">
-                <FileText className="size-3.5" />
-                Live Content Brief
-              </CardTitle>
-              {isTyping && (
-                <span className="text-[10px] bg-indigo-500/10 text-indigo-500 font-mono font-medium px-2 py-0.5 rounded animate-pulse">
-                  Streaming...
-                </span>
-              )}
-            </CardHeader>
-            <CardContent className="flex-1 p-0 relative min-h-0">
+        {/* Workspace Canvas Header Tabs */}
+        <div className="border-b bg-muted/20 px-4 py-2 flex items-center justify-between shrink-0">
+          <div className="flex items-center gap-1.5 p-0.5 bg-muted/50 rounded-lg border border-hairline">
+            <button
+              onClick={() => setActiveTab("brief")}
+              disabled={step < 2}
+              className={`flex items-center gap-1.5 px-3 py-1 rounded-md text-xs font-medium transition-colors ${
+                activeTab === "brief"
+                  ? "bg-card text-foreground shadow-xs"
+                  : "text-muted-foreground hover:text-foreground disabled:opacity-40 disabled:cursor-not-allowed"
+              }`}
+            >
+              <FileText className="size-3.5" />
+              Outline Brief
+            </button>
+            <button
+              onClick={() => setActiveTab("preview")}
+              disabled={step < 3}
+              className={`flex items-center gap-1.5 px-3 py-1 rounded-md text-xs font-medium transition-colors ${
+                activeTab === "preview"
+                  ? "bg-card text-foreground shadow-xs"
+                  : "text-muted-foreground hover:text-foreground disabled:opacity-40 disabled:cursor-not-allowed"
+              }`}
+            >
+              <LayoutGrid className="size-3.5" />
+              Live Design Preview
+            </button>
+          </div>
+
+          {/* Contextual Action Button based on current step */}
+          <div className="flex items-center gap-2">
+            {step === 2 && (
+              <Button
+                size="sm"
+                disabled={pending || isTyping}
+                onClick={handlePlanGeneration}
+                className="h-7 text-xs font-medium gap-1 px-3"
+              >
+                <Check className="size-3.5" />
+                Approve & Render Slide
+              </Button>
+            )}
+            {step === 3 && plan && (
+              <>
+                {approved ? (
+                  <ExportButton html={html} />
+                ) : (
+                  <Button
+                    size="sm"
+                    disabled={pending}
+                    onClick={() => setApproved(true)}
+                    className="h-7 text-xs font-medium gap-1 px-3"
+                  >
+                    <Eye className="size-3.5" />
+                    Approve Design
+                  </Button>
+                )}
+              </>
+            )}
+          </div>
+        </div>
+
+        {/* Workspace Canvas Main Content area */}
+        <div className="flex-1 min-h-0 relative bg-canvas-soft">
+          {activeTab === "brief" ? (
+            <div className="h-full relative flex flex-col p-4">
               <Textarea
                 value={brief}
                 onChange={(e) => {
@@ -416,33 +472,31 @@ export function Wizard({ models }: { models: ModelId[] }) {
                     setFinalBrief(e.target.value);
                   }
                 }}
-                disabled={isTyping}
-                placeholder="The content outline brief will write out here once generated..."
-                className="w-full h-full border-0 rounded-t-none resize-none focus-visible:ring-0 font-mono text-sm leading-relaxed p-6 bg-transparent overflow-y-auto"
+                disabled={isTyping || step < 2}
+                placeholder="Tulis ide di panel kiri untuk menjabarkan outline brief di sini..."
+                className="w-full h-full border-0 resize-none focus-visible:ring-0 font-mono text-sm leading-relaxed p-4 bg-transparent outline-none flex-1 min-h-0"
               />
               
-              {/* Typewriter pulse cursor overlay when writing */}
               {isTyping && (
-                <div className="absolute bottom-6 right-6 flex items-center gap-1 text-[11px] font-mono text-muted-foreground select-none pointer-events-none">
+                <div className="absolute bottom-6 right-6 flex items-center gap-1.5 text-[11px] font-mono text-muted-foreground select-none pointer-events-none bg-card/85 p-2 rounded-lg border border-hairline shadow-sm backdrop-blur-xs">
                   <div className="size-1.5 rounded-full bg-primary animate-ping" />
-                  typing brief
+                  Streaming brief outline...
                 </div>
               )}
-            </CardContent>
-          </Card>
-        ) : (
-          <Card className="shadow-sm flex flex-col h-full overflow-hidden min-h-0">
-            <CardHeader className="border-b bg-muted/20 py-3 shrink-0">
-              <CardTitle className="text-sm font-semibold tracking-wider uppercase text-muted-foreground flex items-center gap-1.5">
-                <LayoutGrid className="size-3.5" />
-                Live Slide Preview
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="flex-1 p-4 flex items-center justify-center bg-canvas-soft-2 overflow-y-auto min-h-0">
-              <PreviewFrame html={html} slideCount={plan ? plan.slides.length : 0} />
-            </CardContent>
-          </Card>
-        )}
+            </div>
+          ) : (
+            <div className="h-full overflow-y-auto flex items-center justify-center p-4 min-h-0">
+              {plan ? (
+                <PreviewFrame html={html} slideCount={plan.slides.length} />
+              ) : (
+                <div className="text-center p-8 text-muted-foreground">
+                  <LayoutGrid className="size-8 mx-auto mb-2 text-muted-foreground/50 animate-pulse" />
+                  <p className="text-xs">Slide preview belum siap. Setujui brief outline terlebih dahulu.</p>
+                </div>
+              )}
+            </div>
+          )}
+        </div>
 
       </div>
 
