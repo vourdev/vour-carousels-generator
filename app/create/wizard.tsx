@@ -372,7 +372,7 @@ export function Wizard({ models }: { models: ModelId[] }) {
     <div className="grid lg:grid-cols-[400px_1fr] gap-6 items-stretch lg:h-full lg:overflow-hidden relative pb-16 lg:pb-0 flex-1 min-h-0">
       
       {/* LEFT COLUMN: Workspace sidebar & Chat console */}
-      <div className="flex flex-col h-full gap-4 overflow-hidden min-h-0">
+      <div className="flex flex-col h-full gap-4 overflow-hidden min-h-0 px-0.5">
         
         {/* Workspace controls & Stepper */}
         <Card className="shadow-sm shrink-0">
@@ -547,7 +547,7 @@ export function Wizard({ models }: { models: ModelId[] }) {
       <div className="flex flex-col h-full overflow-hidden min-h-0 border border-hairline rounded-xl bg-card shadow-sm">
         
         {/* Workspace Canvas Header Tabs */}
-        <div className="border-b bg-muted/20 px-4 py-2 flex items-center justify-between shrink-0">
+        <div className="border-b bg-muted/20 px-4 py-2 flex flex-col md:flex-row md:items-center gap-2 md:justify-between shrink-0">
           <div className="flex items-center gap-1.5 p-0.5 bg-muted/50 rounded-lg border border-hairline">
             <button
               onClick={() => setActiveTab("brief")}
@@ -627,7 +627,7 @@ export function Wizard({ models }: { models: ModelId[] }) {
             <div className="h-full relative flex flex-col">
               
               {/* Sub-header for Markdown format view toggles */}
-              <div className="flex items-center justify-between border-b px-4 py-1.5 bg-muted/10 shrink-0">
+              <div className="flex flex-col md:flex-row md:items-center gap-1.5 md:justify-between border-b px-4 py-1.5 bg-muted/10 shrink-0">
                 <span className="text-[10px] text-muted-foreground uppercase font-semibold">Outline Format View</span>
                 <div className="flex items-center gap-1 bg-muted/40 p-0.5 rounded-md border border-hairline">
                   <button

@@ -136,7 +136,7 @@ export function PreviewSandbox() {
     <div className="grid lg:grid-cols-[400px_1fr] gap-6 items-stretch lg:h-full lg:overflow-hidden relative pb-16 lg:pb-0 flex-1 min-h-0">
       
       {/* LEFT COLUMN: Slides Content Editor */}
-      <div className="flex flex-col h-full gap-4 overflow-hidden min-h-0">
+      <div className="flex flex-col h-full gap-4 overflow-hidden min-h-0 px-0.5">
         
         {/* Navigation Sidebar Card */}
         <Card className="shadow-sm shrink-0">
