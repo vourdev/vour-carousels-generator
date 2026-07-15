@@ -1,4 +1,8 @@
 @import "tailwindcss";
+@import "tw-animate-css";
+@import "shadcn/tailwind.css";
+
+@custom-variant dark (&:is(.dark *));
 
 /* Vercel-inspired design tokens — vercel-DESIGN.md (website UI ONLY; carousel
    content uses the Vour Dev editorial system, not this). Exposed via @theme so
@@ -12,7 +16,6 @@
   --color-mute: #888888;
   --color-hairline: #ebebeb;
   --color-hairline-strong: #a1a1a1;
-  --color-primary: #171717;
   --color-on-primary: #ffffff;
   --color-link: #0070f3;
   --color-error: #ee0000;
@@ -32,32 +35,15 @@
   --font-mono: "Geist Mono", "JetBrains Mono", ui-monospace, SFMono-Regular, monospace;
 }
 
-/* Dark mode flips the ink/paper duet by overriding the theme custom properties. */
-@media (prefers-color-scheme: dark) {
-  :root {
-    --color-canvas: #0a0a0a;
-    --color-canvas-soft: #111111;
-    --color-canvas-soft-2: #171717;
-    --color-ink: #ededed;
-    --color-body: #a1a1a1;
-    --color-mute: #8f8f8f;
-    --color-hairline: #2a2a2a;
-    --color-hairline-strong: #4d4d4d;
-    --color-primary: #ededed;
-    --color-on-primary: #0a0a0a;
-  }
-}
-
 @layer base {
   html {
     color-scheme: light dark;
+    @apply font-sans;
   }
   body {
-    background-color: var(--color-canvas);
-    color: var(--color-ink);
-    font-family: var(--font-sans);
     font-feature-settings: "ss01", "ss02";
     -webkit-font-smoothing: antialiased;
+    @apply bg-background text-foreground;
   }
   h1,
   h2,
@@ -68,7 +54,10 @@
   }
   ::selection {
     background: var(--color-ink);
-    color: #f2f2f2;
+    color: var(--color-on-primary);
+  }
+  * {
+    @apply border-border outline-ring/50;
   }
 }
 
@@ -78,4 +67,167 @@
   -webkit-background-clip: text;
   background-clip: text;
   color: transparent;
+}
+
+/* ─── shadcn theme tokens mapped to vercel-DESIGN.md ─── */
+@theme inline {
+  --font-heading: var(--font-sans);
+  --font-sans: var(--font-sans);
+  --color-sidebar-ring: var(--sidebar-ring);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar: var(--sidebar);
+  --color-chart-5: var(--chart-5);
+  --color-chart-4: var(--chart-4);
+  --color-chart-3: var(--chart-3);
+  --color-chart-2: var(--chart-2);
+  --color-chart-1: var(--chart-1);
+  --color-ring: var(--ring);
+  --color-input: var(--input);
+  --color-border: var(--border);
+  --color-destructive: var(--destructive);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-accent: var(--accent);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-muted: var(--muted);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-secondary: var(--secondary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-primary: var(--primary);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-popover: var(--popover);
+  --color-card-foreground: var(--card-foreground);
+  --color-card: var(--card);
+  --color-foreground: var(--foreground);
+  --color-background: var(--background);
+  --radius-sm: calc(var(--radius) * 0.6);
+  --radius-md: calc(var(--radius) * 0.8);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) * 1.4);
+  --radius-2xl: calc(var(--radius) * 1.8);
+  --radius-3xl: calc(var(--radius) * 2.2);
+  --radius-4xl: calc(var(--radius) * 2.6);
+}
+
+/* Light mode — mapped from vercel-DESIGN.md tokens */
+:root {
+  --background: #fafafa;       /* canvas-soft — page bg */
+  --foreground: #171717;       /* ink */
+  --card: #ffffff;             /* canvas — card surfaces */
+  --card-foreground: #171717;  /* ink */
+  --popover: #ffffff;          /* canvas */
+  --popover-foreground: #171717;
+  --primary: #171717;          /* ink — the single black CTA */
+  --primary-foreground: #ffffff; /* on-primary */
+  --secondary: #f5f5f5;        /* canvas-soft-2 */
+  --secondary-foreground: #171717;
+  --muted: #fafafa;            /* canvas-soft */
+  --muted-foreground: #888888; /* mute */
+  --accent: #f5f5f5;           /* canvas-soft-2 */
+  --accent-foreground: #171717;
+  --destructive: #ee0000;      /* error */
+  --border: #ebebeb;           /* hairline */
+  --input: #ebebeb;            /* hairline */
+  --ring: #a1a1a1;             /* hairline-strong */
+  --chart-1: #007cf0;          /* develop-start */
+  --chart-2: #7928ca;          /* preview-start */
+  --chart-3: #ff0080;          /* preview-end */
+  --chart-4: #ff4d4d;          /* ship-start */
+  --chart-5: #f9cb28;          /* ship-end */
+  --radius: 0.5rem;            /* 8px — marketing radius */
+  --sidebar: #fafafa;
+  --sidebar-foreground: #171717;
+  --sidebar-primary: #171717;
+  --sidebar-primary-foreground: #ffffff;
+  --sidebar-accent: #f5f5f5;
+  --sidebar-accent-foreground: #171717;
+  --sidebar-border: #ebebeb;
+  --sidebar-ring: #a1a1a1;
+}
+
+/* Dark mode — ink/paper duet flip */
+.dark {
+  --background: #0a0a0a;       /* dark canvas */
+  --foreground: #ededed;       /* dark ink */
+  --card: #111111;             /* dark canvas-soft */
+  --card-foreground: #ededed;
+  --popover: #111111;
+  --popover-foreground: #ededed;
+  --primary: #ededed;          /* flipped ink */
+  --primary-foreground: #0a0a0a;
+  --secondary: #171717;        /* dark canvas-soft-2 */
+  --secondary-foreground: #ededed;
+  --muted: #171717;
+  --muted-foreground: #8f8f8f;
+  --accent: #171717;
+  --accent-foreground: #ededed;
+  --destructive: #ff4444;
+  --border: #2a2a2a;           /* dark hairline */
+  --input: #2a2a2a;
+  --ring: #4d4d4d;             /* dark hairline-strong */
+  --chart-1: #00dfd8;
+  --chart-2: #7928ca;
+  --chart-3: #ff0080;
+  --chart-4: #ff4d4d;
+  --chart-5: #f9cb28;
+  --sidebar: #111111;
+  --sidebar-foreground: #ededed;
+  --sidebar-primary: #ededed;
+  --sidebar-primary-foreground: #0a0a0a;
+  --sidebar-accent: #171717;
+  --sidebar-accent-foreground: #ededed;
+  --sidebar-border: #2a2a2a;
+  --sidebar-ring: #4d4d4d;
+}
+
+/* System dark mode preference support */
+@media (prefers-color-scheme: dark) {
+  :root:not(.light) {
+    --background: #0a0a0a;
+    --foreground: #ededed;
+    --card: #111111;
+    --card-foreground: #ededed;
+    --popover: #111111;
+    --popover-foreground: #ededed;
+    --primary: #ededed;
+    --primary-foreground: #0a0a0a;
+    --secondary: #171717;
+    --secondary-foreground: #ededed;
+    --muted: #171717;
+    --muted-foreground: #8f8f8f;
+    --accent: #171717;
+    --accent-foreground: #ededed;
+    --destructive: #ff4444;
+    --border: #2a2a2a;
+    --input: #2a2a2a;
+    --ring: #4d4d4d;
+    --chart-1: #00dfd8;
+    --chart-2: #7928ca;
+    --chart-3: #ff0080;
+    --chart-4: #ff4d4d;
+    --chart-5: #f9cb28;
+    --sidebar: #111111;
+    --sidebar-foreground: #ededed;
+    --sidebar-primary: #ededed;
+    --sidebar-primary-foreground: #0a0a0a;
+    --sidebar-accent: #171717;
+    --sidebar-accent-foreground: #ededed;
+    --sidebar-border: #2a2a2a;
+    --sidebar-ring: #4d4d4d;
+
+    /* Override Vour design tokens for dark mode */
+    --color-canvas: #0a0a0a;
+    --color-canvas-soft: #111111;
+    --color-canvas-soft-2: #171717;
+    --color-ink: #ededed;
+    --color-body: #a1a1a1;
+    --color-mute: #8f8f8f;
+    --color-hairline: #2a2a2a;
+    --color-hairline-strong: #4d4d4d;
+    --color-on-primary: #0a0a0a;
+  }
 }

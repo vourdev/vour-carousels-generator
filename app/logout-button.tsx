@@ -2,18 +2,20 @@
 
 import { useRouter } from "next/navigation";
 import { signOut } from "@/lib/auth-client";
+import { Button } from "@/components/ui/button";
 
 export function LogoutButton() {
   const router = useRouter();
   return (
-    <button
+    <Button
+      variant="outline"
+      size="sm"
       onClick={async () => {
         await signOut();
         router.push("/login");
       }}
-      className="h-8 rounded-pill border border-hairline bg-canvas px-3.5 text-sm font-medium text-ink"
     >
       Sign out
-    </button>
+    </Button>
   );
 }

@@ -8,7 +8,7 @@ describe("app UI theme tokens (vercel-DESIGN.md)", () => {
   it("defines the Vercel-inspired palette in @theme", () => {
     expect(css).toContain("--color-canvas: #ffffff");
     expect(css).toContain("--color-ink: #171717");
-    expect(css).toContain("--color-primary: #171717");
+    expect(css).toContain("--primary: #171717");
   });
   it("defines the brand mesh-gradient stops", () => {
     expect(css).toContain("--color-grad-develop-start: #007cf0");
