@@ -201,13 +201,13 @@ export function Wizard({ models }: { models: ModelId[] }) {
   }
 
   return (
-    <div className="grid lg:grid-cols-[1.2fr_1fr] gap-8 items-start relative min-h-[750px] pb-24">
+    <div className="grid lg:grid-cols-[1.2fr_1fr] gap-8 items-stretch lg:h-[calc(100vh-130px)] lg:overflow-hidden relative pb-16 lg:pb-0">
       
       {/* LEFT COLUMN: Workspace control and Chat input */}
-      <div className="grid gap-6">
+      <div className="flex flex-col h-full gap-4 overflow-hidden min-h-0">
         
         {/* Stepper Header */}
-        <Card className="shadow-sm">
+        <Card className="shadow-sm shrink-0">
           <CardContent className="p-4 flex items-center justify-between">
             <div className="flex items-center gap-2">
               <span className={`flex items-center justify-center size-6 rounded-full text-xs font-semibold ${step >= 1 ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground"}`}>1</span>
@@ -232,171 +232,171 @@ export function Wizard({ models }: { models: ModelId[] }) {
         </Card>
 
         {/* Dynamic step instructions & workspace controls */}
-        {step === 1 && (
-          <Card className="shadow-sm">
-            <CardHeader>
-              <CardTitle className="text-lg flex items-center gap-2">
-                <Sparkle className="size-4 text-indigo-500" />
-                Start Your Content Journey
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="grid gap-4">
-              <p className="text-sm text-muted-foreground">
-                Enter your core topic, programming concept, or tutorial idea below. The AI will outline the flow and structure in the next step.
-              </p>
-              
-              <div className="grid gap-2">
-                <label className="text-xs font-semibold text-muted-foreground">SELECT AI PROVIDER</label>
-                <Select value={model} onValueChange={(v) => setModel(v as ModelId)}>
-                  <SelectTrigger className="w-full">
-                    <div className="flex items-center gap-2">
-                      {model && modelDetails[model]?.icon}
-                      <SelectValue placeholder="Model" />
-                    </div>
-                  </SelectTrigger>
-                  <SelectContent>
-                    {models.map((m) => (
-                      <SelectItem key={m} value={m}>
-                        <div className="flex items-center gap-2">
-                          {modelDetails[m]?.icon}
-                          <span>{modelDetails[m]?.label}</span>
-                        </div>
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-            </CardContent>
-          </Card>
-        )}
+        <div className="flex-1 overflow-y-auto pr-1 grid gap-4 min-h-0">
+          {step === 1 && (
+            <Card className="shadow-sm">
+              <CardHeader>
+                <CardTitle className="text-lg flex items-center gap-2">
+                  <Sparkle className="size-4 text-indigo-500" />
+                  Start Your Content Journey
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="grid gap-4">
+                <p className="text-sm text-muted-foreground">
+                  Enter your core topic, programming concept, or tutorial idea below. The AI will outline the flow and structure in the next step.
+                </p>
+                
+                <div className="grid gap-2">
+                  <label className="text-xs font-semibold text-muted-foreground">SELECT AI PROVIDER</label>
+                  <Select value={model} onValueChange={(v) => setModel(v as ModelId)}>
+                    <SelectTrigger className="w-full">
+                      <div className="flex items-center gap-2">
+                        {model && modelDetails[model]?.icon}
+                        <SelectValue placeholder="Model" />
+                      </div>
+                    </SelectTrigger>
+                    <SelectContent>
+                      {models.map((m) => (
+                        <SelectItem key={m} value={m}>
+                          <div className="flex items-center gap-2">
+                            {modelDetails[m]?.icon}
+                            <span>{modelDetails[m]?.label}</span>
+                          </div>
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              </CardContent>
+            </Card>
+          )}
 
-        {step === 2 && (
-          <Card className="shadow-sm">
-            <CardHeader>
-              <CardTitle className="text-lg flex items-center gap-2">
-                <FileText className="size-4 text-blue-500" />
-                Refine Content Brief
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="grid gap-4">
-              <p className="text-sm text-muted-foreground">
-                Read, edit, or revise the generated outline on the right. Once it covers all key takeaways, approve it to render the design.
-              </p>
+          {step === 2 && (
+            <Card className="shadow-sm">
+              <CardHeader>
+                <CardTitle className="text-lg flex items-center gap-2">
+                  <FileText className="size-4 text-blue-500" />
+                  Refine Content Brief
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="grid gap-4">
+                <p className="text-sm text-muted-foreground">
+                  Read, edit, or revise the generated outline on the right. Once it covers all key takeaways, approve it to render the design.
+                </p>
 
-              <div className="flex items-center gap-2">
-                <Button 
-                  disabled={pending || isTyping} 
-                  onClick={handlePlanGeneration}
-                  className="w-full"
-                >
-                  <Check className="size-4 mr-2" />
-                  Approve & Create Slide HTML
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
-        )}
-
-        {step === 3 && plan && (
-          <Card className="shadow-sm">
-            <CardHeader>
-              <CardTitle className="text-lg flex items-center gap-2">
-                <LayoutGrid className="size-4 text-emerald-500" />
-                Design Deck & Export
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="grid gap-4">
-              <p className="text-sm text-muted-foreground">
-                Review slide visuals on the right. You can request copy updates, layout modifications, or tone adjustments using the chat below.
-              </p>
-
-              <div className="border-t pt-4 grid gap-2">
-                {approved ? (
-                  <div className="grid gap-2 animate-in fade-in zoom-in-95 duration-200">
-                    <p className="text-xs text-emerald-500 font-medium flex items-center gap-1.5">
-                      <Check className="size-3.5" /> Carousel Approved!
-                    </p>
-                    <ExportButton html={html} />
-                  </div>
-                ) : (
+                <div className="flex items-center gap-2">
                   <Button 
-                    disabled={pending} 
-                    onClick={() => setApproved(true)}
+                    disabled={pending || isTyping} 
+                    onClick={handlePlanGeneration}
                     className="w-full"
                   >
-                    <Eye className="size-4 mr-2" />
-                    Approve Slide Design
+                    <Check className="size-4 mr-2" />
+                    Approve & Create Slide HTML
                   </Button>
-                )}
-              </div>
-            </CardContent>
-          </Card>
-        )}
+                </div>
+              </CardContent>
+            </Card>
+          )}
 
-        {/* BOTTOM STICKY CHAT COMPOSER */}
-        <div className="fixed bottom-0 left-0 right-0 p-4 bg-background/80 backdrop-blur-md border-t border-border z-40">
-          <div className="mx-auto max-w-[1400px] flex items-center gap-3">
-            {step === 1 ? (
-              <div className="flex-1 relative flex items-center">
-                <Input
-                  value={idea}
-                  onChange={(e) => setIdea(e.target.value)}
-                  placeholder="Type your content idea here... (e.g., idempotency di API)"
-                  className="pr-12 h-11"
-                  disabled={pending}
-                  onKeyDown={(e) => {
-                    if (e.key === "Enter") handleBriefGeneration();
-                  }}
-                />
-                <Button 
-                  size="icon" 
-                  className="absolute right-1.5 size-8" 
-                  disabled={pending || !idea.trim() || !model}
-                  onClick={handleBriefGeneration}
-                >
-                  <Send className="size-3.5" />
-                </Button>
-              </div>
-            ) : (
-              <div className="flex-1 relative flex items-center">
-                <Input
-                  value={revision}
-                  onChange={(e) => setRevision(e.target.value)}
-                  placeholder={step === 2 ? "Ask AI to revise the brief outline..." : "Ask AI to change slides... (e.g. perpendek slide 2)"}
-                  className="pr-12 h-11"
-                  disabled={pending || isTyping}
-                  onKeyDown={(e) => {
-                    if (e.key === "Enter") handleRevisionSend();
-                  }}
-                />
-                <Button 
-                  size="icon" 
-                  className="absolute right-1.5 size-8" 
-                  disabled={pending || !revision.trim() || isTyping}
-                  onClick={handleRevisionSend}
-                >
-                  <Send className="size-3.5" />
-                </Button>
-              </div>
-            )}
-            
-            {pending && (
-              <div className="text-xs text-muted-foreground animate-pulse shrink-0 flex items-center gap-1.5 font-mono">
-                <div className="size-2 rounded-full bg-primary animate-ping" />
-                WORKING...
-              </div>
-            )}
-          </div>
+          {step === 3 && plan && (
+            <Card className="shadow-sm">
+              <CardHeader>
+                <CardTitle className="text-lg flex items-center gap-2">
+                  <LayoutGrid className="size-4 text-emerald-500" />
+                  Design Deck & Export
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="grid gap-4">
+                <p className="text-sm text-muted-foreground">
+                  Review slide visuals on the right. You can request copy updates, layout modifications, or tone adjustments using the chat below.
+                </p>
+
+                <div className="border-t pt-4 grid gap-2">
+                  {approved ? (
+                    <div className="grid gap-2 animate-in fade-in zoom-in-95 duration-200">
+                      <p className="text-xs text-emerald-500 font-medium flex items-center gap-1.5">
+                        <Check className="size-3.5" /> Carousel Approved!
+                      </p>
+                      <ExportButton html={html} />
+                    </div>
+                  ) : (
+                    <Button 
+                      disabled={pending} 
+                      onClick={() => setApproved(true)}
+                      className="w-full"
+                    >
+                      <Eye className="size-4 mr-2" />
+                      Approve Slide Design
+                    </Button>
+                  )}
+                </div>
+              </CardContent>
+            </Card>
+          )}
+        </div>
+
+        {/* BOTTOM CHAT COMPOSER */}
+        <div className="p-4 bg-card border border-border rounded-xl shadow-sm flex items-center gap-3 shrink-0">
+          {step === 1 ? (
+            <div className="flex-1 relative flex items-center">
+              <Input
+                value={idea}
+                onChange={(e) => setIdea(e.target.value)}
+                placeholder="Type your content idea here... (e.g., idempotency di API)"
+                className="pr-12 h-11"
+                disabled={pending}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") handleBriefGeneration();
+                }}
+              />
+              <Button 
+                size="icon" 
+                className="absolute right-1.5 size-8" 
+                disabled={pending || !idea.trim() || !model}
+                onClick={handleBriefGeneration}
+              >
+                <Send className="size-3.5" />
+              </Button>
+            </div>
+          ) : (
+            <div className="flex-1 relative flex items-center">
+              <Input
+                value={revision}
+                onChange={(e) => setRevision(e.target.value)}
+                placeholder={step === 2 ? "Ask AI to revise the brief outline..." : "Ask AI to change slides... (e.g. perpendek slide 2)"}
+                className="pr-12 h-11"
+                disabled={pending || isTyping}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") handleRevisionSend();
+                }}
+              />
+              <Button 
+                size="icon" 
+                className="absolute right-1.5 size-8" 
+                disabled={pending || !revision.trim() || isTyping}
+                onClick={handleRevisionSend}
+              >
+                <Send className="size-3.5" />
+              </Button>
+            </div>
+          )}
+          
+          {pending && (
+            <div className="text-xs text-muted-foreground animate-pulse shrink-0 flex items-center gap-1.5 font-mono">
+              <div className="size-2 rounded-full bg-primary animate-ping" />
+              WORKING...
+            </div>
+          )}
         </div>
 
       </div>
 
       {/* RIGHT COLUMN: Output display (Markdown Brief with Typewriter OR Carousel HTML Iframe) */}
-      <div className="grid gap-4 self-stretch">
+      <div className="flex flex-col h-full overflow-hidden min-h-0">
         
         {step < 3 ? (
-          <Card className="min-h-[500px] flex flex-col shadow-sm">
-            <CardHeader className="border-b bg-muted/20 py-3 flex flex-row items-center justify-between">
+          <Card className="flex-1 flex flex-col shadow-sm h-full overflow-hidden min-h-0">
+            <CardHeader className="border-b bg-muted/20 py-3 flex flex-row items-center justify-between shrink-0">
               <CardTitle className="text-sm font-semibold tracking-wider uppercase text-muted-foreground flex items-center gap-1.5">
                 <FileText className="size-3.5" />
                 Live Content Brief
@@ -407,7 +407,7 @@ export function Wizard({ models }: { models: ModelId[] }) {
                 </span>
               )}
             </CardHeader>
-            <CardContent className="flex-1 p-0 relative">
+            <CardContent className="flex-1 p-0 relative min-h-0">
               <Textarea
                 value={brief}
                 onChange={(e) => {
@@ -418,7 +418,7 @@ export function Wizard({ models }: { models: ModelId[] }) {
                 }}
                 disabled={isTyping}
                 placeholder="The content outline brief will write out here once generated..."
-                className="w-full h-full min-h-[500px] border-0 rounded-t-none resize-none focus-visible:ring-0 font-mono text-sm leading-relaxed p-6 bg-transparent"
+                className="w-full h-full border-0 rounded-t-none resize-none focus-visible:ring-0 font-mono text-sm leading-relaxed p-6 bg-transparent overflow-y-auto"
               />
               
               {/* Typewriter pulse cursor overlay when writing */}
@@ -431,14 +431,14 @@ export function Wizard({ models }: { models: ModelId[] }) {
             </CardContent>
           </Card>
         ) : (
-          <Card className="shadow-sm flex flex-col">
-            <CardHeader className="border-b bg-muted/20 py-3">
+          <Card className="shadow-sm flex flex-col h-full overflow-hidden min-h-0">
+            <CardHeader className="border-b bg-muted/20 py-3 shrink-0">
               <CardTitle className="text-sm font-semibold tracking-wider uppercase text-muted-foreground flex items-center gap-1.5">
                 <LayoutGrid className="size-3.5" />
                 Live Slide Preview
               </CardTitle>
             </CardHeader>
-            <CardContent className="p-4 flex items-center justify-center bg-canvas-soft-2 min-h-[500px]">
+            <CardContent className="flex-1 p-4 flex items-center justify-center bg-canvas-soft-2 overflow-y-auto min-h-0">
               <PreviewFrame html={html} slideCount={plan ? plan.slides.length : 0} />
             </CardContent>
           </Card>
