@@ -2,6 +2,15 @@ import { toBlob } from "html-to-image";
 
 const SLIDE_W = 1080;
 const SLIDE_H = 1350;
+const READY_TIMEOUT_MS = 4000;
+
+/** Resolve when `p` settles or after `ms` — never hangs. */
+function withTimeout(p: Promise<unknown>, ms: number): Promise<void> {
+  return Promise.race([
+    p.then(() => undefined),
+    new Promise<void>((r) => setTimeout(r, ms)),
+  ]);
+}
 
 /** Load an assembled carousel document in a hidden, real-size iframe. */
 function mountHiddenIframe(html: string): Promise<HTMLIFrameElement> {
@@ -16,45 +25,59 @@ function mountHiddenIframe(html: string): Promise<HTMLIFrameElement> {
       height: `${SLIDE_H}px`,
       border: "0",
     });
-    iframe.onload = () => resolve(iframe);
-    iframe.onerror = () => reject(new Error("export iframe failed to load"));
+    // Fallback in case onload never fires.
+    const timer = setTimeout(() => resolve(iframe), READY_TIMEOUT_MS);
+    iframe.onload = () => {
+      clearTimeout(timer);
+      resolve(iframe);
+    };
+    iframe.onerror = () => {
+      clearTimeout(timer);
+      reject(new Error("export iframe failed to load"));
+    };
     iframe.srcdoc = html;
     document.body.appendChild(iframe);
   });
 }
 
-/** Wait for fonts + Iconify web components to finish rendering. */
-async function waitForReady(doc: Document): Promise<void> {
-  await doc.fonts.ready;
+/** Wait for fonts + Iconify to render — each capped so it can never hang. */
+async function waitForReady(doc: Document, win: Window): Promise<void> {
+  await withTimeout(doc.fonts.ready, READY_TIMEOUT_MS);
+
   const icons = Array.from(doc.querySelectorAll("iconify-icon")) as HTMLElement[];
-  await Promise.all(
-    icons.map(
-      (el) =>
-        new Promise<void>((res) => {
-          const check = () => {
-            if (el.shadowRoot?.querySelector("svg")) return res();
-            requestAnimationFrame(check);
-          };
-          check();
-        })
-    )
-  );
-  // Two frames to let layout + paint settle (mirrors the script's post-load wait).
+  if (icons.length) {
+    const allRendered = Promise.all(
+      icons.map(
+        (el) =>
+          new Promise<void>((res) => {
+            const check = () => {
+              // Iconify renders into shadow DOM (open) or, in some builds, light DOM.
+              if (el.shadowRoot?.querySelector("svg") || el.querySelector("svg")) return res();
+              win.requestAnimationFrame(check);
+            };
+            check();
+          })
+      )
+    );
+    await withTimeout(allRendered, READY_TIMEOUT_MS);
+  }
+
+  // Two frames to let layout + paint settle.
   await new Promise<void>((r) =>
-    requestAnimationFrame(() => requestAnimationFrame(() => r()))
+    win.requestAnimationFrame(() => win.requestAnimationFrame(() => r()))
   );
 }
 
-/** Copy each <iconify-icon>'s shadow SVG into the light DOM so it is captured. */
+/** Copy each <iconify-icon>'s rendered SVG into the light DOM so it is captured. */
 function inlineIcons(doc: Document): void {
   for (const el of Array.from(doc.querySelectorAll("iconify-icon"))) {
     const host = el as HTMLElement;
-    const svg = host.shadowRoot?.querySelector("svg");
+    const svg = host.shadowRoot?.querySelector("svg") ?? host.querySelector("svg");
     if (!svg) continue;
     const clone = svg.cloneNode(true) as SVGElement;
     const rect = host.getBoundingClientRect();
-    clone.setAttribute("width", `${rect.width}`);
-    clone.setAttribute("height", `${rect.height}`);
+    if (rect.width) clone.setAttribute("width", `${rect.width}`);
+    if (rect.height) clone.setAttribute("height", `${rect.height}`);
     clone.style.verticalAlign = "middle";
     host.replaceWith(clone);
   }
@@ -70,11 +93,14 @@ export async function captureCarousel(
   const iframe = await mountHiddenIframe(html);
   try {
     const doc = iframe.contentDocument;
-    if (!doc) throw new Error("export iframe has no document");
-    await waitForReady(doc);
+    const win = iframe.contentWindow;
+    if (!doc || !win) throw new Error("export iframe has no document");
+    await waitForReady(doc, win);
     inlineIcons(doc);
 
     const sections = Array.from(doc.querySelectorAll("section")) as HTMLElement[];
+    if (!sections.length) throw new Error("no slides found to export");
+
     const blobs: Blob[] = [];
     for (const section of sections) {
       const blob = await toBlob(section, {
