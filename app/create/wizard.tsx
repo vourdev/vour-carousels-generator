@@ -213,6 +213,8 @@ export function Wizard({ models }: { models: ModelId[] }) {
   const [carouselId, setCarouselId] = useState<string | null>(null);
   const [uploadedHtml, setUploadedHtml] = useState<string | null>(null);
   const htmlInputRef = useRef<HTMLInputElement>(null);
+  // Mobile shows one panel at a time (desktop keeps the 2-col layout).
+  const [mobilePanel, setMobilePanel] = useState<"chat" | "canvas">("chat");
 
   const html = useMemo(
     () => uploadedHtml ?? (plan ? assembleCarousel(plan) : ""),
@@ -283,6 +285,12 @@ export function Wizard({ models }: { models: ModelId[] }) {
     )}`;
     setDueAt(formatted);
   }, []);
+
+  // Mobile: follow the flow — Chat while ideating (steps 1-2), Canvas once
+  // there's output to review (steps 3+). Desktop ignores this (shows both).
+  useEffect(() => {
+    setMobilePanel(step >= 3 ? "canvas" : "chat");
+  }, [step]);
 
   // Fetch publishing channels config
   useEffect(() => {
@@ -617,10 +625,28 @@ export function Wizard({ models }: { models: ModelId[] }) {
   }
 
   return (
-    <div className="grid lg:grid-cols-[400px_1fr] gap-6 items-stretch lg:h-full lg:overflow-hidden relative pb-16 lg:pb-0 flex-1 min-h-0">
-      
+    <div className="flex flex-col gap-3 lg:h-full min-h-0 flex-1">
+
+      {/* Mobile-only panel toggle (desktop shows both columns side by side). */}
+      <div className="flex lg:hidden items-center gap-1 p-0.5 bg-muted/50 rounded-lg border border-hairline shrink-0">
+        <button
+          onClick={() => setMobilePanel("chat")}
+          className={`flex-1 py-2 rounded-md text-xs font-medium transition-colors ${mobilePanel === "chat" ? "bg-card text-foreground shadow-xs" : "text-muted-foreground"}`}
+        >
+          Chat & Controls
+        </button>
+        <button
+          onClick={() => setMobilePanel("canvas")}
+          className={`flex-1 py-2 rounded-md text-xs font-medium transition-colors ${mobilePanel === "canvas" ? "bg-card text-foreground shadow-xs" : "text-muted-foreground"}`}
+        >
+          Canvas
+        </button>
+      </div>
+
+    <div className="grid lg:grid-cols-[400px_1fr] gap-4 lg:gap-6 items-stretch lg:h-full lg:overflow-hidden relative pb-16 lg:pb-0 flex-1 min-h-0">
+
       {/* LEFT COLUMN: Workspace sidebar & Chat console */}
-      <div className="flex flex-col h-full gap-4 overflow-hidden min-h-0 px-0.5">
+      <div className={`${mobilePanel === "chat" ? "flex" : "hidden"} lg:flex flex-col h-full gap-4 overflow-hidden min-h-0 px-0.5`}>
         
         {/* Workspace controls & Stepper */}
         <Card className="shadow-sm shrink-0">
@@ -823,7 +849,7 @@ export function Wizard({ models }: { models: ModelId[] }) {
       </div>
 
       {/* RIGHT COLUMN: Output display workspace canvas */}
-      <div className="flex flex-col h-full overflow-hidden min-h-0 border border-hairline rounded-xl bg-card shadow-sm">
+      <div className={`${mobilePanel === "canvas" ? "flex" : "hidden"} lg:flex flex-col h-full overflow-hidden min-h-0 border border-hairline rounded-xl bg-card shadow-sm`}>
         
         {/* Workspace Canvas Header Tabs */}
         <div className="border-b bg-muted/20 px-4 py-2 flex flex-col md:flex-row md:items-center gap-2 md:justify-between shrink-0">
@@ -1225,6 +1251,7 @@ export function Wizard({ models }: { models: ModelId[] }) {
 
       </div>
 
+    </div>
     </div>
   );
 }
