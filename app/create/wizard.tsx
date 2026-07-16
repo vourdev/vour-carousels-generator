@@ -20,7 +20,7 @@ import { captureCarousel } from "@/lib/export/capture";
 import type { ModelId } from "@/lib/ai/registry";
 import type { SlidePlan } from "@/lib/ds/schema";
 import { briefAction, planAction, reviseAction, uploadImagesAction, publishAction, getPublishingConfigAction } from "./actions";
-import { Sparkles, Brain, Zap, RotateCcw, Check, Send, Eye, FileText, LayoutGrid, User, Upload, Clock, CheckCircle2, XCircle, AlertCircle, Calendar } from "lucide-react";
+import { Sparkles, Brain, Zap, RotateCcw, Check, Send, Eye, FileText, LayoutGrid, User, Upload, Clock, CheckCircle2, XCircle, AlertCircle, Calendar, Globe } from "lucide-react";
 import { toast } from "sonner";
 
 interface Message {
@@ -41,6 +41,10 @@ const modelDetails: Record<string, { label: string; icon: React.ReactNode }> = {
   mimo: {
     label: "MIMO",
     icon: <Zap className="size-4 text-amber-500 shrink-0" />,
+  },
+  openrouter: {
+    label: "OpenRouter",
+    icon: <Globe className="size-4 text-rose-500 shrink-0" />,
   },
 };
 

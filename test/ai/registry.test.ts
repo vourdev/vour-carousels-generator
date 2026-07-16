@@ -19,6 +19,9 @@ describe("availableModels", () => {
     const full = { ...base, MIMO_API_KEY: "m", MIMO_BASE_URL: "u", MIMO_MODEL: "x" };
     expect(availableModels(full)).toEqual(["mimo"]);
   });
+  it("lists openrouter when its key is present", () => {
+    expect(availableModels({ ...base, OPENROUTER_API_KEY: "o" })).toEqual(["openrouter"]);
+  });
 });
 
 describe("defaultModel", () => {
