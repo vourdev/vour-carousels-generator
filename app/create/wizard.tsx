@@ -19,7 +19,7 @@ import { captureCarousel } from "@/lib/export/capture";
 import type { ModelId } from "@/lib/ai/registry";
 import type { SlidePlan } from "@/lib/ds/schema";
 import { briefAction, planAction, reviseAction, uploadSingleImageAction, publishAction, getPublishingConfigAction } from "./actions";
-import { saveExportedCarouselAction, markCarouselStatusAction } from "@/app/history/actions";
+import { saveExportedCarouselAction, markCarouselStatusAction, deleteCarouselAction } from "@/app/history/actions";
 import { Sparkles, Brain, Zap, RotateCcw, Check, Send, Eye, FileText, LayoutGrid, User, Upload, Clock, CheckCircle2, XCircle, AlertCircle, Calendar, Globe } from "lucide-react";
 import { toast } from "sonner";
 
@@ -564,6 +564,10 @@ export function Wizard({ models }: { models: ModelId[] }) {
   function handleReset() {
     if (typewriterIntervalRef.current) {
       clearInterval(typewriterIntervalRef.current);
+    }
+    // Delete the unscheduled/unpublished draft from the database on reset
+    if (carouselId && publishState.status !== "success") {
+      deleteCarouselAction(carouselId).catch(console.error);
     }
     setStep(1);
     setIdea("");

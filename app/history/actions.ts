@@ -6,6 +6,7 @@ import {
   createCarousel,
   updateCarousel,
   getCarousel,
+  deleteCarousel,
   type CarouselSource,
   type CarouselStatus,
   type Carousel,
@@ -106,4 +107,9 @@ export async function publishSavedCarouselAction(
   });
 
   return results;
+}
+
+export async function deleteCarouselAction(id: string): Promise<void> {
+  const session = await requireSession();
+  await deleteCarousel(id, session.user.id);
 }

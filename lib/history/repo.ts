@@ -189,3 +189,11 @@ export async function getCarousel(id: string, userId: string): Promise<Carousel 
   });
   return res.rows[0] ? rowToCarousel(res.rows[0]) : null;
 }
+
+export async function deleteCarousel(id: string, userId: string): Promise<void> {
+  await ensureSchema();
+  await db().execute({
+    sql: `DELETE FROM carousels WHERE id = ? AND user_id = ?`,
+    args: [id, userId],
+  });
+}
