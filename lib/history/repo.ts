@@ -19,6 +19,7 @@ export interface Carousel {
   dueAt: string | null;
   createdAt: number;
   updatedAt: number;
+  imageUrls: string[];
 }
 
 let client: Client | null = null;
@@ -53,8 +54,17 @@ function ensureSchema(): Promise<void> {
         buffer_tt_id TEXT,
         due_at TEXT,
         created_at INTEGER NOT NULL,
-        updated_at INTEGER NOT NULL
+        updated_at INTEGER NOT NULL,
+        image_urls TEXT DEFAULT '[]'
       )`);
+      
+      // Safe dynamic migration to add image_urls for existing databases
+      try {
+        await db().execute(`ALTER TABLE carousels ADD COLUMN image_urls TEXT DEFAULT '[]'`);
+      } catch (e) {
+        // Ignored if column already exists
+      }
+
       await db().execute(
         `CREATE INDEX IF NOT EXISTS idx_carousels_user ON carousels(user_id, created_at DESC)`
       );
@@ -81,6 +91,7 @@ function rowToCarousel(r: any): Carousel {
     dueAt: r.due_at ?? null,
     createdAt: Number(r.created_at),
     updatedAt: Number(r.updated_at),
+    imageUrls: JSON.parse(String(r.image_urls ?? "[]")),
   };
 }
 /* eslint-enable @typescript-eslint/no-explicit-any */
@@ -95,6 +106,7 @@ export interface CreateCarouselInput {
   model?: string | null;
   status?: CarouselStatus;
   thumbnail?: string | null;
+  imageUrls?: string[];
 }
 
 export async function createCarousel(input: CreateCarouselInput): Promise<Carousel> {
@@ -103,8 +115,8 @@ export async function createCarousel(input: CreateCarouselInput): Promise<Carous
   const id = crypto.randomUUID();
   await db().execute({
     sql: `INSERT INTO carousels
-      (id, user_id, source, title, caption, hashtags, slide_count, status, model, thumbnail, created_at, updated_at)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      (id, user_id, source, title, caption, hashtags, slide_count, status, model, thumbnail, image_urls, created_at, updated_at)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
     args: [
       id,
       input.userId,
@@ -116,6 +128,7 @@ export async function createCarousel(input: CreateCarouselInput): Promise<Carous
       input.status ?? "draft",
       input.model ?? null,
       input.thumbnail ?? null,
+      JSON.stringify(input.imageUrls ?? []),
       now,
       now,
     ],
@@ -133,12 +146,13 @@ const PATCH_COLUMNS: Record<string, string> = {
   dueAt: "due_at",
   title: "title",
   caption: "caption",
+  imageUrls: "image_urls",
 };
 
 export async function updateCarousel(
   id: string,
   patch: Partial<
-    Pick<Carousel, "status" | "thumbnail" | "bufferIgId" | "bufferTtId" | "dueAt" | "title" | "caption">
+    Pick<Carousel, "status" | "thumbnail" | "bufferIgId" | "bufferTtId" | "dueAt" | "title" | "caption" | "imageUrls">
   >
 ): Promise<void> {
   await ensureSchema();
@@ -147,7 +161,8 @@ export async function updateCarousel(
   for (const [key, col] of Object.entries(PATCH_COLUMNS)) {
     if (key in patch) {
       sets.push(`${col} = ?`);
-      args.push((patch as Record<string, string | null>)[key]);
+      const val = (patch as any)[key];
+      args.push(Array.isArray(val) ? JSON.stringify(val) : val);
     }
   }
   if (sets.length === 0) return;

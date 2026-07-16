@@ -225,6 +225,7 @@ export function Wizard({ models }: { models: ModelId[] }) {
 
   const [blobs, setBlobs] = useState<Blob[]>([]);
   const [exportedImages, setExportedImages] = useState<string[]>([]);
+  const [uploadedImageUrls, setUploadedImageUrls] = useState<string[]>([]);
   const [exportPending, setExportPending] = useState(false);
   const [dueAt, setDueAt] = useState("");
   const [pubConfig, setPubConfig] = useState<{ hasIg: boolean; hasTt: boolean } | null>(null);
@@ -292,6 +293,7 @@ export function Wizard({ models }: { models: ModelId[] }) {
         if (parsed.dueAt) setDueAt(parsed.dueAt);
         if (parsed.editableTitle) setEditableTitle(parsed.editableTitle);
         if (parsed.editableCaption) setEditableCaption(parsed.editableCaption);
+        if (parsed.uploadedImageUrls) setUploadedImageUrls(parsed.uploadedImageUrls);
       } catch (e) {
         console.error("Failed to parse saved draft", e);
       }
@@ -317,6 +319,7 @@ export function Wizard({ models }: { models: ModelId[] }) {
       dueAt,
       editableTitle,
       editableCaption,
+      uploadedImageUrls,
     };
     localStorage.setItem("vour_carousel_draft", JSON.stringify(draft));
   }, [
@@ -335,6 +338,7 @@ export function Wizard({ models }: { models: ModelId[] }) {
     dueAt,
     editableTitle,
     editableCaption,
+    uploadedImageUrls,
   ]);
 
   // Auto-scroll chat feed to bottom
@@ -400,7 +404,7 @@ export function Wizard({ models }: { models: ModelId[] }) {
   const handleExport = async () => {
     if (!html) return;
     setExportPending(true);
-    addMessage("ai", "Mengekspor slide rancangan menjadi gambar PNG resolusi tinggi...");
+    addMessage("ai", "Mengekspor slide rancangan menjadi gambar PNG...");
     try {
       const generatedBlobs = await captureCarousel(html);
       setBlobs(generatedBlobs);
@@ -411,10 +415,26 @@ export function Wizard({ models }: { models: ModelId[] }) {
       const urls = generatedBlobs.map((b) => URL.createObjectURL(b));
       setExportedImages(urls);
 
-      // Persist to history — thumbnail = first slide uploaded to Cloudinary.
+      // Now, upload all slides to Cloudinary in the background to stock them
+      addMessage("ai", "Mengunggah gambar slide ke server Cloudinary...");
+      const uploadedUrls: string[] = [];
+      for (let idx = 0; idx < generatedBlobs.length; idx++) {
+        const blob = generatedBlobs[idx];
+        const base64 = await new Promise<string>((res, rej) => {
+          const reader = new FileReader();
+          reader.onloadend = () => res(reader.result as string);
+          reader.onerror = rej;
+          reader.readAsDataURL(blob);
+        });
+        const url = await uploadSingleImageAction(base64);
+        uploadedUrls.push(url);
+      }
+      setUploadedImageUrls(uploadedUrls);
+
+      // Persist to history — thumbnail = first slide URL directly
       if (plan) {
         try {
-          const thumb = generatedBlobs[0] ? await compressImageBlob(generatedBlobs[0]) : null;
+          const thumb = uploadedUrls[0] || null;
           const id = await saveExportedCarouselAction({
             source: uploadedHtml ? "upload" : "ai",
             title: editableTitle || plan.title,
@@ -422,7 +442,8 @@ export function Wizard({ models }: { models: ModelId[] }) {
             hashtags: plan.hashtags,
             slideCount,
             model: uploadedHtml ? null : model || null,
-            thumbnailBase64: thumb,
+            thumbnail: thumb,
+            imageUrls: uploadedUrls,
           });
           setCarouselId(id);
         } catch (err) {
@@ -460,25 +481,35 @@ export function Wizard({ models }: { models: ModelId[] }) {
       return;
     }
 
-    setPublishState({ status: "uploading", progressMsg: "Mengunggah gambar ke Cloudinary..." });
+    setPublishState({ status: "publishing", progressMsg: "Mengirim ke Buffer API..." });
     addMessage("user", `Jadwalkan publikasi pada ${scheduleDate.toLocaleString("id-ID")}`);
 
     try {
-      const urls: string[] = [];
-      for (let idx = 0; idx < blobs.length; idx++) {
-        setPublishState({
-          status: "uploading",
-          progressMsg: `Mengunggah slide ${idx + 1} dari ${blobs.length} ke Cloudinary...`,
-        });
-        const blob = blobs[idx];
-        const base64 = await new Promise<string>((res, rej) => {
-          const reader = new FileReader();
-          reader.onloadend = () => res(reader.result as string);
-          reader.onerror = rej;
-          reader.readAsDataURL(blob);
-        });
-        const url = await uploadSingleImageAction(base64);
-        urls.push(url);
+      let urls = uploadedImageUrls;
+      if (urls.length === 0 && blobs.length > 0) {
+        setPublishState({ status: "uploading", progressMsg: "Mengunggah gambar ke Cloudinary..." });
+        const uploadedUrls: string[] = [];
+        for (let idx = 0; idx < blobs.length; idx++) {
+          setPublishState({
+            status: "uploading",
+            progressMsg: `Mengunggah slide ${idx + 1} dari ${blobs.length} ke Cloudinary...`,
+          });
+          const blob = blobs[idx];
+          const base64 = await new Promise<string>((res, rej) => {
+            const reader = new FileReader();
+            reader.onloadend = () => res(reader.result as string);
+            reader.onerror = rej;
+            reader.readAsDataURL(blob);
+          });
+          const url = await uploadSingleImageAction(base64);
+          uploadedUrls.push(url);
+        }
+        urls = uploadedUrls;
+        setUploadedImageUrls(urls);
+        // Also save to database
+        if (carouselId) {
+          await markCarouselStatusAction(carouselId, { imageUrls: urls });
+        }
       }
 
       setPublishState({ status: "publishing", progressMsg: "Mengirim ke Buffer API..." });
@@ -1168,7 +1199,7 @@ export function Wizard({ models }: { models: ModelId[] }) {
           ) : (
             <div className="h-full min-h-0 w-full relative">
               {step === 3 && (
-                <div className="h-full overflow-y-auto flex items-center justify-center p-4 min-h-0">
+                <div className="h-full overflow-y-auto flex flex-col items-center justify-start p-4 md:py-8 min-h-0">
                   {plan ? (
                     <PreviewFrame html={html} slideCount={slideCount} />
                   ) : (
