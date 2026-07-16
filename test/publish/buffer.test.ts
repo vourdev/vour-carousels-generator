@@ -66,6 +66,12 @@ describe("Buffer Publisher", () => {
       dueAt: "2026-07-17T09:00:00Z",
       saveToDraft: false,
       assets: [{ image: { url: "https://res.cloudinary.com/image1.jpg" } }],
+      metadata: {
+        instagram: {
+          type: "post",
+          shouldShareToFeed: true,
+        },
+      },
     });
   });
 

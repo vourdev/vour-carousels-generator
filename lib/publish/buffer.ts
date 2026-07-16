@@ -43,10 +43,19 @@ export async function scheduleBufferPost(params: {
     })),
   };
 
-  if (params.isTikTok && params.title) {
+  if (params.isTikTok) {
+    if (params.title) {
+      input.metadata = {
+        tiktok: {
+          title: params.title,
+        },
+      };
+    }
+  } else {
     input.metadata = {
-      tiktok: {
-        title: params.title,
+      instagram: {
+        type: "post",
+        shouldShareToFeed: true,
       },
     };
   }
