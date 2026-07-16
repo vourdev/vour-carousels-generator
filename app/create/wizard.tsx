@@ -13,8 +13,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { assembleCarousel } from "@/lib/ds/assemble";
-import { PreviewFrame } from "@/app/preview/preview-frame";
-import { ExportButton } from "@/app/preview/export-button";
+import { PreviewFrame } from "@/components/preview-frame";
 import { namedBlobs, downloadNamedBlobs } from "@/lib/export/download";
 import { captureCarousel } from "@/lib/export/capture";
 import type { ModelId } from "@/lib/ai/registry";
