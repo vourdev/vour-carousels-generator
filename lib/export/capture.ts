@@ -146,7 +146,7 @@ export async function captureCarousel(
   html: string,
   opts: { pixelRatio?: number; quality?: number } = {}
 ): Promise<Blob[]> {
-  const pixelRatio = opts.pixelRatio ?? 2;
+  const pixelRatio = opts.pixelRatio ?? 1;
   const quality = opts.quality ?? 0.92;
 
   const iframe = await mountHiddenIframe(html);
