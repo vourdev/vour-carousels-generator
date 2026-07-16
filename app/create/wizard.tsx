@@ -86,6 +86,31 @@ function blobToDataUrl(blob: Blob): Promise<string> {
   });
 }
 
+function compressImageBlob(blob: Blob, maxWidth = 360): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    img.src = URL.createObjectURL(blob);
+    img.onload = () => {
+      URL.revokeObjectURL(img.src);
+      const canvas = document.createElement("canvas");
+      const ctx = canvas.getContext("2d");
+      if (!ctx) {
+        reject(new Error("canvas context not available"));
+        return;
+      }
+      
+      const scale = maxWidth / img.width;
+      canvas.width = maxWidth;
+      canvas.height = img.height * scale;
+      
+      ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+      const dataUrl = canvas.toDataURL("image/jpeg", 0.7);
+      resolve(dataUrl);
+    };
+    img.onerror = (e) => reject(e);
+  });
+}
+
 /** Read the vourdev-meta block (title/caption/hashtags) from an uploaded HTML carousel. */
 function parseMeta(html: string): { title: string; caption: string; hashtags: string[] } {
   const m = html.match(/<script[^>]*id="vourdev-meta"[^>]*>([\s\S]*?)<\/script>/);
@@ -389,7 +414,7 @@ export function Wizard({ models }: { models: ModelId[] }) {
       // Persist to history — thumbnail = first slide uploaded to Cloudinary.
       if (plan) {
         try {
-          const thumb = generatedBlobs[0] ? await blobToDataUrl(generatedBlobs[0]) : null;
+          const thumb = generatedBlobs[0] ? await compressImageBlob(generatedBlobs[0]) : null;
           const id = await saveExportedCarouselAction({
             source: uploadedHtml ? "upload" : "ai",
             title: editableTitle || plan.title,
