@@ -19,6 +19,7 @@ import { captureCarousel } from "@/lib/export/capture";
 import type { ModelId } from "@/lib/ai/registry";
 import type { SlidePlan } from "@/lib/ds/schema";
 import { briefAction, planAction, reviseAction, uploadImagesAction, publishAction, getPublishingConfigAction } from "./actions";
+import { saveExportedCarouselAction, markCarouselStatusAction } from "@/app/history/actions";
 import { Sparkles, Brain, Zap, RotateCcw, Check, Send, Eye, FileText, LayoutGrid, User, Upload, Clock, CheckCircle2, XCircle, AlertCircle, Calendar, Globe } from "lucide-react";
 import { toast } from "sonner";
 
@@ -74,6 +75,15 @@ function summarizeError(msg: string): string {
   }
   
   return msg;
+}
+
+function blobToDataUrl(blob: Blob): Promise<string> {
+  return new Promise((res, rej) => {
+    const reader = new FileReader();
+    reader.onloadend = () => res(reader.result as string);
+    reader.onerror = rej;
+    reader.readAsDataURL(blob);
+  });
 }
 
 // Simple React Markdown Renderer
@@ -178,6 +188,7 @@ export function Wizard({ models }: { models: ModelId[] }) {
     igPostId?: string;
     ttPostId?: string;
   }>({ status: "idle", progressMsg: "" });
+  const [carouselId, setCarouselId] = useState<string | null>(null);
 
   const html = useMemo(() => (plan ? assembleCarousel(plan) : ""), [plan]);
 
@@ -268,6 +279,26 @@ export function Wizard({ models }: { models: ModelId[] }) {
       
       const urls = generatedBlobs.map((b) => URL.createObjectURL(b));
       setExportedImages(urls);
+
+      // Persist to history — thumbnail = first slide uploaded to Cloudinary.
+      if (plan) {
+        try {
+          const thumb = generatedBlobs[0] ? await blobToDataUrl(generatedBlobs[0]) : null;
+          const id = await saveExportedCarouselAction({
+            source: "ai",
+            title: plan.title,
+            caption: plan.caption,
+            hashtags: plan.hashtags,
+            slideCount: plan.slides.length,
+            model: model || null,
+            thumbnailBase64: thumb,
+          });
+          setCarouselId(id);
+        } catch (err) {
+          console.error("history save failed", err);
+        }
+      }
+
       setStep(4);
       setActiveTab("preview");
       addMessage("ai", "Ekspor gambar berhasil diselesaikan! Tinjau hasil preview di sebelah kanan. Anda dapat mengunduh gambar ke lokal, atau melanjutkan ke langkah Publish.");
@@ -325,6 +356,15 @@ export function Wizard({ models }: { models: ModelId[] }) {
         ttPostId: results.ttPostId,
       });
 
+      if (carouselId) {
+        markCarouselStatusAction(carouselId, {
+          status: "scheduled",
+          bufferIgId: results.igPostId,
+          bufferTtId: results.ttPostId,
+          dueAt: scheduleDate.toISOString(),
+        }).catch(console.error);
+      }
+
       addMessage(
         "ai",
         `Sukses! Carousel berhasil dijadwalkan di Buffer pada ${scheduleDate.toLocaleString("id-ID")}.${
@@ -341,6 +381,7 @@ export function Wizard({ models }: { models: ModelId[] }) {
       });
       addMessage("ai", `Gagal mempublikasikan: ${msg}`);
       toast.error(`Publish error: ${msg}`);
+      if (carouselId) markCarouselStatusAction(carouselId, { status: "failed" }).catch(() => {});
     }
   };
 
@@ -362,6 +403,7 @@ export function Wizard({ models }: { models: ModelId[] }) {
     exportedImages.forEach((url) => URL.revokeObjectURL(url));
     setExportedImages([]);
     setDueAt("");
+    setCarouselId(null);
     setPublishState({ status: "idle", progressMsg: "" });
     setMessages([
       {
