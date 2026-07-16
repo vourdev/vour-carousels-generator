@@ -51,6 +51,7 @@ export async function markCarouselStatusAction(
     title?: string;
     caption?: string;
     imageUrls?: string[];
+    thumbnail?: string | null;
   }
 ): Promise<void> {
   await requireSession();
@@ -111,5 +112,9 @@ export async function publishSavedCarouselAction(
 
 export async function deleteCarouselAction(id: string): Promise<void> {
   const session = await requireSession();
-  await deleteCarousel(id, session.user.id);
+  const c = await getCarousel(id, session.user.id);
+  // Only delete draft/temporary or failed carousels. Never delete scheduled/posted ones on reset!
+  if (c && c.status !== "scheduled" && c.status !== "posted") {
+    await deleteCarousel(id, session.user.id);
+  }
 }

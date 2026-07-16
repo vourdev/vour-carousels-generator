@@ -257,16 +257,14 @@ export function Wizard({ models }: { models: ModelId[] }) {
   // Sync editable Title & Caption when plan changes
   useEffect(() => {
     if (plan) {
-      setEditableTitle((prev) => prev || plan.title || "");
-      setEditableCaption((prev) => {
-        if (prev) return prev;
-        const hashtagsStr = plan.hashtags
-          ? plan.hashtags.map((h) => (h.startsWith("#") ? h : `#${h}`)).join(" ")
-          : "";
-        return plan.caption 
-          ? `${plan.caption}\n\n${hashtagsStr}` 
-          : hashtagsStr;
-      });
+      setEditableTitle(plan.title || "");
+      const hashtagsStr = plan.hashtags
+        ? plan.hashtags.map((h) => (h.startsWith("#") ? h : `#${h}`)).join(" ")
+        : "";
+      setEditableCaption(plan.caption ? `${plan.caption}\n\n${hashtagsStr}` : hashtagsStr);
+    } else {
+      setEditableTitle("");
+      setEditableCaption("");
     }
   }, [plan]);
 
@@ -415,26 +413,13 @@ export function Wizard({ models }: { models: ModelId[] }) {
       const urls = generatedBlobs.map((b) => URL.createObjectURL(b));
       setExportedImages(urls);
 
-      // Now, upload all slides to Cloudinary in the background to stock them
-      addMessage("ai", "Mengunggah gambar slide ke server Cloudinary...");
-      const uploadedUrls: string[] = [];
-      for (let idx = 0; idx < generatedBlobs.length; idx++) {
-        const blob = generatedBlobs[idx];
-        const base64 = await new Promise<string>((res, rej) => {
-          const reader = new FileReader();
-          reader.onloadend = () => res(reader.result as string);
-          reader.onerror = rej;
-          reader.readAsDataURL(blob);
-        });
-        const url = await uploadSingleImageAction(base64);
-        uploadedUrls.push(url);
-      }
-      setUploadedImageUrls(uploadedUrls);
+      // Reset uploaded URLs state (we upload only when publishing to Buffer)
+      setUploadedImageUrls([]);
 
-      // Persist to history — thumbnail = first slide URL directly
+      // Persist to history — thumbnail = tiny local compressed base64 JPEG
       if (plan) {
         try {
-          const thumb = uploadedUrls[0] || null;
+          const thumb = generatedBlobs[0] ? await compressImageBlob(generatedBlobs[0], 120) : null;
           const id = await saveExportedCarouselAction({
             source: uploadedHtml ? "upload" : "ai",
             title: editableTitle || plan.title,
@@ -443,7 +428,7 @@ export function Wizard({ models }: { models: ModelId[] }) {
             slideCount,
             model: uploadedHtml ? null : model || null,
             thumbnail: thumb,
-            imageUrls: uploadedUrls,
+            imageUrls: [], // Defer upload to Cloudinary until publishing
           });
           setCarouselId(id);
         } catch (err) {
@@ -506,9 +491,12 @@ export function Wizard({ models }: { models: ModelId[] }) {
         }
         urls = uploadedUrls;
         setUploadedImageUrls(urls);
-        // Also save to database
+        // Also save to database and promote thumbnail to Cloudinary URL
         if (carouselId) {
-          await markCarouselStatusAction(carouselId, { imageUrls: urls });
+          await markCarouselStatusAction(carouselId, { 
+            imageUrls: urls,
+            thumbnail: urls[0] || null,
+          });
         }
       }
 
@@ -580,6 +568,8 @@ export function Wizard({ models }: { models: ModelId[] }) {
     setPlan(null);
     setApproved(false);
     setRevision("");
+    setEditableTitle("");
+    setEditableCaption("");
     setIsTyping(false);
     setActiveTab("brief");
     setMdMode("split");
