@@ -15,10 +15,12 @@ import {
 import { assembleCarousel } from "@/lib/ds/assemble";
 import { PreviewFrame } from "@/app/preview/preview-frame";
 import { ExportButton } from "@/app/preview/export-button";
+import { namedBlobs, downloadNamedBlobs } from "@/lib/export/download";
+import { captureCarousel } from "@/lib/export/capture";
 import type { ModelId } from "@/lib/ai/registry";
 import type { SlidePlan } from "@/lib/ds/schema";
-import { briefAction, planAction, reviseAction } from "./actions";
-import { Sparkles, Brain, Zap, RotateCcw, Check, Send, Eye, FileText, LayoutGrid, User, Upload } from "lucide-react";
+import { briefAction, planAction, reviseAction, uploadImagesAction, publishAction, getPublishingConfigAction } from "./actions";
+import { Sparkles, Brain, Zap, RotateCcw, Check, Send, Eye, FileText, LayoutGrid, User, Upload, Clock, CheckCircle2, XCircle, AlertCircle, Calendar } from "lucide-react";
 import { toast } from "sonner";
 
 interface Message {
@@ -161,6 +163,19 @@ export function Wizard({ models }: { models: ModelId[] }) {
   const chatEndRef = useRef<HTMLDivElement | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
+  const [blobs, setBlobs] = useState<Blob[]>([]);
+  const [exportedImages, setExportedImages] = useState<string[]>([]);
+  const [exportPending, setExportPending] = useState(false);
+  const [dueAt, setDueAt] = useState("");
+  const [pubConfig, setPubConfig] = useState<{ hasIg: boolean; hasTt: boolean } | null>(null);
+  const [publishState, setPublishState] = useState<{
+    status: "idle" | "uploading" | "publishing" | "success" | "error";
+    progressMsg: string;
+    errorMsg?: string;
+    igPostId?: string;
+    ttPostId?: string;
+  }>({ status: "idle", progressMsg: "" });
+
   const html = useMemo(() => (plan ? assembleCarousel(plan) : ""), [plan]);
 
   // Load state from local storage
@@ -209,6 +224,123 @@ export function Wizard({ models }: { models: ModelId[] }) {
     };
   }, []);
 
+  // Initialize datetime picker with tomorrow at 9:00 AM
+  useEffect(() => {
+    const tomorrow = new Date();
+    tomorrow.setDate(tomorrow.getDate() + 1);
+    tomorrow.setHours(9, 0, 0, 0);
+    const pad = (n: number) => String(n).padStart(2, "0");
+    const formatted = `${tomorrow.getFullYear()}-${pad(
+      tomorrow.getMonth() + 1
+    )}-${pad(tomorrow.getDate())}T${pad(tomorrow.getHours())}:${pad(
+      tomorrow.getMinutes()
+    )}`;
+    setDueAt(formatted);
+  }, []);
+
+  // Fetch publishing channels config
+  useEffect(() => {
+    if (step === 5) {
+      getPublishingConfigAction().then(setPubConfig).catch(console.error);
+    }
+  }, [step]);
+
+  // Clean up object URLs on unmount/re-export
+  useEffect(() => {
+    return () => {
+      exportedImages.forEach((url) => URL.revokeObjectURL(url));
+    };
+  }, [exportedImages]);
+
+  const handleExport = async () => {
+    if (!html) return;
+    setExportPending(true);
+    addMessage("ai", "Mengekspor slide rancangan menjadi gambar JPEG resolusi tinggi...");
+    try {
+      const generatedBlobs = await captureCarousel(html);
+      setBlobs(generatedBlobs);
+      
+      // Revoke any existing object URLs to avoid memory leaks
+      exportedImages.forEach((url) => URL.revokeObjectURL(url));
+      
+      const urls = generatedBlobs.map((b) => URL.createObjectURL(b));
+      setExportedImages(urls);
+      setStep(4);
+      setActiveTab("preview");
+      addMessage("ai", "Ekspor gambar berhasil diselesaikan! Tinjau hasil preview di sebelah kanan. Anda dapat mengunduh gambar ke lokal, atau melanjutkan ke langkah Publish.");
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : "failed";
+      toast.error(`Gagal ekspor: ${msg}`);
+      addMessage("ai", `Gagal memproses ekspor gambar: ${msg}`);
+    } finally {
+      setExportPending(false);
+    }
+  };
+
+  // Fallback to regenerate exports if they refreshed while in Step 4 or 5
+  useEffect(() => {
+    if (mounted && step >= 4 && exportedImages.length === 0 && html) {
+      handleExport();
+    }
+  }, [mounted, step, html]);
+
+  const handlePublish = async () => {
+    if (!dueAt) {
+      toast.error("Pilih tanggal dan waktu scheduling!");
+      return;
+    }
+    const scheduleDate = new Date(dueAt);
+    if (scheduleDate <= new Date()) {
+      toast.error("Waktu harus di masa depan!");
+      return;
+    }
+
+    setPublishState({ status: "uploading", progressMsg: "Mengunggah gambar ke Cloudinary..." });
+    addMessage("user", `Jadwalkan publikasi pada ${scheduleDate.toLocaleString("id-ID")}`);
+
+    try {
+      const base64s: string[] = [];
+      for (const blob of blobs) {
+        const base64 = await new Promise<string>((res, rej) => {
+          const reader = new FileReader();
+          reader.onloadend = () => res(reader.result as string);
+          reader.onerror = rej;
+          reader.readAsDataURL(blob);
+        });
+        base64s.push(base64);
+      }
+
+      const urls = await uploadImagesAction(base64s);
+
+      setPublishState({ status: "publishing", progressMsg: "Mengirim ke Buffer API..." });
+      const results = await publishAction(urls, plan!, scheduleDate.toISOString());
+
+      setPublishState({
+        status: "success",
+        progressMsg: "Berhasil dijadwalkan!",
+        igPostId: results.igPostId,
+        ttPostId: results.ttPostId,
+      });
+
+      addMessage(
+        "ai",
+        `Sukses! Carousel berhasil dijadwalkan di Buffer pada ${scheduleDate.toLocaleString("id-ID")}.${
+          results.igPostId ? `\n- Instagram Post ID: ${results.igPostId}` : ""
+        }${results.ttPostId ? `\n- TikTok Post ID: ${results.ttPostId}` : ""}`
+      );
+      toast.success("Berhasil dijadwalkan di Buffer!");
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : "Gagal";
+      setPublishState({
+        status: "error",
+        progressMsg: "Gagal menjadwalkan",
+        errorMsg: msg,
+      });
+      addMessage("ai", `Gagal mempublikasikan: ${msg}`);
+      toast.error(`Publish error: ${msg}`);
+    }
+  };
+
   function handleReset() {
     if (typewriterIntervalRef.current) {
       clearInterval(typewriterIntervalRef.current);
@@ -223,6 +355,11 @@ export function Wizard({ models }: { models: ModelId[] }) {
     setIsTyping(false);
     setActiveTab("brief");
     setMdMode("split");
+    setBlobs([]);
+    exportedImages.forEach((url) => URL.revokeObjectURL(url));
+    setExportedImages([]);
+    setDueAt("");
+    setPublishState({ status: "idle", progressMsg: "" });
     setMessages([
       {
         sender: "ai",
@@ -341,8 +478,12 @@ export function Wizard({ models }: { models: ModelId[] }) {
           setFinalBrief(res);
           setBrief(res);
           addMessage("ai", "Brief outline berhasil diperbarui.");
-        } else if (step === 3 && plan) {
+        } else if ((step === 3 || step === 4) && plan) {
           addMessage("ai", "Merevisi rancangan slide berdasarkan instruksi Anda...");
+          if (step === 4) {
+            setStep(3);
+            setActiveTab("preview");
+          }
           const updatedPlan = await reviseAction(plan, currentRevision, model as ModelId);
           setPlan(updatedPlan);
           setApproved(false);
@@ -402,22 +543,30 @@ export function Wizard({ models }: { models: ModelId[] }) {
             </div>
 
             {/* Visual Stepper */}
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-1">
+            <div className="flex flex-col gap-2 border-b pb-2">
+              <div className="flex flex-wrap items-center gap-y-1.5 gap-x-1">
                 <span className={`flex items-center justify-center size-5 rounded-full text-[10px] font-semibold ${step >= 1 ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground"}`}>1</span>
-                <span className={`text-xs ${step === 1 ? "font-semibold text-foreground" : "text-muted-foreground"}`}>Concept</span>
+                <span className={`text-[11px] ${step === 1 ? "font-semibold text-foreground" : "text-muted-foreground"}`}>Concept</span>
                 <span className="text-muted-foreground/40 text-[10px] mx-0.5">→</span>
                 <span className={`flex items-center justify-center size-5 rounded-full text-[10px] font-semibold ${step >= 2 ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground"}`}>2</span>
-                <span className={`text-xs ${step === 2 ? "font-semibold text-foreground" : "text-muted-foreground"}`}>Brief</span>
+                <span className={`text-[11px] ${step === 2 ? "font-semibold text-foreground" : "text-muted-foreground"}`}>Brief</span>
                 <span className="text-muted-foreground/40 text-[10px] mx-0.5">→</span>
                 <span className={`flex items-center justify-center size-5 rounded-full text-[10px] font-semibold ${step >= 3 ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground"}`}>3</span>
-                <span className={`text-xs ${step === 3 ? "font-semibold text-foreground" : "text-muted-foreground"}`}>Carousel</span>
+                <span className={`text-[11px] ${step === 3 ? "font-semibold text-foreground" : "text-muted-foreground"}`}>Design</span>
+                <span className="text-muted-foreground/40 text-[10px] mx-0.5">→</span>
+                <span className={`flex items-center justify-center size-5 rounded-full text-[10px] font-semibold ${step >= 4 ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground"}`}>4</span>
+                <span className={`text-[11px] ${step === 4 ? "font-semibold text-foreground" : "text-muted-foreground"}`}>Export</span>
+                <span className="text-muted-foreground/40 text-[10px] mx-0.5">→</span>
+                <span className={`flex items-center justify-center size-5 rounded-full text-[10px] font-semibold ${step >= 5 ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground"}`}>5</span>
+                <span className={`text-[11px] ${step === 5 ? "font-semibold text-foreground" : "text-muted-foreground"}`}>Publish</span>
               </div>
 
-              <Button variant="ghost" size="sm" onClick={handleReset} className="h-7 text-[10px] gap-1 px-2 text-muted-foreground hover:text-foreground shrink-0">
-                <RotateCcw className="size-3" />
-                Clear
-              </Button>
+              <div className="flex justify-end">
+                <Button variant="ghost" size="sm" onClick={handleReset} className="h-7 text-[10px] gap-1 px-2 text-muted-foreground hover:text-foreground shrink-0">
+                  <RotateCcw className="size-3" />
+                  Clear
+                </Button>
+              </div>
             </div>
 
           </CardContent>
@@ -522,9 +671,15 @@ export function Wizard({ models }: { models: ModelId[] }) {
               <Input
                 value={revision}
                 onChange={(e) => setRevision(e.target.value)}
-                placeholder={step === 2 ? "Ketik instruksi revisi outline..." : "Ketik instruksi revisi slide..."}
+                placeholder={
+                  step === 2
+                    ? "Ketik instruksi revisi outline..."
+                    : step === 3 || step === 4
+                    ? "Ketik instruksi revisi slide..."
+                    : "Penjadwalan aktif — gunakan panel kanan"
+                }
                 className="pr-10 h-10 text-xs"
-                disabled={pending || isTyping}
+                disabled={pending || isTyping || step >= 5}
                 onKeyDown={(e) => {
                   if (e.key === "Enter") handleRevisionSend();
                 }}
@@ -532,7 +687,7 @@ export function Wizard({ models }: { models: ModelId[] }) {
               <Button 
                 size="icon" 
                 className="absolute right-1 size-8" 
-                disabled={pending || !revision.trim() || isTyping}
+                disabled={pending || !revision.trim() || isTyping || step >= 5}
                 onClick={handleRevisionSend}
               >
                 <Send className="size-3.5" />
@@ -570,7 +725,7 @@ export function Wizard({ models }: { models: ModelId[] }) {
               }`}
             >
               <LayoutGrid className="size-3.5" />
-              Live Design Preview
+              {step === 3 ? "Live Design Preview" : step === 4 ? "Exported JPEGs Preview" : "Schedule & Publish"}
             </button>
           </div>
 
@@ -602,21 +757,66 @@ export function Wizard({ models }: { models: ModelId[] }) {
               </Button>
             )}
             {step === 3 && plan && (
-              <>
-                {approved ? (
-                  <ExportButton html={html} />
-                ) : (
-                  <Button
-                    size="sm"
-                    disabled={pending}
-                    onClick={() => setApproved(true)}
-                    className="h-7 text-xs font-medium gap-1 px-3"
-                  >
-                    <Eye className="size-3.5" />
-                    Approve Design
-                  </Button>
-                )}
-              </>
+              <Button
+                size="sm"
+                disabled={pending || exportPending}
+                onClick={handleExport}
+                className="h-7 text-xs font-medium gap-1 px-3"
+              >
+                <Upload className="size-3.5" />
+                {exportPending ? "Exporting..." : "Approve & Export JPEGs"}
+              </Button>
+            )}
+            {step === 4 && (
+              <div className="flex items-center gap-2">
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => {
+                    setStep(3);
+                    addMessage("ai", "Kembali ke mode desain. Anda dapat merevisi slide kembali melalui chat console.");
+                  }}
+                  className="h-7 text-xs font-medium px-3 animate-fade-in"
+                >
+                  Revise Design (Back)
+                </Button>
+                <Button
+                  size="sm"
+                  variant="secondary"
+                  disabled={blobs.length === 0}
+                  onClick={() => {
+                    downloadNamedBlobs(namedBlobs(blobs));
+                    toast.success("Downloaded JPEGs locally!");
+                  }}
+                  className="h-7 text-xs font-medium px-3"
+                >
+                  Download JPEGs
+                </Button>
+                <Button
+                  size="sm"
+                  onClick={() => {
+                    setStep(5);
+                    setActiveTab("preview");
+                    addMessage("ai", "Langkah 5: Publish. Silakan tentukan tanggal & waktu penjadwalan, lalu klik 'Schedule to Buffer'.");
+                  }}
+                  className="h-7 text-xs font-medium px-3"
+                >
+                  Next: Schedule
+                </Button>
+              </div>
+            )}
+            {step === 5 && (
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={() => {
+                  setStep(4);
+                  setActiveTab("preview");
+                }}
+                className="h-7 text-xs font-medium px-3"
+              >
+                Back to Export
+              </Button>
             )}
           </div>
         </div>
@@ -711,13 +911,188 @@ export function Wizard({ models }: { models: ModelId[] }) {
               )}
             </div>
           ) : (
-            <div className="h-full overflow-y-auto flex items-center justify-center p-4 min-h-0">
-              {plan ? (
-                <PreviewFrame html={html} slideCount={plan.slides.length} />
-              ) : (
-                <div className="text-center p-8 text-muted-foreground">
-                  <LayoutGrid className="size-8 mx-auto mb-2 text-muted-foreground/50 animate-pulse" />
-                  <p className="text-xs">Slide preview belum siap. Setujui brief outline terlebih dahulu.</p>
+            <div className="h-full min-h-0 w-full relative">
+              {step === 3 && (
+                <div className="h-full overflow-y-auto flex items-center justify-center p-4 min-h-0">
+                  {plan ? (
+                    <PreviewFrame html={html} slideCount={plan.slides.length} />
+                  ) : (
+                    <div className="text-center p-8 text-muted-foreground">
+                      <LayoutGrid className="size-8 mx-auto mb-2 text-muted-foreground/50 animate-pulse" />
+                      <p className="text-xs">Slide preview belum siap. Setujui brief outline terlebih dahulu.</p>
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {step === 4 && (
+                <div className="h-full overflow-y-auto p-6 bg-canvas-soft">
+                  <div className="max-w-4xl mx-auto space-y-4">
+                    <h3 className="text-sm font-semibold text-foreground font-heading">Exported Slides Gallery</h3>
+                    <p className="text-xs text-muted-foreground">Silakan periksa setiap slide untuk memastikan tidak ada teks terpotong atau visual rusak.</p>
+                    <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                      {exportedImages.map((src, idx) => (
+                        <div key={idx} className="relative aspect-[4/5] rounded-lg border border-hairline overflow-hidden bg-muted shadow-sm group">
+                          <img src={src} alt={`Slide ${idx + 1}`} className="w-full h-full object-cover" />
+                          <div className="absolute bottom-2 left-2 bg-background/80 px-2 py-0.5 rounded text-[10px] font-mono border border-hairline backdrop-blur-xs">
+                            Slide {String(idx + 1).padStart(2, "0")}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {step === 5 && plan && (
+                <div className="h-full overflow-y-auto p-6 bg-canvas-soft flex items-center justify-center">
+                  <div className="max-w-xl w-full space-y-6">
+                    
+                    {/* Scheduling Header */}
+                    <div>
+                      <h3 className="text-xl font-bold tracking-tight text-foreground font-heading">
+                        Schedule & Publish
+                      </h3>
+                      <p className="text-xs text-muted-foreground mt-1">
+                        Kirim gambar slide ke Cloudinary dan jadwalkan posting di Instagram & TikTok via Buffer.
+                      </p>
+                    </div>
+
+                    {/* Channel Status */}
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="bg-card border border-hairline rounded-xl p-4 shadow-xs">
+                        <div className="flex items-center justify-between">
+                          <span className="text-xs font-semibold text-muted-foreground uppercase">Instagram</span>
+                          {pubConfig?.hasIg ? (
+                            <span className="text-[10px] font-semibold text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200">
+                              Active
+                            </span>
+                          ) : (
+                            <span className="text-[10px] font-semibold text-muted-foreground bg-muted px-2 py-0.5 rounded border border-border">
+                              Not Set
+                            </span>
+                          )}
+                        </div>
+                        <p className="text-[11px] text-muted-foreground mt-1.5">
+                          {pubConfig?.hasIg 
+                            ? "Carousel JPEG dan caption akan dikirim ke Instagram."
+                            : "Set BUFFER_IG_CHANNEL_ID di .env untuk mengaktifkan."}
+                        </p>
+                      </div>
+                      
+                      <div className="bg-card border border-hairline rounded-xl p-4 shadow-xs">
+                        <div className="flex items-center justify-between">
+                          <span className="text-xs font-semibold text-muted-foreground uppercase">TikTok</span>
+                          {pubConfig?.hasTt ? (
+                            <span className="text-[10px] font-semibold text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200">
+                              Active
+                            </span>
+                          ) : (
+                            <span className="text-[10px] font-semibold text-muted-foreground bg-muted px-2 py-0.5 rounded border border-border">
+                              Not Set
+                            </span>
+                          )}
+                        </div>
+                        <p className="text-[11px] text-muted-foreground mt-1.5">
+                          {pubConfig?.hasTt
+                            ? "Carousel JPEG, judul, dan caption akan dikirim ke TikTok."
+                            : "Set BUFFER_TIKTOK_CHANNEL_ID di .env untuk mengaktifkan."}
+                        </p>
+                      </div>
+                    </div>
+
+                    {/* Date & Time Picker */}
+                    <div className="bg-card border border-hairline rounded-xl p-4 shadow-xs space-y-3">
+                      <label className="text-xs font-semibold text-muted-foreground uppercase flex items-center gap-1.5">
+                        <Clock className="size-3.5 text-primary" />
+                        Waktu Posting (dueAt)
+                      </label>
+                      <Input
+                        type="datetime-local"
+                        value={dueAt}
+                        onChange={(e) => setDueAt(e.target.value)}
+                        disabled={publishState.status === "uploading" || publishState.status === "publishing"}
+                        className="text-xs"
+                      />
+                      <p className="text-[10px] text-muted-foreground">
+                        Pilih waktu kapan Buffer akan menjadwalkan notifikasi posting ini.
+                      </p>
+                    </div>
+
+                    {/* Caption & Metadata Preview */}
+                    <div className="bg-card border border-hairline rounded-xl p-4 shadow-xs space-y-3">
+                      <div>
+                        <span className="text-xs font-semibold text-muted-foreground uppercase block">
+                          Instagram Caption & TikTok Title
+                        </span>
+                      </div>
+                      <div className="space-y-2">
+                        <div>
+                          <span className="text-[10px] font-medium text-muted-foreground uppercase">TikTok Title</span>
+                          <div className="text-xs border border-hairline rounded p-2 bg-muted/30 font-mono mt-1">
+                            {plan.title}
+                          </div>
+                        </div>
+                        <div>
+                          <span className="text-[10px] font-medium text-muted-foreground uppercase">Caption (Instagram / TikTok)</span>
+                          <div className="text-xs border border-hairline rounded p-2 bg-muted/30 font-mono whitespace-pre-wrap mt-1 max-h-32 overflow-y-auto">
+                            {plan.caption}
+                            {"\n\n"}
+                            {plan.hashtags.map((h) => (h.startsWith("#") ? h : `#${h}`)).join(" ")}
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Action or Progress Panel */}
+                    <div className="bg-card border border-hairline rounded-xl p-6 shadow-xs text-center space-y-4">
+                      {publishState.status === "idle" && (
+                        <Button
+                          onClick={handlePublish}
+                          className="w-full font-semibold"
+                          disabled={!pubConfig?.hasIg && !pubConfig?.hasTt}
+                        >
+                          Schedule to Buffer
+                        </Button>
+                      )}
+
+                      {(publishState.status === "uploading" || publishState.status === "publishing") && (
+                        <div className="space-y-3">
+                          <div className="size-8 rounded-full border-2 border-primary border-t-transparent animate-spin mx-auto" />
+                          <p className="text-xs font-medium text-foreground">{publishState.progressMsg}</p>
+                        </div>
+                      )}
+
+                      {publishState.status === "success" && (
+                        <div className="space-y-3">
+                          <CheckCircle2 className="size-8 text-emerald-500 mx-auto" />
+                          <p className="text-xs font-medium text-emerald-600">Berhasil Dijadwalkan!</p>
+                          <div className="text-left text-[11px] font-mono border border-emerald-100 bg-emerald-50/50 rounded p-3 space-y-1">
+                            {publishState.igPostId && (
+                              <div>Instagram Post ID: <span className="text-foreground font-semibold">{publishState.igPostId}</span></div>
+                            )}
+                            {publishState.ttPostId && (
+                              <div>TikTok Post ID: <span className="text-foreground font-semibold">{publishState.ttPostId}</span></div>
+                            )}
+                          </div>
+                        </div>
+                      )}
+
+                      {publishState.status === "error" && (
+                        <div className="space-y-3">
+                          <XCircle className="size-8 text-destructive mx-auto" />
+                          <p className="text-xs font-medium text-destructive">Gagal Mempublikasikan</p>
+                          <p className="text-[11px] text-muted-foreground border border-destructive/20 bg-destructive/5 rounded p-3 font-mono text-left max-h-32 overflow-y-auto">
+                            {publishState.errorMsg}
+                          </p>
+                          <Button onClick={handlePublish} variant="outline" className="w-full">
+                            Coba Lagi
+                          </Button>
+                        </div>
+                      )}
+                    </div>
+
+                  </div>
                 </div>
               )}
             </div>
