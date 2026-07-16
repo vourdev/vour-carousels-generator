@@ -86,6 +86,28 @@ function blobToDataUrl(blob: Blob): Promise<string> {
   });
 }
 
+/** Read the vourdev-meta block (title/caption/hashtags) from an uploaded HTML carousel. */
+function parseMeta(html: string): { title: string; caption: string; hashtags: string[] } {
+  const m = html.match(/<script[^>]*id="vourdev-meta"[^>]*>([\s\S]*?)<\/script>/);
+  if (m) {
+    try {
+      const j = JSON.parse(m[1]);
+      return {
+        title: typeof j.title === "string" ? j.title : "Untitled",
+        caption: typeof j.caption === "string" ? j.caption : "",
+        hashtags: Array.isArray(j.hashtags) ? j.hashtags : [],
+      };
+    } catch {
+      // fall through
+    }
+  }
+  return { title: "Untitled", caption: "", hashtags: [] };
+}
+
+function countSections(html: string): number {
+  return (html.match(/<section[\s>]/g) ?? []).length;
+}
+
 // Simple React Markdown Renderer
 function renderMarkdown(md: string) {
   if (!md) return <p className="text-muted-foreground italic text-xs">Brief outline kosong...</p>;
@@ -189,8 +211,17 @@ export function Wizard({ models }: { models: ModelId[] }) {
     ttPostId?: string;
   }>({ status: "idle", progressMsg: "" });
   const [carouselId, setCarouselId] = useState<string | null>(null);
+  const [uploadedHtml, setUploadedHtml] = useState<string | null>(null);
+  const htmlInputRef = useRef<HTMLInputElement>(null);
 
-  const html = useMemo(() => (plan ? assembleCarousel(plan) : ""), [plan]);
+  const html = useMemo(
+    () => uploadedHtml ?? (plan ? assembleCarousel(plan) : ""),
+    [uploadedHtml, plan]
+  );
+  const slideCount = useMemo(
+    () => (uploadedHtml ? countSections(uploadedHtml) : plan?.slides.length ?? 0),
+    [uploadedHtml, plan]
+  );
 
   // Load state from local storage
   useEffect(() => {
@@ -220,9 +251,10 @@ export function Wizard({ models }: { models: ModelId[] }) {
   // Save state to local storage
   useEffect(() => {
     if (!mounted) return;
+    if (uploadedHtml) return; // don't persist heavy raw-HTML upload sessions
     const draft = { step, idea, model, brief, plan, approved, activeTab, messages, mdMode };
     localStorage.setItem("vour_carousel_draft", JSON.stringify(draft));
-  }, [step, idea, model, brief, plan, approved, activeTab, messages, mdMode, mounted]);
+  }, [step, idea, model, brief, plan, approved, activeTab, messages, mdMode, mounted, uploadedHtml]);
 
   // Auto-scroll chat feed to bottom
   useEffect(() => {
@@ -285,12 +317,12 @@ export function Wizard({ models }: { models: ModelId[] }) {
         try {
           const thumb = generatedBlobs[0] ? await blobToDataUrl(generatedBlobs[0]) : null;
           const id = await saveExportedCarouselAction({
-            source: "ai",
+            source: uploadedHtml ? "upload" : "ai",
             title: plan.title,
             caption: plan.caption,
             hashtags: plan.hashtags,
-            slideCount: plan.slides.length,
-            model: model || null,
+            slideCount,
+            model: uploadedHtml ? null : model || null,
             thumbnailBase64: thumb,
           });
           setCarouselId(id);
@@ -404,6 +436,7 @@ export function Wizard({ models }: { models: ModelId[] }) {
     setExportedImages([]);
     setDueAt("");
     setCarouselId(null);
+    setUploadedHtml(null);
     setPublishState({ status: "idle", progressMsg: "" });
     setMessages([
       {
@@ -445,6 +478,31 @@ export function Wizard({ models }: { models: ModelId[] }) {
       }
     };
     reader.readAsText(file);
+  }
+
+  function handleHtmlUpload(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      const text = event.target?.result as string;
+      if (!text) return;
+      const meta = parseMeta(text);
+      setUploadedHtml(text);
+      // Synthetic plan carries the caption/title/hashtags for export + publish.
+      setPlan({ title: meta.title, caption: meta.caption, hashtags: meta.hashtags, slides: [] } as SlidePlan);
+      setApproved(false);
+      setStep(3);
+      setActiveTab("preview");
+      addMessage("user", `Upload HTML: ${file.name}`);
+      addMessage(
+        "ai",
+        `HTML carousel dimuat (${countSections(text)} slide). Lewati AI — langsung klik "Approve & Export JPEGs", lalu Publish.`
+      );
+      toast.success(`HTML ${file.name} loaded`);
+    };
+    reader.readAsText(file);
+    e.target.value = "";
   }
 
   function handleBriefGeneration() {
@@ -511,6 +569,10 @@ export function Wizard({ models }: { models: ModelId[] }) {
 
   function handleRevisionSend() {
     if (!revision.trim()) return;
+    if (uploadedHtml) {
+      toast.error("Revisi AI tidak tersedia untuk HTML upload — langsung export.");
+      return;
+    }
     const currentRevision = revision;
     addMessage("user", currentRevision);
     setRevision("");
@@ -640,8 +702,25 @@ export function Wizard({ models }: { models: ModelId[] }) {
                   <Upload className="size-3.5" />
                   Upload Markdown (.md)
                 </Button>
+                <input
+                  type="file"
+                  accept=".html,text/html"
+                  ref={htmlInputRef}
+                  onChange={handleHtmlUpload}
+                  className="hidden"
+                  id="html-file-upload"
+                />
+                <Button
+                  type="button"
+                  variant="outline"
+                  className="w-full h-8 text-xs gap-1.5"
+                  onClick={() => htmlInputRef.current?.click()}
+                >
+                  <FileText className="size-3.5" />
+                  Upload HTML (.html) — skip AI
+                </Button>
                 <p className="text-[10px] text-muted-foreground text-center">
-                  Atau langsung paste teks markdown ke dalam panel kanan.
+                  Markdown → brief editor. HTML jadi → langsung export &amp; publish.
                 </p>
               </div>
             </CardContent>
@@ -960,7 +1039,7 @@ export function Wizard({ models }: { models: ModelId[] }) {
               {step === 3 && (
                 <div className="h-full overflow-y-auto flex items-center justify-center p-4 min-h-0">
                   {plan ? (
-                    <PreviewFrame html={html} slideCount={plan.slides.length} />
+                    <PreviewFrame html={html} slideCount={slideCount} />
                   ) : (
                     <div className="text-center p-8 text-muted-foreground">
                       <LayoutGrid className="size-8 mx-auto mb-2 text-muted-foreground/50 animate-pulse" />
