@@ -12,7 +12,7 @@ export function KeyboardNav() {
       const t = e.target as HTMLElement | null;
       if (t && /^(INPUT|TEXTAREA|SELECT)$/.test(t.tagName)) return;
       if (e.key === "c" || e.key === "C") router.push("/create");
-      else if (e.key === "p" || e.key === "P") router.push("/preview");
+      else if (e.key === "h" || e.key === "H") router.push("/history");
     }
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);

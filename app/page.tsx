@@ -3,7 +3,7 @@ import { availableModels } from "@/lib/ai/registry";
 import { LogoutButton } from "./logout-button";
 import { KeyboardNav } from "./keyboard-nav";
 import Link from "next/link";
-import { ArrowUpRight, Sparkles, Layers } from "lucide-react";
+import { ArrowUpRight, Sparkles, Clock } from "lucide-react";
 
 const gradientBorder: React.CSSProperties = {
   padding: 1,
@@ -110,11 +110,11 @@ export default async function Home() {
             icon={<Sparkles className="size-4" />}
           />
           <LaunchTile
-            href="/preview"
-            kbd="P"
-            title="Preview"
-            desc="render + export gambar HD"
-            icon={<Layers className="size-4" />}
+            href="/history"
+            kbd="H"
+            title="History"
+            desc="lacak konten & status Buffer"
+            icon={<Clock className="size-4" />}
           />
         </div>
 
