@@ -19,11 +19,14 @@ function mountHiddenIframe(html: string): Promise<HTMLIFrameElement> {
     iframe.setAttribute("aria-hidden", "true");
     Object.assign(iframe.style, {
       position: "fixed",
-      left: "-99999px",
+      left: "0",
       top: "0",
       width: `${SLIDE_W}px`,
       height: `${SLIDE_H}px`,
       border: "0",
+      opacity: "0.01",
+      pointerEvents: "none",
+      zIndex: "-9999",
     });
     // Fallback in case onload never fires.
     const timer = setTimeout(() => resolve(iframe), READY_TIMEOUT_MS);
