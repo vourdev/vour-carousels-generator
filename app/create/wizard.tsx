@@ -18,7 +18,7 @@ import { namedBlobs, downloadNamedBlobs } from "@/lib/export/download";
 import { captureCarousel } from "@/lib/export/capture";
 import type { ModelId } from "@/lib/ai/registry";
 import type { SlidePlan } from "@/lib/ds/schema";
-import { briefAction, planAction, reviseAction, uploadImagesAction, publishAction, getPublishingConfigAction } from "./actions";
+import { briefAction, planAction, reviseAction, uploadSingleImageAction, publishAction, getPublishingConfigAction } from "./actions";
 import { saveExportedCarouselAction, markCarouselStatusAction } from "@/app/history/actions";
 import { Sparkles, Brain, Zap, RotateCcw, Check, Send, Eye, FileText, LayoutGrid, User, Upload, Clock, CheckCircle2, XCircle, AlertCircle, Calendar, Globe } from "lucide-react";
 import { toast } from "sonner";
@@ -216,6 +216,9 @@ export function Wizard({ models }: { models: ModelId[] }) {
   // Mobile shows one panel at a time (desktop keeps the 2-col layout).
   const [mobilePanel, setMobilePanel] = useState<"chat" | "canvas">("chat");
 
+  const [editableTitle, setEditableTitle] = useState("");
+  const [editableCaption, setEditableCaption] = useState("");
+
   const html = useMemo(
     () => uploadedHtml ?? (plan ? assembleCarousel(plan) : ""),
     [uploadedHtml, plan]
@@ -224,6 +227,22 @@ export function Wizard({ models }: { models: ModelId[] }) {
     () => (uploadedHtml ? countSections(uploadedHtml) : plan?.slides.length ?? 0),
     [uploadedHtml, plan]
   );
+
+  // Sync editable Title & Caption when plan changes
+  useEffect(() => {
+    if (plan) {
+      setEditableTitle((prev) => prev || plan.title || "");
+      setEditableCaption((prev) => {
+        if (prev) return prev;
+        const hashtagsStr = plan.hashtags
+          ? plan.hashtags.map((h) => (h.startsWith("#") ? h : `#${h}`)).join(" ")
+          : "";
+        return plan.caption 
+          ? `${plan.caption}\n\n${hashtagsStr}` 
+          : hashtagsStr;
+      });
+    }
+  }, [plan]);
 
   // Load state from local storage
   useEffect(() => {
@@ -243,6 +262,11 @@ export function Wizard({ models }: { models: ModelId[] }) {
         if (parsed.activeTab) setActiveTab(parsed.activeTab);
         if (parsed.messages) setMessages(parsed.messages);
         if (parsed.mdMode) setMdMode(parsed.mdMode);
+        if (parsed.uploadedHtml) setUploadedHtml(parsed.uploadedHtml);
+        if (parsed.carouselId) setCarouselId(parsed.carouselId);
+        if (parsed.dueAt) setDueAt(parsed.dueAt);
+        if (parsed.editableTitle) setEditableTitle(parsed.editableTitle);
+        if (parsed.editableCaption) setEditableCaption(parsed.editableCaption);
       } catch (e) {
         console.error("Failed to parse saved draft", e);
       }
@@ -253,10 +277,40 @@ export function Wizard({ models }: { models: ModelId[] }) {
   // Save state to local storage
   useEffect(() => {
     if (!mounted) return;
-    if (uploadedHtml) return; // don't persist heavy raw-HTML upload sessions
-    const draft = { step, idea, model, brief, plan, approved, activeTab, messages, mdMode };
+    const draft = {
+      step,
+      idea,
+      model,
+      brief,
+      plan,
+      approved,
+      activeTab,
+      messages,
+      mdMode,
+      uploadedHtml,
+      carouselId,
+      dueAt,
+      editableTitle,
+      editableCaption,
+    };
     localStorage.setItem("vour_carousel_draft", JSON.stringify(draft));
-  }, [step, idea, model, brief, plan, approved, activeTab, messages, mdMode, mounted, uploadedHtml]);
+  }, [
+    step,
+    idea,
+    model,
+    brief,
+    plan,
+    approved,
+    activeTab,
+    messages,
+    mdMode,
+    mounted,
+    uploadedHtml,
+    carouselId,
+    dueAt,
+    editableTitle,
+    editableCaption,
+  ]);
 
   // Auto-scroll chat feed to bottom
   useEffect(() => {
@@ -306,10 +360,22 @@ export function Wizard({ models }: { models: ModelId[] }) {
     };
   }, [exportedImages]);
 
+  const handleSaveEdits = async () => {
+    if (!carouselId) return;
+    try {
+      await markCarouselStatusAction(carouselId, {
+        title: editableTitle,
+        caption: editableCaption,
+      });
+    } catch (err) {
+      console.error("failed to save edits to db", err);
+    }
+  };
+
   const handleExport = async () => {
     if (!html) return;
     setExportPending(true);
-    addMessage("ai", "Mengekspor slide rancangan menjadi gambar JPEG resolusi tinggi...");
+    addMessage("ai", "Mengekspor slide rancangan menjadi gambar PNG resolusi tinggi...");
     try {
       const generatedBlobs = await captureCarousel(html);
       setBlobs(generatedBlobs);
@@ -326,8 +392,8 @@ export function Wizard({ models }: { models: ModelId[] }) {
           const thumb = generatedBlobs[0] ? await blobToDataUrl(generatedBlobs[0]) : null;
           const id = await saveExportedCarouselAction({
             source: uploadedHtml ? "upload" : "ai",
-            title: plan.title,
-            caption: plan.caption,
+            title: editableTitle || plan.title,
+            caption: editableCaption || plan.caption,
             hashtags: plan.hashtags,
             slideCount,
             model: uploadedHtml ? null : model || null,
@@ -373,21 +439,33 @@ export function Wizard({ models }: { models: ModelId[] }) {
     addMessage("user", `Jadwalkan publikasi pada ${scheduleDate.toLocaleString("id-ID")}`);
 
     try {
-      const base64s: string[] = [];
-      for (const blob of blobs) {
+      const urls: string[] = [];
+      for (let idx = 0; idx < blobs.length; idx++) {
+        setPublishState({
+          status: "uploading",
+          progressMsg: `Mengunggah slide ${idx + 1} dari ${blobs.length} ke Cloudinary...`,
+        });
+        const blob = blobs[idx];
         const base64 = await new Promise<string>((res, rej) => {
           const reader = new FileReader();
           reader.onloadend = () => res(reader.result as string);
           reader.onerror = rej;
           reader.readAsDataURL(blob);
         });
-        base64s.push(base64);
+        const url = await uploadSingleImageAction(base64);
+        urls.push(url);
       }
 
-      const urls = await uploadImagesAction(base64s);
-
       setPublishState({ status: "publishing", progressMsg: "Mengirim ke Buffer API..." });
-      const results = await publishAction(urls, plan!, scheduleDate.toISOString());
+      
+      const editedPlan: SlidePlan = {
+        ...plan!,
+        title: editableTitle,
+        caption: editableCaption,
+        hashtags: [],
+      };
+      
+      const results = await publishAction(urls, editedPlan, scheduleDate.toISOString());
 
       setPublishState({
         status: "success",
@@ -402,6 +480,8 @@ export function Wizard({ models }: { models: ModelId[] }) {
           bufferIgId: results.igPostId,
           bufferTtId: results.ttPostId,
           dueAt: scheduleDate.toISOString(),
+          title: editableTitle,
+          caption: editableCaption,
         }).catch(console.error);
       }
 
@@ -1178,18 +1258,27 @@ export function Wizard({ models }: { models: ModelId[] }) {
                       </div>
                       <div className="space-y-2">
                         <div>
-                          <span className="text-[10px] font-medium text-muted-foreground uppercase">TikTok Title</span>
-                          <div className="text-xs border border-hairline rounded p-2 bg-muted/30 font-mono mt-1">
-                            {plan.title}
-                          </div>
+                          <span className="text-[10px] font-medium text-muted-foreground uppercase block">TikTok Title</span>
+                          <Input
+                            type="text"
+                            value={editableTitle}
+                            onChange={(e) => setEditableTitle(e.target.value)}
+                            onBlur={handleSaveEdits}
+                            disabled={publishState.status === "uploading" || publishState.status === "publishing"}
+                            placeholder="Judul postingan TikTok..."
+                            className="text-xs font-mono mt-1 w-full bg-muted/20 focus-visible:ring-1 focus-visible:ring-primary border-hairline"
+                          />
                         </div>
                         <div>
-                          <span className="text-[10px] font-medium text-muted-foreground uppercase">Caption (Instagram / TikTok)</span>
-                          <div className="text-xs border border-hairline rounded p-2 bg-muted/30 font-mono whitespace-pre-wrap mt-1 max-h-32 overflow-y-auto">
-                            {plan.caption}
-                            {"\n\n"}
-                            {plan.hashtags.map((h) => (h.startsWith("#") ? h : `#${h}`)).join(" ")}
-                          </div>
+                          <span className="text-[10px] font-medium text-muted-foreground uppercase block">Caption (Instagram / TikTok)</span>
+                          <Textarea
+                            value={editableCaption}
+                            onChange={(e) => setEditableCaption(e.target.value)}
+                            onBlur={handleSaveEdits}
+                            disabled={publishState.status === "uploading" || publishState.status === "publishing"}
+                            placeholder="Tulis caption Anda di sini..."
+                            className="text-xs font-mono mt-1 w-full h-32 bg-muted/20 focus-visible:ring-1 focus-visible:ring-primary border-hairline resize-none"
+                          />
                         </div>
                       </div>
                     </div>

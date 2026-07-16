@@ -42,14 +42,9 @@ export async function getPublishingConfigAction(): Promise<{ hasIg: boolean; has
   };
 }
 
-export async function uploadImagesAction(base64Images: string[]): Promise<string[]> {
+export async function uploadSingleImageAction(base64Image: string): Promise<string> {
   await requireSession();
-  const urls: string[] = [];
-  for (const img of base64Images) {
-    const url = await uploadImage(img);
-    urls.push(url);
-  }
-  return urls;
+  return await uploadImage(base64Image);
 }
 
 export async function publishAction(

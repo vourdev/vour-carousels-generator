@@ -167,8 +167,7 @@ export async function captureCarousel(
     const blobs: Blob[] = [];
     for (const section of sections) {
       const blob = await toBlob(section, {
-        type: "image/jpeg",
-        quality,
+        type: "image/png",
         pixelRatio,
         width: SLIDE_W,
         height: SLIDE_H,

@@ -45,7 +45,14 @@ export async function saveExportedCarouselAction(input: {
 
 export async function markCarouselStatusAction(
   id: string,
-  patch: { status: CarouselStatus; bufferIgId?: string; bufferTtId?: string; dueAt?: string }
+  patch: {
+    status?: CarouselStatus;
+    bufferIgId?: string;
+    bufferTtId?: string;
+    dueAt?: string;
+    title?: string;
+    caption?: string;
+  }
 ): Promise<void> {
   await requireSession();
   await updateCarousel(id, patch);
