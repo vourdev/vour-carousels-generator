@@ -4,6 +4,7 @@ import {
   updateCarousel,
   listCarousels,
   getCarousel,
+  deleteCarousel,
 } from "@/lib/history/repo";
 
 describe("carousel history repo", () => {
@@ -45,5 +46,16 @@ describe("carousel history repo", () => {
     const c = await createCarousel({ userId: owner, source: "upload", title: "Mine" });
     expect(await getCarousel(c.id, other)).toBeNull();
     expect(await listCarousels(other)).toHaveLength(0);
+  });
+
+  it("deletes a carousel", async () => {
+    const user = `u-${crypto.randomUUID()}`;
+    const c = await createCarousel({ userId: user, source: "upload", title: "To Delete" });
+    const fetchedBefore = await getCarousel(c.id, user);
+    expect(fetchedBefore).not.toBeNull();
+
+    await deleteCarousel(c.id, user);
+    const fetchedAfter = await getCarousel(c.id, user);
+    expect(fetchedAfter).toBeNull();
   });
 });

@@ -561,13 +561,17 @@ export function Wizard({ models }: { models: ModelId[] }) {
     }
   };
 
-  function handleReset() {
+  async function handleReset() {
     if (typewriterIntervalRef.current) {
       clearInterval(typewriterIntervalRef.current);
     }
     // Delete the unscheduled/unpublished draft from the database on reset
     if (carouselId && publishState.status !== "success") {
-      deleteCarouselAction(carouselId).catch(console.error);
+      try {
+        await deleteCarouselAction(carouselId);
+      } catch (err) {
+        console.error("Failed to delete draft from db on reset:", err);
+      }
     }
     setStep(1);
     setIdea("");
