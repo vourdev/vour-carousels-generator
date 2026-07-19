@@ -23,16 +23,34 @@ export function defaultModel(env: NodeJS.ProcessEnv = process.env): ModelId | nu
   return availableModels(env)[0] ?? null;
 }
 
+function getGatewayConfig() {
+  const env = process.env;
+  if (!env.AI_GATEWAY_API_KEY) return {};
+
+  return {
+    baseURL: "https://ai-gateway.vercel.sh/v1",
+    headers: {
+      "Authorization": `Bearer ${env.AI_GATEWAY_API_KEY}`,
+    },
+  };
+}
+
 export function resolveModel(id: ModelId): LanguageModel {
   const env = process.env;
   switch (id) {
     case "gemini": {
-      const google = createGoogleGenerativeAI({ apiKey: env.GOOGLE_GENERATIVE_AI_API_KEY });
+      const google = createGoogleGenerativeAI({
+        apiKey: env.GOOGLE_GENERATIVE_AI_API_KEY,
+        ...getGatewayConfig(),
+      });
       // Use gemini-flash-latest alias as gemini-2.5-flash gets sunset for new accounts.
       return google(env.GEMINI_MODEL || "gemini-flash-latest");
     }
     case "deepseek": {
-      const deepseek = createDeepSeek({ apiKey: env.DEEPSEEK_API_KEY });
+      const deepseek = createDeepSeek({
+        apiKey: env.DEEPSEEK_API_KEY,
+        ...getGatewayConfig(),
+      });
       return deepseek("deepseek-chat");
     }
     case "mimo": {

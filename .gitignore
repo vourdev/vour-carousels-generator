@@ -44,3 +44,5 @@ next-env.d.ts
 # local sqlite/libsql db files
 *.db
 *.db-journal
+
+graphify-out/

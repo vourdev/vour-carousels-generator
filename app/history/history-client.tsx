@@ -283,7 +283,7 @@ export default function HistoryClient({ initialItems, userId, betterAuthSecret }
       </div>
 
       {/* Calendar View Panel */}
-      {view === "calendar" && (
+      {view === "calendar" ? (
         <div className="grid grid-cols-1 lg:grid-cols-[1fr_360px] gap-6 items-stretch min-h-0">
           
           {/* LEFT: The Main Calendar Grid */}
@@ -380,30 +380,36 @@ export default function HistoryClient({ initialItems, userId, betterAuthSecret }
             </div>
           </div>
 
-          {/* RIGHT: Detail Day Selected & Unscheduled Stock */}
-          <div className="flex flex-col gap-6">
+          {/* RIGHT: Detail Day Selected */}
+          <div className="flex flex-col h-full">
             
             {/* Panel 1: Scheduled on selected day */}
-            <Card className="shadow-sm shrink-0 border-hairline">
-              <CardContent className="p-4 flex flex-col gap-3">
-                <div className="flex items-center justify-between border-b pb-3">
+            <Card className="shadow-sm border-hairline flex flex-col flex-1 min-h-[400px]">
+              <CardContent className="p-4 flex flex-col gap-3 flex-1 min-h-0">
+                <div className="flex items-center justify-between border-b pb-3 shrink-0">
                   <span className="text-xs font-bold text-foreground flex items-center gap-1.5">
                     <Clock className="size-4 text-primary" />
                     Schedule: {selectedDate ? selectedDate.toLocaleDateString("id-ID", { day: "numeric", month: "long", year: "numeric" }) : "Pilih Tanggal"}
                   </span>
+                  <Link href="/create">
+                    <Button size="sm" variant="ghost" className="h-6 text-[10px] gap-1 px-2 text-primary hover:bg-primary/10 border border-primary/20">
+                      <Plus className="size-3" />
+                      Buat Konten
+                    </Button>
+                  </Link>
                 </div>
                 
                 {selectedDate && getScheduledItemsForDate(selectedDate).length === 0 ? (
-                  <p className="text-center py-6 text-xs text-muted-foreground font-mono">
-                    Tidak ada konten dijadwalkan untuk hari ini.
-                  </p>
+                  <div className="flex-1 flex flex-col items-center justify-center text-center p-6 text-muted-foreground">
+                    <p className="text-xs font-mono">Tidak ada konten dijadwalkan untuk hari ini.</p>
+                  </div>
                 ) : (
-                  <div className="flex flex-col gap-2.5 max-h-[220px] overflow-y-auto pr-1">
+                  <div className="flex-1 overflow-y-auto flex flex-col gap-2.5 pr-1 min-h-0">
                     {selectedDate && getScheduledItemsForDate(selectedDate).map(item => (
                       <div
                         key={item.id}
                         onClick={() => setSelectedCarousel(item)}
-                        className="flex items-center gap-2 p-2 rounded-lg border border-hairline hover:bg-muted/10 cursor-pointer bg-card/50"
+                        className="flex items-center gap-2.5 p-2 rounded-xl border border-hairline hover:bg-muted/10 cursor-pointer bg-card/50"
                       >
                         <div className="size-10 rounded border border-hairline bg-muted overflow-hidden shrink-0">
                           {item.thumbnail ? (
@@ -427,80 +433,12 @@ export default function HistoryClient({ initialItems, userId, betterAuthSecret }
                 )}
               </CardContent>
             </Card>
-
-            {/* Panel 2: Stock Konten (Unscheduled) */}
-            <Card className="shadow-sm flex-1 border-hairline flex flex-col min-h-[300px]">
-              <CardContent className="p-4 flex flex-col gap-3 flex-1 min-h-0">
-                <div className="flex items-center justify-between border-b pb-3 shrink-0">
-                  <span className="text-xs font-bold text-foreground flex items-center gap-1.5">
-                    <Sparkles className="size-4 text-indigo-500 animate-pulse" />
-                    Stock Konten ({unscheduledItems.length})
-                  </span>
-                  <Link href="/create">
-                    <Button size="icon" className="size-6 bg-primary/10 hover:bg-primary/20 text-primary border border-primary/20">
-                      <Plus className="size-3" />
-                    </Button>
-                  </Link>
-                </div>
-
-                {unscheduledItems.length === 0 ? (
-                  <div className="flex-1 flex flex-col items-center justify-center text-center p-6 text-muted-foreground">
-                    <p className="text-xs font-mono">Stock kosong. Buat carousel baru terlebih dahulu.</p>
-                  </div>
-                ) : (
-                  <div className="flex-1 overflow-y-auto flex flex-col gap-2.5 pr-1 min-h-0">
-                    {unscheduledItems.map(item => (
-                      <div
-                        key={item.id}
-                        className="flex flex-col gap-2 p-2.5 rounded-xl border border-hairline hover:border-muted-foreground/30 bg-muted/10 transition-all hover:translate-y-[-1px] shadow-2xs"
-                      >
-                        <div className="flex items-center gap-2.5 cursor-pointer" onClick={() => setSelectedCarousel(item)}>
-                          <div className="size-12 rounded-lg border border-hairline bg-muted overflow-hidden shrink-0">
-                            {item.thumbnail ? (
-                              <img src={item.thumbnail} alt="" className="size-full object-cover" />
-                            ) : (
-                              <div className="size-full" />
-                            )}
-                          </div>
-                          <div className="flex-1 min-w-0">
-                            <p className="text-xs font-bold truncate leading-tight">{item.title || "Untitled"}</p>
-                            <p className="text-[10px] text-muted-foreground font-mono mt-0.5">
-                              {item.slideCount} slides · {item.source === "ai" ? "AI Generator" : "Upload HTML"}
-                            </p>
-                          </div>
-                        </div>
-                        <div className="flex items-center justify-between gap-2 border-t border-hairline pt-2 mt-1 shrink-0">
-                          <span className={`text-[8px] uppercase px-1.5 py-0.5 rounded-full border leading-none font-mono ${statusStyle[item.status].bg} ${statusStyle[item.status].text} ${statusStyle[item.status].border}`}>
-                            {item.status}
-                          </span>
-                          <Button
-                            size="sm"
-                            className="h-6 text-[10px] font-mono"
-                            onClick={() => {
-                              setSchedulingTarget(item.id);
-                              // Default: tomorrow at 9 AM
-                              const tomorrow = new Date();
-                              tomorrow.setDate(tomorrow.getDate() + 1);
-                              tomorrow.setHours(9, 0, 0, 0);
-                              const pad = (n: number) => String(n).padStart(2, "0");
-                              setScheduleTime(`${tomorrow.getFullYear()}-${pad(tomorrow.getMonth() + 1)}-${pad(tomorrow.getDate())}T${pad(tomorrow.getHours())}:${pad(tomorrow.getMinutes())}`);
-                            }}
-                          >
-                            Schedule
-                          </Button>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </CardContent>
-            </Card>
           </div>
         </div>
-      )}
+      ) : null}
 
       {/* List View Panel */}
-      {view === "list" && (
+      {view === "list" ? (
         <Card className="border-hairline shadow-sm overflow-hidden">
           <CardContent className="p-0">
             {items.length === 0 ? (
@@ -595,7 +533,7 @@ export default function HistoryClient({ initialItems, userId, betterAuthSecret }
             )}
           </CardContent>
         </Card>
-      )}
+      ) : null}
 
       {/* Connection for n8n Section */}
       <Card className="border border-indigo-500/20 bg-gradient-to-r from-indigo-500/5 via-primary/5 to-transparent shadow-xs">

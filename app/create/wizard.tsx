@@ -549,6 +549,79 @@ export function Wizard({ models }: { models: ModelId[] }) {
     }
   };
 
+  const handleSaveToStock = async () => {
+    if (!dueAt) {
+      toast.error("Pilih tanggal dan waktu scheduling!");
+      return;
+    }
+    const scheduleDate = new Date(dueAt);
+    if (scheduleDate <= new Date()) {
+      toast.error("Waktu harus di masa depan!");
+      return;
+    }
+
+    setPublishState({ status: "publishing", progressMsg: "Menyimpan ke Stock Konten..." });
+    addMessage("user", `Simpan ke Stock Konten pada ${scheduleDate.toLocaleString("id-ID")}`);
+
+    try {
+      let urls = uploadedImageUrls;
+      if (urls.length === 0 && blobs.length > 0) {
+        setPublishState({ status: "uploading", progressMsg: "Mengunggah gambar ke Cloudinary..." });
+        const uploadedUrls: string[] = [];
+        for (let idx = 0; idx < blobs.length; idx++) {
+          setPublishState({
+            status: "uploading",
+            progressMsg: `Mengunggah slide ${idx + 1} dari ${blobs.length} ke Cloudinary...`,
+          });
+          const blob = blobs[idx];
+          const base64 = await new Promise<string>((res, rej) => {
+            const reader = new FileReader();
+            reader.onloadend = () => res(reader.result as string);
+            reader.onerror = rej;
+            reader.readAsDataURL(blob);
+          });
+          const url = await uploadSingleImageAction(base64);
+          uploadedUrls.push(url);
+        }
+        urls = uploadedUrls;
+        setUploadedImageUrls(urls);
+      }
+
+      setPublishState({ status: "publishing", progressMsg: "Menyimpan ke database..." });
+      
+      if (carouselId) {
+        await markCarouselStatusAction(carouselId, {
+          status: "exported",
+          dueAt: scheduleDate.toISOString(),
+          title: editableTitle,
+          caption: editableCaption,
+          imageUrls: urls,
+          thumbnail: urls[0] || null,
+        });
+      }
+
+      setPublishState({
+        status: "success",
+        progressMsg: "Berhasil disimpan ke Stock Konten!",
+      });
+
+      addMessage(
+        "ai",
+        `Sukses! Carousel berhasil disimpan ke Stock Konten pada ${scheduleDate.toLocaleString("id-ID")}. Konten ini dapat dipublish manual nanti dari halaman History.`
+      );
+      toast.success("Berhasil disimpan ke Stock Konten!");
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : "Gagal";
+      setPublishState({
+        status: "error",
+        progressMsg: "Gagal menyimpan",
+        errorMsg: msg,
+      });
+      addMessage("ai", `Gagal menyimpan ke Stock Konten: ${msg}`);
+      toast.error(`Gagal menyimpan: ${msg}`);
+    }
+  };
+
   async function handleReset() {
     if (typewriterIntervalRef.current) {
       clearInterval(typewriterIntervalRef.current);
@@ -1030,26 +1103,49 @@ export function Wizard({ models }: { models: ModelId[] }) {
               </Button>
             )}
             {step === 2 && (
-              <Button
-                size="sm"
-                disabled={pending || isTyping}
-                onClick={handlePlanGeneration}
-                className="h-7 text-xs font-medium gap-1 px-3"
-              >
-                <Check className="size-3.5" />
-                Approve & Render Slide
-              </Button>
+              <div className="flex items-center gap-2">
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => setStep(1)}
+                  className="h-7 text-xs font-medium px-3"
+                >
+                  Back
+                </Button>
+                <Button
+                  size="sm"
+                  disabled={pending || isTyping}
+                  onClick={handlePlanGeneration}
+                  className="h-7 text-xs font-medium gap-1 px-3"
+                >
+                  <Check className="size-3.5" />
+                  Approve & Render Slide
+                </Button>
+              </div>
             )}
             {step === 3 && plan && (
-              <Button
-                size="sm"
-                disabled={pending || exportPending}
-                onClick={handleExport}
-                className="h-7 text-xs font-medium gap-1 px-3"
-              >
-                <Upload className="size-3.5" />
-                {exportPending ? "Exporting..." : "Approve & Export JPEGs"}
-              </Button>
+              <div className="flex items-center gap-2">
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => {
+                    setStep(2);
+                    setActiveTab("brief");
+                  }}
+                  className="h-7 text-xs font-medium px-3"
+                >
+                  Back
+                </Button>
+                <Button
+                  size="sm"
+                  disabled={pending || exportPending}
+                  onClick={handleExport}
+                  className="h-7 text-xs font-medium gap-1 px-3"
+                >
+                  <Upload className="size-3.5" />
+                  {exportPending ? "Exporting..." : "Approve & Export JPEGs"}
+                </Button>
+              </div>
             )}
             {step === 4 && (
               <div className="flex items-center gap-2">
@@ -1335,43 +1431,58 @@ export function Wizard({ models }: { models: ModelId[] }) {
                           />
                         </div>
                       </div>
-                    </div>
-
-                    {/* Action or Progress Panel */}
+                        {/* Action or Progress Panel */}
                     <div className="bg-card border border-hairline rounded-xl p-6 shadow-xs text-center space-y-4">
-                      {publishState.status === "idle" && (
-                        <Button
-                          onClick={handlePublish}
-                          className="w-full font-semibold"
-                          disabled={!pubConfig?.hasIg && !pubConfig?.hasTt}
-                        >
-                          Schedule to Buffer
-                        </Button>
-                      )}
+                      {publishState.status === "idle" ? (
+                        <div className="flex flex-col sm:flex-row gap-3">
+                          <Button
+                            onClick={handlePublish}
+                            className="flex-1 font-semibold"
+                            disabled={!pubConfig?.hasIg && !pubConfig?.hasTt}
+                          >
+                            Schedule to Buffer
+                          </Button>
+                          <Button
+                            onClick={handleSaveToStock}
+                            variant="outline"
+                            className="flex-1 font-semibold border-primary/40 text-primary hover:bg-primary/5"
+                          >
+                            Save to Stock Content
+                          </Button>
+                        </div>
+                      ) : null}
 
-                      {(publishState.status === "uploading" || publishState.status === "publishing") && (
+                      {publishState.status === "uploading" || publishState.status === "publishing" ? (
                         <div className="space-y-3">
                           <div className="size-8 rounded-full border-2 border-primary border-t-transparent animate-spin mx-auto" />
                           <p className="text-xs font-medium text-foreground">{publishState.progressMsg}</p>
                         </div>
-                      )}
+                      ) : null}
 
-                      {publishState.status === "success" && (
+                      {publishState.status === "success" ? (
                         <div className="space-y-3">
                           <CheckCircle2 className="size-8 text-emerald-500 mx-auto" />
-                          <p className="text-xs font-medium text-emerald-600">Berhasil Dijadwalkan!</p>
-                          <div className="text-left text-[11px] font-mono border border-emerald-100 bg-emerald-50/50 rounded p-3 space-y-1">
-                            {publishState.igPostId && (
-                              <div>Instagram Post ID: <span className="text-foreground font-semibold">{publishState.igPostId}</span></div>
-                            )}
-                            {publishState.ttPostId && (
-                              <div>TikTok Post ID: <span className="text-foreground font-semibold">{publishState.ttPostId}</span></div>
-                            )}
-                          </div>
+                          <p className="text-xs font-medium text-emerald-600">{publishState.progressMsg || "Berhasil!"}</p>
+                          {publishState.igPostId || publishState.ttPostId ? (
+                            <div className="text-left text-[11px] font-mono border border-emerald-100 bg-emerald-50/50 rounded p-3 space-y-1">
+                              {publishState.igPostId ? (
+                                <div>Instagram Post ID: <span className="text-foreground font-semibold">{publishState.igPostId}</span></div>
+                              ) : null}
+                              {publishState.ttPostId ? (
+                                <div>TikTok Post ID: <span className="text-foreground font-semibold">{publishState.ttPostId}</span></div>
+                              ) : null}
+                            </div>
+                          ) : null}
+                          <Button
+                            onClick={handleReset}
+                            className="w-full mt-2 font-semibold bg-emerald-600 hover:bg-emerald-700 text-white"
+                          >
+                            Buat Konten Baru
+                          </Button>
                         </div>
-                      )}
+                      ) : null}
 
-                      {publishState.status === "error" && (
+                      {publishState.status === "error" ? (
                         <div className="space-y-3">
                           <XCircle className="size-8 text-destructive mx-auto" />
                           <p className="text-xs font-medium text-destructive">Gagal Mempublikasikan</p>
@@ -1382,8 +1493,8 @@ export function Wizard({ models }: { models: ModelId[] }) {
                             Coba Lagi
                           </Button>
                         </div>
-                      )}
-                    </div>
+                      ) : null}
+                    </div>                  </div>
 
                   </div>
                 </div>
