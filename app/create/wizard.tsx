@@ -20,7 +20,7 @@ import type { ModelId } from "@/lib/ai/registry";
 import type { SlidePlan } from "@/lib/ds/schema";
 import { briefAction, planAction, reviseAction, uploadSingleImageAction, publishAction, getPublishingConfigAction } from "./actions";
 import { saveExportedCarouselAction, markCarouselStatusAction, deleteCarouselAction } from "@/app/history/actions";
-import { Sparkles, Brain, Zap, RotateCcw, Check, Send, Eye, FileText, LayoutGrid, User, Upload, Clock, CheckCircle2, XCircle, AlertCircle, Calendar, Globe } from "lucide-react";
+import { Sparkles, Brain, Zap, RotateCcw, Check, Send, Eye, FileText, LayoutGrid, User, Upload, Clock, CheckCircle2, XCircle, AlertCircle, Calendar, Globe, ArrowLeft } from "lucide-react";
 import { toast } from "sonner";
 
 interface Message {
@@ -901,7 +901,29 @@ export function Wizard({ models }: { models: ModelId[] }) {
                 <span className={`text-[11px] ${step === 5 ? "font-semibold text-foreground" : "text-muted-foreground"}`}>Publish</span>
               </div>
 
-              <div className="flex justify-end">
+              <div className="flex justify-between items-center mt-2">
+                {step > 1 ? (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => {
+                      if (step === 2) {
+                        setStep(1);
+                      } else if (step === 3) {
+                        setStep(2);
+                        setActiveTab("brief");
+                      } else if (step === 4) {
+                        setStep(3);
+                      } else if (step === 5) {
+                        setStep(4);
+                      }
+                    }}
+                    className="h-7 text-[10px] gap-1 px-2 text-muted-foreground hover:text-foreground shrink-0"
+                  >
+                    <ArrowLeft className="size-3" />
+                    Back
+                  </Button>
+                ) : <div />}
                 <Button variant="ghost" size="sm" onClick={handleReset} className="h-7 text-[10px] gap-1 px-2 text-muted-foreground hover:text-foreground shrink-0">
                   <RotateCcw className="size-3" />
                   Clear
