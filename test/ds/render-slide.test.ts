@@ -151,6 +151,43 @@ describe("renderSlide", () => {
     expect(html).not.toContain("<script>x");
     expect(html).toContain("&lt;script&gt;x");
   });
+
+  it("renders a full-hero cover (no hook) with hero headline", () => {
+    const html = renderSlide({ role: "cover", eyebrow: "BACKEND", headline: "Idempotency", accentWord: "Idempotency" });
+    expect(html).toContain("hero");
+    expect(html).not.toContain("HOOK_INJECT");
+    expect(html).toContain("Geser");
+  });
+
+  it("renders a compact cover with a device hook", () => {
+    const html = renderSlide({
+      role: "cover", eyebrow: "MISKONSEPSI", headline: "JWT bukan enkripsi", accentWord: "enkripsi",
+      hook: { kind: "device", chrome: "browser", label: "app.tsx",
+        lines: [{ text: "decode(jwt)", style: "kw" }] },
+    });
+    expect(html).toContain('h1 class="compact');
+    expect(html).toContain('class="urlbar"');
+    expect(html).not.toContain("HOOK_INJECT");
+    expect(html).toContain("MISKONSEPSI");
+  });
+
+  it("sanitizes a custom cover hook", () => {
+    const html = renderSlide({
+      role: "cover", eyebrow: "E", headline: "H", accentWord: "H",
+      hook: { kind: "custom", html: '<div class="x">ok</div><script>alert(1)</script>' },
+    });
+    expect(html).toContain('<div class="x">ok</div>');
+    expect(html).not.toContain("alert(1)");
+  });
+
+  it("preserves $ sequences in a custom hook verbatim (no replace() expansion)", () => {
+    const html = renderSlide({
+      role: "cover", eyebrow: "E", headline: "H", accentWord: "H",
+      hook: { kind: "custom", html: '<div class="dollar">$& $$ $` $\' cost=$50</div>' },
+    });
+    // $-sequences must survive unchanged; String.replace would collapse/expand them.
+    expect(html).toContain('<div class="dollar">$& $$ $` $\' cost=$50</div>');
+  });
 });
 
 describe("renderDeviceHook", () => {
