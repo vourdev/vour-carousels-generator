@@ -1209,7 +1209,7 @@ export function Wizard({ models }: { models: ModelId[] }) {
               </div>
 
               {/* Main Content Area Based on mdMode */}
-              <div className="min-h-[420px] max-h-[550px] rounded-2xl border border-hairline overflow-hidden bg-canvas-soft shadow-inner relative">
+              <div className="h-[520px] w-full rounded-2xl border border-hairline overflow-hidden bg-canvas-soft shadow-inner relative">
                 {mdMode === "editor" && (
                   <Textarea
                     value={brief}
@@ -1233,7 +1233,7 @@ export function Wizard({ models }: { models: ModelId[] }) {
                 )}
 
                 {mdMode === "split" && (
-                  <div className="grid grid-cols-1 md:grid-cols-2 h-full divide-y md:divide-y-0 md:divide-x divide-hairline">
+                  <div className="grid grid-cols-1 md:grid-cols-2 h-full divide-y md:divide-y-0 md:divide-x divide-hairline overflow-hidden">
                     <Textarea
                       value={brief}
                       onChange={(e) => setBrief(e.target.value)}
