@@ -93,8 +93,8 @@ export function renderDeviceHook(h: Extract<CoverHook, { kind: "device" }>): str
       : `<span class="title">${escapeHtml(h.label)}</span>`
     : "";
   return deviceTemplate
-    .replace("BAR_LABEL_INJECT", labelHtml)
-    .replace("DEVICE_LINES_INJECT", bodyLines);
+    .replace("BAR_LABEL_INJECT", () => labelHtml)
+    .replace("DEVICE_LINES_INJECT", () => bodyLines);
 }
 
 // Phase-2 refinement pending (ImagePlate styling). Minimal, escaped, safe today.

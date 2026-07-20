@@ -214,4 +214,14 @@ describe("renderDeviceHook", () => {
     expect(html).toContain("jwt.ts");
     expect(html).not.toContain('class="urlbar"');
   });
+  it("preserves $-sequences in device code lines verbatim", () => {
+    const html = renderDeviceHook({
+      kind: "device", chrome: "terminal", label: "sh",
+      lines: [{ text: "echo $'x' $$ a$&b", style: "plain" }],
+    });
+    // escapeHtml turns & -> &amp; and ' -> &#39; but must NOT collapse/re-inject
+    // any $-sequence ($', $$, $&). Bare String.replace would corrupt these.
+    expect(html).toContain("echo $&#39;x&#39; $$ a$&amp;b");
+    expect(html).not.toContain("DEVICE_LINES_INJECT");
+  });
 });
