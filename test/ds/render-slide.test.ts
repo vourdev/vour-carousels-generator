@@ -126,6 +126,26 @@ describe("renderSlide", () => {
     expect(html).not.toContain("Card Title");
   });
 
+  it("renders an outro CTA highlight with strong + sub", () => {
+    const html = renderSlide({
+      role: "outro", eyebrow: "KESIMPULAN", headline: "Mulai sekarang",
+      accentWord: "sekarang", body: "Ringkas.",
+      cta: { strong: "Simpan & bagikan", sub: "Biar gampang dicari lagi." },
+    });
+    expect(html).toContain('class="highlight');
+    expect(html).toContain('class="strong"');
+    expect(html).toContain("Simpan &amp; bagikan");
+    expect(html).toContain('class="sub"');
+    expect(html).toContain("Biar gampang dicari lagi.");
+    expect(html).toContain("KESIMPULAN");
+  });
+
+  it("omits the CTA sub-line when not provided", () => {
+    const html = renderSlide({ role: "outro", headline: "Done", cta: { strong: "Follow" } });
+    expect(html).toContain('class="strong"');
+    expect(html).not.toContain('class="sub"');
+  });
+
   it("escapes user text", () => {
     const html = renderSlide({ role: "outro", headline: "<script>x", cta: { strong: "Save" } });
     expect(html).not.toContain("<script>x");

@@ -169,11 +169,16 @@ export function renderSlide(slide: Slide): string {
       // Replace the sentinel with raw (unescaped) mockup HTML
       return base.replace("MOCKUP_INJECT", mockupHtml);
     }
-    case "outro":
+    case "outro": {
+      const cta = slide.cta ?? { strong: "" };
       return fillTemplate(outroTemplate, {
         brand,
+        eyebrow: slide.eyebrow ?? "",
         ...splitHeadline(slide.headline, slide.accentWord),
         body: slide.body ?? "",
+        ctaStrong: cta.strong,
+        ctaSub: cta.sub ?? "",
       });
+    }
   }
 }
