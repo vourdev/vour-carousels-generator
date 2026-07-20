@@ -5,6 +5,7 @@ import {
   briefUserPrompt,
   planSystem,
   planUserPrompt,
+  reviseSystem,
   reviseUserPrompt,
 } from "@/lib/ai/prompts";
 
@@ -94,7 +95,7 @@ export async function reviseSlidePlan(
       const { object } = await generateObject({
         model,
         schema: slidePlanSchema,
-        system: planSystem,
+        system: reviseSystem,
         prompt: reviseUserPrompt(JSON.stringify(plan), message),
       });
       return object;
@@ -102,7 +103,7 @@ export async function reviseSlidePlan(
       console.warn("reviseObject failed, trying generateText + JSON parse fallback:", err?.message || err);
       const { text } = await generateText({
         model,
-        system: planSystem + "\nIMPORTANT: Return ONLY valid JSON matching the schema. No markdown codeblocks or extra text.",
+        system: reviseSystem + "\nIMPORTANT: Return ONLY valid JSON matching the schema. No markdown codeblocks or extra text.",
         prompt: reviseUserPrompt(JSON.stringify(plan), message),
       });
       const parsed = extractAndParseJson(text);

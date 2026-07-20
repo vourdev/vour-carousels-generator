@@ -4,6 +4,7 @@ import {
   briefUserPrompt,
   planSystem,
   planUserPrompt,
+  reviseSystem,
   reviseUserPrompt,
 } from "@/lib/ai/prompts";
 
@@ -49,5 +50,11 @@ describe("prompt builders", () => {
     expect(briefSystem).toMatch(/Callout/);
     expect(briefSystem).toMatch(/BigStat/);
     expect(briefSystem).toMatch(/VARY/i);
+  });
+  it("reviseSystem includes instructions for slide targeting and outro editing", () => {
+    expect(reviseSystem).toMatch(/outro/i);
+    expect(reviseSystem).toMatch(/cover/i);
+    expect(reviseSystem).toMatch(/ACCENT WORD/i);
+    expect(reviseSystem).toMatch(/IDENTIFY TARGET SLIDE/i);
   });
 });

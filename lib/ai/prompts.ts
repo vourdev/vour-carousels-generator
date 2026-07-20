@@ -179,7 +179,41 @@ export function planUserPrompt(brief: string): string {
   return `Approved brief:\n${brief}\n\nProduce the slide plan.`;
 }
 
+export const reviseSystem = `You are an expert presentation editor for @vourdev carousels.
+Your task is to revise an existing slide plan (JSON) according to the user's specific revision request.
+
+STRICT REVISION INSTRUCTIONS:
+1. IDENTIFY TARGET SLIDE:
+   - "outro" / "slide outro" -> Update the slide with role "outro" (the final slide in the array).
+   - "cover" / "slide cover" / "slide 1" -> Update the slide with role "cover" (the first slide).
+   - "slide N" or "slide point N" -> Update the slide at that 1-based index in the slides array.
+   - General requests -> Apply requested edits across all relevant slides.
+
+2. APPLY REQUESTED EDITS:
+   - Update slide fields (headline, accentWord, body, lede, mockup fields) to match the user's revision request.
+   - DO NOT return the old JSON unchanged. You MUST modify the targeted slide's data.
+
+3. ACCENT WORD SYNCHRONIZATION:
+   - Whenever you edit a headline (on cover, point, or outro slides), select ONE key word from the new headline as accentWord.
+   - The accentWord MUST appear VERBATIM inside the updated headline string.
+
+4. OUTRO SLIDE FORMAT:
+   - Role "outro" format: { "role": "outro", "headline": "...", "accentWord": "...", "body": "..." }.
+   - If user asks to change the outro text/headline/body, update these fields on the outro slide.
+
+5. PRESERVE STRUCTURE & VALIDITY:
+   - Keep all other slides intact unless asked to modify or remove them.
+   - Ensure every "point" slide retains a valid mockup object.
+   - Keep copy within caps (headline ≤ 60 chars, body ≤ 120 chars).
+   - Ensure hashtags array contains "fyp".`;
+
 export function reviseUserPrompt(planJson: string, message: string): string {
-  return `Current slide plan (JSON):\n${planJson}\n\nRevision request:\n${message}\n\nReturn the full revised slide plan. Fix issues by editing copy/roles — never by changing layout or CSS. Keep it on-brand and within the caps. Ensure hashtags include "fyp". EVERY point slide must have a mockup object.`;
+  return `CURRENT SLIDE PLAN (JSON):
+${planJson}
+
+USER REVISION REQUEST:
+"${message}"
+
+Perform the requested revision now. Return the COMPLETE updated SlidePlan JSON matching the schema.`;
 }
 
