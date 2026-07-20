@@ -58,3 +58,22 @@ describe("prompt builders", () => {
     expect(reviseSystem).toMatch(/IDENTIFY TARGET SLIDE/i);
   });
 });
+
+describe("planSystem", () => {
+  it("documents the cover device hook", () => {
+    expect(planSystem).toMatch(/hook/);
+    expect(planSystem).toMatch(/device/);
+    expect(planSystem).toMatch(/chrome/);
+  });
+  it("requires an outro cta", () => {
+    expect(planSystem).toMatch(/cta/);
+    expect(planSystem.toLowerCase()).toMatch(/call.?to.?action|cta/);
+  });
+});
+
+describe("reviseSystem", () => {
+  it("covers editing the hook and the cta", () => {
+    expect(reviseSystem).toMatch(/hook/);
+    expect(reviseSystem).toMatch(/cta/);
+  });
+});

@@ -8,7 +8,7 @@ const plan = {
   hashtags: ["backend", "api"],
   slides: [
     { role: "cover", eyebrow: "BACKEND", headline: "Idempotency", accentWord: "Idempotency" },
-    { role: "outro", headline: "Follow" },
+    { role: "outro", headline: "Follow", cta: { strong: "Follow @vourdev" } },
   ],
 } as const;
 

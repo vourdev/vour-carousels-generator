@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { slidePlanSchema, mockupSchema } from "@/lib/ds/schema";
+import { slidePlanSchema, mockupSchema, coverHookSchema } from "@/lib/ds/schema";
 
 const valid = {
   title: "Test",
@@ -8,7 +8,7 @@ const valid = {
   slides: [
     { role: "cover", eyebrow: "BACKEND", headline: "Idempotency", accentWord: "Idempotency" },
     { role: "point", counter: "02 / 05", eyebrow: "WHY", headline: "It matters", body: "because." },
-    { role: "outro", headline: "Follow @vourdev" },
+    { role: "outro", headline: "Follow @vourdev", cta: { strong: "Follow @vourdev" } },
   ],
 };
 
@@ -26,6 +26,22 @@ describe("slidePlanSchema", () => {
       slides: [{ role: "point", counter: "1/1", eyebrow: "E", headline: "H", body: "b",
         card: { icon: "lucide:box", title: "T", body: "B", tone: "turquoise" } }],
     };
+    expect(() => slidePlanSchema.parse(bad)).toThrow();
+  });
+  it("accepts an outro with a cta", () => {
+    const plan = {
+      ...valid,
+      slides: [
+        { role: "cover", eyebrow: "E", headline: "H", accentWord: "H" },
+        { role: "outro", headline: "Follow @vourdev", accentWord: "@vourdev",
+          cta: { strong: "Simpan & bagikan", sub: "Biar nggak lupa." } },
+      ],
+    };
+    expect(slidePlanSchema.parse(plan).slides).toHaveLength(2);
+  });
+
+  it("rejects an outro missing its cta", () => {
+    const bad = { ...valid, slides: [{ role: "outro", headline: "No cta here" }] };
     expect(() => slidePlanSchema.parse(bad)).toThrow();
   });
 });
@@ -91,7 +107,7 @@ describe("mockupSchema", () => {
           role: "point", counter: "01/03", eyebrow: "E", headline: "H", body: "b",
           mockup: { type: "terminal", filename: "x.ts", lines: [{ text: "hi", style: "plain" }] },
         },
-        { role: "outro", headline: "Done" },
+        { role: "outro", headline: "Done", cta: { strong: "Save it" } },
       ],
     });
     const point = plan.slides[1];
@@ -108,5 +124,26 @@ describe("mockupSchema", () => {
         { role: "point", counter: "01/01", eyebrow: "TEST", headline: "H", body: overlyLongBody },
       ],
     })).toThrow();
+  });
+});
+
+describe("coverHookSchema", () => {
+  it("accepts a device hook", () => {
+    const h = coverHookSchema.parse({
+      kind: "device", chrome: "browser", label: "app.tsx",
+      lines: [{ text: "const t = decode(jwt)", style: "kw" }],
+    });
+    expect(h.kind).toBe("device");
+  });
+  it("accepts a custom hook", () => {
+    const h = coverHookSchema.parse({ kind: "custom", html: "<div>hi</div>" });
+    expect(h.kind).toBe("custom");
+  });
+  it("rejects a device hook with zero lines", () => {
+    expect(() => coverHookSchema.parse({ kind: "device", chrome: "browser", lines: [] })).toThrow();
+  });
+  it("rejects a device hook with more than six lines", () => {
+    const lines = Array.from({ length: 7 }, () => ({ text: "x", style: "plain" }));
+    expect(() => coverHookSchema.parse({ kind: "device", chrome: "terminal", lines })).toThrow();
   });
 });

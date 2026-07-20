@@ -1,7 +1,9 @@
-import type { Slide, Mockup } from "@/lib/ds/schema";
+import type { Slide, Mockup, CoverHook } from "@/lib/ds/schema";
 import { fillTemplate, escapeHtml } from "@/lib/ds/fill";
 import { brandMarkDataUri } from "@/lib/ds/brand";
 import { coverTemplate } from "@/lib/ds/templates/cover";
+import { coverCompactTemplate } from "@/lib/ds/templates/cover-compact";
+import { sanitizeHookHtml } from "@/lib/ds/sanitize";
 import { pointTemplate } from "@/lib/ds/templates/point";
 import { outroTemplate } from "@/lib/ds/templates/outro";
 import { terminalTemplate } from "@/lib/ds/templates/terminal";
@@ -9,6 +11,7 @@ import { comparisonTemplate } from "@/lib/ds/templates/comparison";
 import { stepsTemplate, stepCardPartial } from "@/lib/ds/templates/steps";
 import { calloutTemplate } from "@/lib/ds/templates/callout";
 import { bigstatTemplate } from "@/lib/ds/templates/bigstat";
+import { deviceTemplate } from "@/lib/ds/templates/device";
 
 function splitHeadline(headline: string, accentWord?: string) {
   if (!accentWord) return { headlinePre: headline, accentWord: "", headlinePost: "" };
@@ -77,6 +80,29 @@ function renderBigstatMockup(m: Extract<Mockup, { type: "bigstat" }>): string {
   });
 }
 
+export function renderDeviceHook(h: Extract<CoverHook, { kind: "device" }>): string {
+  const bodyLines = h.lines
+    .map((l) => {
+      const escaped = escapeHtml(l.text);
+      return l.style && l.style !== "plain" ? `<span class="${l.style}">${escaped}</span>` : escaped;
+    })
+    .join("\n");
+  const labelHtml = h.label
+    ? h.chrome === "browser"
+      ? `<span class="urlbar">${escapeHtml(h.label)}</span>`
+      : `<span class="title">${escapeHtml(h.label)}</span>`
+    : "";
+  return deviceTemplate
+    .replace("BAR_LABEL_INJECT", () => labelHtml)
+    .replace("DEVICE_LINES_INJECT", () => bodyLines);
+}
+
+// Phase-2 refinement pending (ImagePlate styling). Minimal, escaped, safe today.
+function renderImageHook(h: Extract<CoverHook, { kind: "image" }>): string {
+  const src = escapeHtml(h.src);
+  return `<div class="diag-wrap mt-40"><img src="${src}" alt="" style="max-width:100%; border-radius:20px;"></div>`;
+}
+
 function renderCardMockup(m: Extract<Mockup, { type: "card" }>): string {
   // Card is rendered inline inside the point template, not as a separate block.
   // This function is not called directly — card data is passed to the point template.
@@ -124,13 +150,31 @@ function resolveMockup(slide: Extract<Slide, { role: "point" }>): Mockup {
 export function renderSlide(slide: Slide): string {
   const brand = brandMarkDataUri;
   switch (slide.role) {
-    case "cover":
-      return fillTemplate(coverTemplate, {
+    case "cover": {
+      if (!slide.hook) {
+        return fillTemplate(coverTemplate, {
+          brand,
+          eyebrow: slide.eyebrow,
+          ...splitHeadline(slide.headline, slide.accentWord),
+          lede: slide.lede ?? "",
+        });
+      }
+      const h = slide.hook;
+      let fragment = "";
+      if (h.kind === "device") fragment = renderDeviceHook(h);
+      else if (h.kind === "custom") fragment = sanitizeHookHtml(h.html);
+      else fragment = renderImageHook(h);
+      const base = fillTemplate(coverCompactTemplate, {
         brand,
         eyebrow: slide.eyebrow,
         ...splitHeadline(slide.headline, slide.accentWord),
         lede: slide.lede ?? "",
+        hook: "1",
       });
+      // Function replacer: a bare string would let $-sequences ($$, $&, $`, $')
+      // in hook fragments be interpreted by String.replace and corrupt output.
+      return base.replace("HOOK_INJECT", () => fragment);
+    }
     case "point": {
       const mockup = resolveMockup(slide);
 
@@ -169,11 +213,16 @@ export function renderSlide(slide: Slide): string {
       // Replace the sentinel with raw (unescaped) mockup HTML
       return base.replace("MOCKUP_INJECT", mockupHtml);
     }
-    case "outro":
+    case "outro": {
+      const cta = slide.cta ?? { strong: "" };
       return fillTemplate(outroTemplate, {
         brand,
+        eyebrow: slide.eyebrow ?? "",
         ...splitHeadline(slide.headline, slide.accentWord),
         body: slide.body ?? "",
+        ctaStrong: cta.strong,
+        ctaSub: cta.sub ?? "",
       });
+    }
   }
 }

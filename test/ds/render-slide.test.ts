@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { renderSlide } from "@/lib/ds/render-slide";
+import { renderSlide, renderDeviceHook } from "@/lib/ds/render-slide";
 
 describe("renderSlide", () => {
   it("renders a cover with an accent span", () => {
@@ -126,9 +126,102 @@ describe("renderSlide", () => {
     expect(html).not.toContain("Card Title");
   });
 
+  it("renders an outro CTA highlight with strong + sub", () => {
+    const html = renderSlide({
+      role: "outro", eyebrow: "KESIMPULAN", headline: "Mulai sekarang",
+      accentWord: "sekarang", body: "Ringkas.",
+      cta: { strong: "Simpan & bagikan", sub: "Biar gampang dicari lagi." },
+    });
+    expect(html).toContain('class="highlight');
+    expect(html).toContain('class="strong"');
+    expect(html).toContain("Simpan &amp; bagikan");
+    expect(html).toContain('class="sub"');
+    expect(html).toContain("Biar gampang dicari lagi.");
+    expect(html).toContain("KESIMPULAN");
+  });
+
+  it("omits the CTA sub-line when not provided", () => {
+    const html = renderSlide({ role: "outro", headline: "Done", cta: { strong: "Follow" } });
+    expect(html).toContain('class="strong"');
+    expect(html).not.toContain('class="sub"');
+  });
+
   it("escapes user text", () => {
-    const html = renderSlide({ role: "outro", headline: "<script>x" });
+    const html = renderSlide({ role: "outro", headline: "<script>x", cta: { strong: "Save" } });
     expect(html).not.toContain("<script>x");
     expect(html).toContain("&lt;script&gt;x");
+  });
+
+  it("renders a full-hero cover (no hook) with hero headline", () => {
+    const html = renderSlide({ role: "cover", eyebrow: "BACKEND", headline: "Idempotency", accentWord: "Idempotency" });
+    expect(html).toContain("hero");
+    expect(html).not.toContain("HOOK_INJECT");
+    expect(html).toContain("Geser");
+  });
+
+  it("renders a compact cover with a device hook", () => {
+    const html = renderSlide({
+      role: "cover", eyebrow: "MISKONSEPSI", headline: "JWT bukan enkripsi", accentWord: "enkripsi",
+      hook: { kind: "device", chrome: "browser", label: "app.tsx",
+        lines: [{ text: "decode(jwt)", style: "kw" }] },
+    });
+    expect(html).toContain('h1 class="compact');
+    expect(html).toContain('class="urlbar"');
+    expect(html).not.toContain("HOOK_INJECT");
+    expect(html).toContain("MISKONSEPSI");
+  });
+
+  it("sanitizes a custom cover hook", () => {
+    const html = renderSlide({
+      role: "cover", eyebrow: "E", headline: "H", accentWord: "H",
+      hook: { kind: "custom", html: '<div class="x">ok</div><script>alert(1)</script>' },
+    });
+    expect(html).toContain('<div class="x">ok</div>');
+    expect(html).not.toContain("alert(1)");
+  });
+
+  it("preserves $ sequences in a custom hook verbatim (no replace() expansion)", () => {
+    const html = renderSlide({
+      role: "cover", eyebrow: "E", headline: "H", accentWord: "H",
+      hook: { kind: "custom", html: '<div class="dollar">$& $$ $` $\' cost=$50</div>' },
+    });
+    // $-sequences must survive unchanged; String.replace would collapse/expand them.
+    expect(html).toContain('<div class="dollar">$& $$ $` $\' cost=$50</div>');
+  });
+});
+
+describe("renderDeviceHook", () => {
+  it("renders browser chrome with a url pill and styled lines", () => {
+    const html = renderDeviceHook({
+      kind: "device", chrome: "browser", label: "app.vourdev.com",
+      lines: [
+        { text: "// readable by anyone", style: "cmt" },
+        { text: "decode(jwt)", style: "kw" },
+      ],
+    });
+    expect(html).toContain('class="diag-wrap');
+    expect(html).toContain('class="urlbar"');
+    expect(html).toContain("app.vourdev.com");
+    expect(html).toContain('class="cmt"');
+    expect(html).toContain('class="kw"');
+  });
+  it("renders terminal chrome with a filename title", () => {
+    const html = renderDeviceHook({
+      kind: "device", chrome: "terminal", label: "jwt.ts",
+      lines: [{ text: "const t = 1", style: "plain" }],
+    });
+    expect(html).toContain('class="title"');
+    expect(html).toContain("jwt.ts");
+    expect(html).not.toContain('class="urlbar"');
+  });
+  it("preserves $-sequences in device code lines verbatim", () => {
+    const html = renderDeviceHook({
+      kind: "device", chrome: "terminal", label: "sh",
+      lines: [{ text: "echo $'x' $$ a$&b", style: "plain" }],
+    });
+    // escapeHtml turns & -> &amp; and ' -> &#39; but must NOT collapse/re-inject
+    // any $-sequence ($', $$, $&). Bare String.replace would corrupt these.
+    expect(html).toContain("echo $&#39;x&#39; $$ a$&amp;b");
+    expect(html).not.toContain("DEVICE_LINES_INJECT");
   });
 });

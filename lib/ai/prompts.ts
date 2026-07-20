@@ -25,6 +25,9 @@ You MUST follow this EXACT Markdown structure (matching Vour Dev Design System):
 ## Description
 <Engaging hook explaining the problem or misconception in 2-3 short sentences.>
 
+## Hook Mockup
+<Describe a synthetic device frame for the cover: browser or terminal chrome, an optional label (URL or filename), and 1-6 short on-topic lines that stop the scroll.>
+
 ## Highlight
 <One-line punchy takeaway callout summary>
 
@@ -132,9 +135,13 @@ export function briefUserPrompt(idea: string): string {
 
 export const planSystem = `You convert an approved carousel brief into a structured slide plan for @vourdev.
 Return ONLY structured data matching the schema. Supported slide roles:
-- "cover": { eyebrow, headline, accentWord?, lede? }
+- "cover": { eyebrow, headline, accentWord?, lede?, hook } — hook is REQUIRED and MUST be a synthetic device frame:
+    hook: { kind: "device", chrome: "browser"|"terminal", label?: "app.tsx"|"app.vourdev.com", lines: [{ text, style: "plain"|"key"|"val"|"kw"|"cmt"|"num" }] }
+    → 1–6 short lines (≤ 52 chars each) of on-topic code/UI that stops the scroll. Use "browser" chrome for app/URL scenes, "terminal" for code/CLI.
 - "point": { counter (e.g. "02 / 05"), eyebrow, headline, accentWord?, body, mockup: <one of the types below> }
-- "outro": { headline, accentWord?, body? }
+- "outro": { eyebrow?, headline, accentWord?, body?, cta } — cta is REQUIRED:
+    cta: { strong: "<the action, e.g. Simpan & bagikan>", sub?: "<why/how, 1 short line>" }
+    → strong MUST be a concrete call-to-action (save / share / follow / try). Never omit the cta.
 
 MOCKUP TYPES — every "point" slide MUST include a "mockup" object with one of these types:
 
@@ -186,6 +193,7 @@ STRICT REVISION INSTRUCTIONS:
 1. IDENTIFY TARGET SLIDE:
    - "outro" / "slide outro" -> Update the slide with role "outro" (the final slide in the array).
    - "cover" / "slide cover" / "slide 1" -> Update the slide with role "cover" (the first slide).
+   - Cover hook edits: the cover carries a \`hook\` (kind "device": chrome/label/lines, or kind "custom": html). Update these when asked to change the intro visual.
    - "slide N" or "slide point N" -> Update the slide at that 1-based index in the slides array.
    - General requests -> Apply requested edits across all relevant slides.
 
@@ -198,8 +206,8 @@ STRICT REVISION INSTRUCTIONS:
    - The accentWord MUST appear VERBATIM inside the updated headline string.
 
 4. OUTRO SLIDE FORMAT:
-   - Role "outro" format: { "role": "outro", "headline": "...", "accentWord": "...", "body": "..." }.
-   - If user asks to change the outro text/headline/body, update these fields on the outro slide.
+   - Role "outro" format: { "role": "outro", "eyebrow"?: "...", "headline": "...", "accentWord": "...", "body"?: "...", "cta": { "strong": "...", "sub"?: "..." } }.
+   - The "cta" is REQUIRED and must stay a concrete call-to-action. If the user changes the outro, keep (or improve) a valid cta.
 
 5. PRESERVE STRUCTURE & VALIDITY:
    - Keep all other slides intact unless asked to modify or remove them.
