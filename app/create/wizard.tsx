@@ -54,6 +54,12 @@ const modelDetails: Record<string, { label: string; vendor: string; description:
     description: "Multi-vendor AI model gateway",
     icon: <Globe className="size-4 text-rose-500 shrink-0" />,
   },
+  omniroute: {
+    label: "OmniRoute",
+    vendor: "OmniRoute AI",
+    description: "Unified AI model gateway & router",
+    icon: <Zap className="size-4 text-purple-500 shrink-0" />,
+  },
 };
 
 function summarizeError(msg: string): string {

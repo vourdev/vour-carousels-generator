@@ -3,7 +3,7 @@ import { createGoogleGenerativeAI } from "@ai-sdk/google";
 import { createDeepSeek } from "@ai-sdk/deepseek";
 import { createOpenAICompatible } from "@ai-sdk/openai-compatible";
 
-export type ModelId = "gemini" | "deepseek" | "mimo" | "openrouter";
+export type ModelId = "gemini" | "deepseek" | "mimo" | "openrouter" | "omniroute";
 
 function has(env: NodeJS.ProcessEnv, ...keys: string[]): boolean {
   return keys.every((k) => Boolean(env[k]));
@@ -16,11 +16,87 @@ export function availableModels(env: NodeJS.ProcessEnv = process.env): ModelId[]
   if (has(env, "DEEPSEEK_API_KEY")) out.push("deepseek");
   if (has(env, "MIMO_API_KEY", "MIMO_BASE_URL", "MIMO_MODEL")) out.push("mimo");
   if (has(env, "OPENROUTER_API_KEY")) out.push("openrouter");
+  if (
+    has(env, "OMNIROUTE_API_KEY", "OMNIROUTE_BASE_URL") &&
+    (Boolean(env.OMNIROUTE_COMBO) || Boolean(env.OMNIROUTE_MODEL))
+  ) {
+    out.push("omniroute");
+  }
   return out;
 }
 
 export function defaultModel(env: NodeJS.ProcessEnv = process.env): ModelId | null {
   return availableModels(env)[0] ?? null;
+}
+
+function cleanBaseUrl(url: string | undefined): string {
+  if (!url) return "";
+  let cleaned = url.trim().replace(/\/+$/, "");
+  if (cleaned.endsWith("/chat/completions")) {
+    cleaned = cleaned.substring(0, cleaned.length - "/chat/completions".length);
+  }
+  if (!cleaned.endsWith("/v1") && !cleaned.includes("/v1/")) {
+    cleaned = `${cleaned}/v1`;
+  }
+  return cleaned;
+}
+
+async function omnirouteFetch(input: RequestInfo | URL, init?: RequestInit): Promise<Response> {
+  const response = await fetch(input, init);
+  const contentType = response.headers.get("content-type") || "";
+
+  if (contentType.includes("text/event-stream")) {
+    const rawText = await response.text();
+    const lines = rawText.split("\n");
+    let fullContent = "";
+    let lastId = "chatcmpl-omniroute";
+    let modelName = "omniroute";
+
+    for (const line of lines) {
+      const trimmed = line.trim();
+      if (trimmed.startsWith("data:") && !trimmed.includes("[DONE]")) {
+        const jsonStr = trimmed.substring(5).trim();
+        try {
+          const parsed = JSON.parse(jsonStr);
+          if (parsed.id) lastId = parsed.id;
+          if (parsed.model) modelName = parsed.model;
+          const deltaContent = parsed.choices?.[0]?.delta?.content;
+          if (deltaContent) {
+            fullContent += deltaContent;
+          }
+        } catch {
+          // ignore invalid chunk
+        }
+      }
+    }
+
+    const jsonCompletion = {
+      id: lastId,
+      object: "chat.completion",
+      created: Math.floor(Date.now() / 1000),
+      model: modelName,
+      choices: [
+        {
+          index: 0,
+          message: {
+            role: "assistant",
+            content: fullContent,
+          },
+          finish_reason: "stop",
+        },
+      ],
+    };
+
+    return new Response(JSON.stringify(jsonCompletion), {
+      status: response.status,
+      statusText: response.statusText,
+      headers: {
+        "content-type": "application/json",
+      },
+    });
+  }
+
+  return response;
 }
 
 export function resolveModel(id: ModelId): LanguageModel {
@@ -43,7 +119,7 @@ export function resolveModel(id: ModelId): LanguageModel {
       const mimo = createOpenAICompatible({
         name: "mimo",
         apiKey: env.MIMO_API_KEY,
-        baseURL: env.MIMO_BASE_URL as string,
+        baseURL: cleanBaseUrl(env.MIMO_BASE_URL),
       });
       return mimo(env.MIMO_MODEL as string);
     }
@@ -58,6 +134,16 @@ export function resolveModel(id: ModelId): LanguageModel {
         },
       });
       return openrouter(env.OPENROUTER_MODEL || "tencent/hy3:free");
+    }
+    case "omniroute": {
+      const omniroute = createOpenAICompatible({
+        name: "omniroute",
+        apiKey: env.OMNIROUTE_API_KEY,
+        baseURL: cleanBaseUrl(env.OMNIROUTE_BASE_URL),
+        fetch: omnirouteFetch,
+      });
+      const target = (env.OMNIROUTE_COMBO || env.OMNIROUTE_MODEL) as string;
+      return omniroute(target);
     }
   }
 }

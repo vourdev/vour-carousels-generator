@@ -22,6 +22,14 @@ describe("availableModels", () => {
   it("lists openrouter when its key is present", () => {
     expect(availableModels({ ...base, OPENROUTER_API_KEY: "o" })).toEqual(["openrouter"]);
   });
+  it("requires all OMNIROUTE vars for omniroute", () => {
+    expect(availableModels({ ...base, OMNIROUTE_API_KEY: "o" })).toEqual([]);
+    const fullModel = { ...base, OMNIROUTE_API_KEY: "k", OMNIROUTE_BASE_URL: "u", OMNIROUTE_MODEL: "m" };
+    expect(availableModels(fullModel)).toEqual(["omniroute"]);
+
+    const fullCombo = { ...base, OMNIROUTE_API_KEY: "k", OMNIROUTE_BASE_URL: "u", OMNIROUTE_COMBO: "my-combo" };
+    expect(availableModels(fullCombo)).toEqual(["omniroute"]);
+  });
 });
 
 describe("defaultModel", () => {
