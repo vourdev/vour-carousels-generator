@@ -8,7 +8,7 @@ const valid = {
   slides: [
     { role: "cover", eyebrow: "BACKEND", headline: "Idempotency", accentWord: "Idempotency" },
     { role: "point", counter: "02 / 05", eyebrow: "WHY", headline: "It matters", body: "because." },
-    { role: "outro", headline: "Follow @vourdev" },
+    { role: "outro", headline: "Follow @vourdev", cta: { strong: "Follow @vourdev" } },
   ],
 };
 
@@ -26,6 +26,22 @@ describe("slidePlanSchema", () => {
       slides: [{ role: "point", counter: "1/1", eyebrow: "E", headline: "H", body: "b",
         card: { icon: "lucide:box", title: "T", body: "B", tone: "turquoise" } }],
     };
+    expect(() => slidePlanSchema.parse(bad)).toThrow();
+  });
+  it("accepts an outro with a cta", () => {
+    const plan = {
+      ...valid,
+      slides: [
+        { role: "cover", eyebrow: "E", headline: "H", accentWord: "H" },
+        { role: "outro", headline: "Follow @vourdev", accentWord: "@vourdev",
+          cta: { strong: "Simpan & bagikan", sub: "Biar nggak lupa." } },
+      ],
+    };
+    expect(slidePlanSchema.parse(plan).slides).toHaveLength(2);
+  });
+
+  it("rejects an outro missing its cta", () => {
+    const bad = { ...valid, slides: [{ role: "outro", headline: "No cta here" }] };
     expect(() => slidePlanSchema.parse(bad)).toThrow();
   });
 });
@@ -91,7 +107,7 @@ describe("mockupSchema", () => {
           role: "point", counter: "01/03", eyebrow: "E", headline: "H", body: "b",
           mockup: { type: "terminal", filename: "x.ts", lines: [{ text: "hi", style: "plain" }] },
         },
-        { role: "outro", headline: "Done" },
+        { role: "outro", headline: "Done", cta: { strong: "Save it" } },
       ],
     });
     const point = plan.slides[1];

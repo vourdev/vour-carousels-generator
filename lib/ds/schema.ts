@@ -104,9 +104,14 @@ const pointSlide = z.object({
 
 const outroSlide = z.object({
   role: z.literal("outro"),
+  eyebrow: z.string().max(40).optional(),
   headline: z.string().max(90),
   accentWord: z.string().optional(),
   body: z.string().max(160).optional(),
+  cta: z.object({
+    strong: z.string().max(60),
+    sub: z.string().max(90).optional(),
+  }),
 });
 
 export const slideSchema = z.discriminatedUnion("role", [coverSlide, pointSlide, outroSlide]);

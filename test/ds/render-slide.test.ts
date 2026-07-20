@@ -127,7 +127,7 @@ describe("renderSlide", () => {
   });
 
   it("escapes user text", () => {
-    const html = renderSlide({ role: "outro", headline: "<script>x" });
+    const html = renderSlide({ role: "outro", headline: "<script>x", cta: { strong: "Save" } });
     expect(html).not.toContain("<script>x");
     expect(html).toContain("&lt;script&gt;x");
   });

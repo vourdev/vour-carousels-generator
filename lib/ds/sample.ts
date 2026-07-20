@@ -31,6 +31,10 @@ export const samplePlan: SlidePlan = {
       headline: "Follow @vourdev",
       accentWord: "@vourdev",
       body: "Konten backend tiap minggu.",
+      cta: {
+        strong: "Follow @vourdev",
+        sub: "Backend & dev-education tiap minggu.",
+      },
     },
   ],
 };
