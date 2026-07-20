@@ -72,6 +72,44 @@ export const mockupSchema = z.discriminatedUnion("type", [
 
 export type Mockup = z.infer<typeof mockupSchema>;
 
+/* ── Cover hook (intro scroll-stopper) ────────────────────────── */
+
+const coverHookDevice = z.object({
+  kind: z.literal("device"),
+  chrome: z.enum(["browser", "terminal"]).default("browser"),
+  label: z.string().max(40).optional(),
+  lines: z
+    .array(
+      z.object({
+        text: z.string().max(52),
+        style: z.enum(["plain", "key", "val", "kw", "cmt", "num"]).default("plain"),
+      })
+    )
+    .min(1)
+    .max(6),
+});
+
+// Reserved for Phase 2 (wizard attach-screenshot). Not emitted by the wizard yet.
+const coverHookImage = z.object({
+  kind: z.literal("image"),
+  src: z.string(),
+  frame: z.enum(["browser", "phone", "plain"]).default("browser"),
+  label: z.string().max(40).optional(),
+});
+
+const coverHookCustom = z.object({
+  kind: z.literal("custom"),
+  html: z.string().max(4000),
+});
+
+export const coverHookSchema = z.discriminatedUnion("kind", [
+  coverHookDevice,
+  coverHookImage,
+  coverHookCustom,
+]);
+
+export type CoverHook = z.infer<typeof coverHookSchema>;
+
 /* ── Slide types ──────────────────────────────────────────────── */
 
 const coverSlide = z.object({
@@ -80,6 +118,7 @@ const coverSlide = z.object({
   headline: z.string().max(90),
   accentWord: z.string().optional(),
   lede: z.string().max(140).optional(),
+  hook: coverHookSchema.optional(),
 });
 
 const pointSlide = z.object({

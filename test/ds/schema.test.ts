@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { slidePlanSchema, mockupSchema } from "@/lib/ds/schema";
+import { slidePlanSchema, mockupSchema, coverHookSchema } from "@/lib/ds/schema";
 
 const valid = {
   title: "Test",
@@ -124,5 +124,26 @@ describe("mockupSchema", () => {
         { role: "point", counter: "01/01", eyebrow: "TEST", headline: "H", body: overlyLongBody },
       ],
     })).toThrow();
+  });
+});
+
+describe("coverHookSchema", () => {
+  it("accepts a device hook", () => {
+    const h = coverHookSchema.parse({
+      kind: "device", chrome: "browser", label: "app.tsx",
+      lines: [{ text: "const t = decode(jwt)", style: "kw" }],
+    });
+    expect(h.kind).toBe("device");
+  });
+  it("accepts a custom hook", () => {
+    const h = coverHookSchema.parse({ kind: "custom", html: "<div>hi</div>" });
+    expect(h.kind).toBe("custom");
+  });
+  it("rejects a device hook with zero lines", () => {
+    expect(() => coverHookSchema.parse({ kind: "device", chrome: "browser", lines: [] })).toThrow();
+  });
+  it("rejects a device hook with more than six lines", () => {
+    const lines = Array.from({ length: 7 }, () => ({ text: "x", style: "plain" }));
+    expect(() => coverHookSchema.parse({ kind: "device", chrome: "terminal", lines })).toThrow();
   });
 });
