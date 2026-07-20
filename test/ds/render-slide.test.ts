@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { renderSlide } from "@/lib/ds/render-slide";
+import { renderSlide, renderDeviceHook } from "@/lib/ds/render-slide";
 
 describe("renderSlide", () => {
   it("renders a cover with an accent span", () => {
@@ -150,5 +150,31 @@ describe("renderSlide", () => {
     const html = renderSlide({ role: "outro", headline: "<script>x", cta: { strong: "Save" } });
     expect(html).not.toContain("<script>x");
     expect(html).toContain("&lt;script&gt;x");
+  });
+});
+
+describe("renderDeviceHook", () => {
+  it("renders browser chrome with a url pill and styled lines", () => {
+    const html = renderDeviceHook({
+      kind: "device", chrome: "browser", label: "app.vourdev.com",
+      lines: [
+        { text: "// readable by anyone", style: "cmt" },
+        { text: "decode(jwt)", style: "kw" },
+      ],
+    });
+    expect(html).toContain('class="diag-wrap');
+    expect(html).toContain('class="urlbar"');
+    expect(html).toContain("app.vourdev.com");
+    expect(html).toContain('class="cmt"');
+    expect(html).toContain('class="kw"');
+  });
+  it("renders terminal chrome with a filename title", () => {
+    const html = renderDeviceHook({
+      kind: "device", chrome: "terminal", label: "jwt.ts",
+      lines: [{ text: "const t = 1", style: "plain" }],
+    });
+    expect(html).toContain('class="title"');
+    expect(html).toContain("jwt.ts");
+    expect(html).not.toContain('class="urlbar"');
   });
 });

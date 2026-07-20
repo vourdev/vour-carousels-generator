@@ -265,6 +265,7 @@ export const carouselCss = String.raw`
   .terminal-bar .dot.y { background: #FFBD2E; }
   .terminal-bar .dot.g { background: #27C93F; }
   .terminal-bar .title { margin-left: 16px; color: rgba(255,255,255,0.55); font-size: 22px; }
+  .terminal-bar .urlbar { margin-left: 16px; flex: 1; background: rgba(255,255,255,0.10); color: rgba(255,255,255,0.75); font-family: 'JetBrains Mono'; font-size: 20px; padding: 8px 18px; border-radius: 999px; text-align: center; }
   .terminal-body { font-family: 'JetBrains Mono'; font-size: 24px; line-height: 1.6; color: #fff; white-space: pre-wrap; word-break: break-word; overflow-wrap: anywhere; }
   .terminal-body .cmt { color: rgba(255,255,255,0.45); }
   .terminal-body .key { color: #E8B4A0; }

@@ -1,4 +1,4 @@
-import type { Slide, Mockup } from "@/lib/ds/schema";
+import type { Slide, Mockup, CoverHook } from "@/lib/ds/schema";
 import { fillTemplate, escapeHtml } from "@/lib/ds/fill";
 import { brandMarkDataUri } from "@/lib/ds/brand";
 import { coverTemplate } from "@/lib/ds/templates/cover";
@@ -9,6 +9,7 @@ import { comparisonTemplate } from "@/lib/ds/templates/comparison";
 import { stepsTemplate, stepCardPartial } from "@/lib/ds/templates/steps";
 import { calloutTemplate } from "@/lib/ds/templates/callout";
 import { bigstatTemplate } from "@/lib/ds/templates/bigstat";
+import { deviceTemplate } from "@/lib/ds/templates/device";
 
 function splitHeadline(headline: string, accentWord?: string) {
   if (!accentWord) return { headlinePre: headline, accentWord: "", headlinePost: "" };
@@ -75,6 +76,23 @@ function renderBigstatMockup(m: Extract<Mockup, { type: "bigstat" }>): string {
     bigstatUnit: m.unit ?? "",
     bigstatCaption: m.caption,
   });
+}
+
+export function renderDeviceHook(h: Extract<CoverHook, { kind: "device" }>): string {
+  const bodyLines = h.lines
+    .map((l) => {
+      const escaped = escapeHtml(l.text);
+      return l.style && l.style !== "plain" ? `<span class="${l.style}">${escaped}</span>` : escaped;
+    })
+    .join("\n");
+  const labelHtml = h.label
+    ? h.chrome === "browser"
+      ? `<span class="urlbar">${escapeHtml(h.label)}</span>`
+      : `<span class="title">${escapeHtml(h.label)}</span>`
+    : "";
+  return deviceTemplate
+    .replace("BAR_LABEL_INJECT", labelHtml)
+    .replace("DEVICE_LINES_INJECT", bodyLines);
 }
 
 function renderCardMockup(m: Extract<Mockup, { type: "card" }>): string {
