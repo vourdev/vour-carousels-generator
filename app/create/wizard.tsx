@@ -850,10 +850,10 @@ export function Wizard({ models }: { models: ModelId[] }) {
         </button>
       </div>
 
-    <div className="grid lg:grid-cols-[400px_1fr] gap-4 lg:gap-6 items-stretch lg:h-full lg:overflow-hidden relative pb-16 lg:pb-0 flex-1 min-h-0">
+    <div className="grid lg:grid-cols-[400px_1fr] gap-4 lg:gap-6 items-stretch lg:h-full relative pb-16 lg:pb-0 flex-1 min-h-0 p-1">
 
       {/* LEFT COLUMN: Workspace sidebar & Chat console */}
-      <div className={`${mobilePanel === "chat" ? "flex" : "hidden"} lg:flex flex-col h-full gap-4 overflow-hidden min-h-0 px-0.5`}>
+      <div className={`${mobilePanel === "chat" ? "flex" : "hidden"} lg:flex flex-col h-full gap-4 min-h-0 p-1`}>
         
         {/* Workspace controls & Stepper */}
         <Card className="shadow-sm shrink-0">
@@ -1453,7 +1453,9 @@ export function Wizard({ models }: { models: ModelId[] }) {
                           />
                         </div>
                       </div>
-                        {/* Action or Progress Panel */}
+                    </div>
+
+                    {/* Action or Progress Panel */}
                     <div className="bg-card border border-hairline rounded-xl p-6 shadow-xs text-center space-y-4">
                       {publishState.status === "idle" ? (
                         <div className="flex flex-col sm:flex-row gap-3">
@@ -1516,7 +1518,7 @@ export function Wizard({ models }: { models: ModelId[] }) {
                           </Button>
                         </div>
                       ) : null}
-                    </div>                  </div>
+                    </div>
 
                   </div>
                 </div>

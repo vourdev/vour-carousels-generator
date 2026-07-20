@@ -698,48 +698,57 @@ export default function HistoryClient({ initialItems, userId, betterAuthSecret }
 
                 {/* Actions */}
                 <div className="flex flex-wrap items-center justify-end gap-2 border-t pt-4">
-                  {/* Reschedule Button */}
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    className="font-mono text-xs"
-                    onClick={() => {
-                      setSchedulingTarget(selectedCarousel.id);
-                      if (selectedCarousel.dueAt) {
-                        setScheduleTime(selectedCarousel.dueAt.substring(0, 16));
-                      } else {
-                        const tomorrow = new Date();
-                        tomorrow.setDate(tomorrow.getDate() + 1);
-                        tomorrow.setHours(9, 0, 0, 0);
-                        const pad = (n: number) => String(n).padStart(2, "0");
-                        setScheduleTime(`${tomorrow.getFullYear()}-${pad(tomorrow.getMonth() + 1)}-${pad(tomorrow.getDate())}T${pad(tomorrow.getHours())}:${pad(tomorrow.getMinutes())}`);
-                      }
-                      setSelectedCarousel(null);
-                    }}
-                  >
-                    Reschedule / Set Date
-                  </Button>
+                  {Boolean(selectedCarousel.bufferIgId || selectedCarousel.bufferTtId || selectedCarousel.status === "posted") ? (
+                    <div className="flex items-center gap-1.5 text-xs font-medium text-emerald-600 bg-emerald-50 dark:bg-emerald-950/30 border border-emerald-200 dark:border-emerald-800 px-3 py-1.5 rounded-lg font-mono">
+                      <CheckCircle className="size-4 text-emerald-500 shrink-0" />
+                      Terupload &amp; Terjadwal di Buffer
+                    </div>
+                  ) : (
+                    <>
+                      {/* Reschedule Button */}
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="font-mono text-xs"
+                        onClick={() => {
+                          setSchedulingTarget(selectedCarousel.id);
+                          if (selectedCarousel.dueAt) {
+                            setScheduleTime(selectedCarousel.dueAt.substring(0, 16));
+                          } else {
+                            const tomorrow = new Date();
+                            tomorrow.setDate(tomorrow.getDate() + 1);
+                            tomorrow.setHours(9, 0, 0, 0);
+                            const pad = (n: number) => String(n).padStart(2, "0");
+                            setScheduleTime(`${tomorrow.getFullYear()}-${pad(tomorrow.getMonth() + 1)}-${pad(tomorrow.getDate())}T${pad(tomorrow.getHours())}:${pad(tomorrow.getMinutes())}`);
+                          }
+                          setSelectedCarousel(null);
+                        }}
+                      >
+                        Reschedule / Set Date
+                      </Button>
 
-                  {/* Publish/Upload to Buffer Action */}
-                  {selectedCarousel.dueAt && selectedCarousel.status !== "posted" && (
-                    <Button
-                      size="sm"
-                      className="font-mono text-xs gap-1.5"
-                      onClick={() => handlePublishToBuffer(selectedCarousel)}
-                      disabled={publishingId === selectedCarousel.id}
-                    >
-                      {publishingId === selectedCarousel.id ? (
-                        <>
-                          <Loader2 className="size-3.5 animate-spin" />
-                          Publishing...
-                        </>
-                      ) : (
-                        <>
-                          <Play className="size-3.5 text-emerald-500 fill-emerald-500" />
-                          Upload to Buffer
-                        </>
+                      {/* Publish/Upload to Buffer Action */}
+                      {selectedCarousel.dueAt && selectedCarousel.status !== "posted" && (
+                        <Button
+                          size="sm"
+                          className="font-mono text-xs gap-1.5"
+                          onClick={() => handlePublishToBuffer(selectedCarousel)}
+                          disabled={publishingId === selectedCarousel.id}
+                        >
+                          {publishingId === selectedCarousel.id ? (
+                            <>
+                              <Loader2 className="size-3.5 animate-spin" />
+                              Publishing...
+                            </>
+                          ) : (
+                            <>
+                              <Play className="size-3.5 text-emerald-500 fill-emerald-500" />
+                              Upload to Buffer
+                            </>
+                          )}
+                        </Button>
                       )}
-                    </Button>
+                    </>
                   )}
                 </div>
               </div>
