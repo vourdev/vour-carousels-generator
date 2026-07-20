@@ -281,6 +281,90 @@ export function Wizard({ models }: { models: ModelId[] }) {
   const [editableTitle, setEditableTitle] = useState("");
   const [editableCaption, setEditableCaption] = useState("");
 
+  // Prompt history state (terminal-style ArrowUp / ArrowDown navigation)
+  const [promptHistory, setPromptHistory] = useState<string[]>([]);
+  const [historyIndex, setHistoryIndex] = useState<number>(-1);
+  const [draftInput, setDraftInput] = useState<string>("");
+
+  // Load prompt history from local storage
+  useEffect(() => {
+    const savedHistory = localStorage.getItem("vour_carousel_prompt_history");
+    if (savedHistory) {
+      try {
+        const parsed = JSON.parse(savedHistory);
+        if (Array.isArray(parsed)) setPromptHistory(parsed);
+      } catch (e) {
+        console.error("Failed to parse prompt history", e);
+      }
+    }
+  }, []);
+
+  // Save prompt history to local storage
+  useEffect(() => {
+    if (promptHistory.length > 0) {
+      localStorage.setItem("vour_carousel_prompt_history", JSON.stringify(promptHistory.slice(-50)));
+    }
+  }, [promptHistory]);
+
+  function pushPromptToHistory(text: string) {
+    const trimmed = text.trim();
+    if (!trimmed) return;
+    setPromptHistory((prev) => {
+      if (prev.length > 0 && prev[prev.length - 1] === trimmed) return prev;
+      return [...prev, trimmed];
+    });
+    setHistoryIndex(-1);
+    setDraftInput("");
+  }
+
+  function handlePromptKeyDown(
+    e: React.KeyboardEvent<HTMLInputElement>,
+    currentValue: string,
+    setValue: (val: string) => void,
+    onSubmit: () => void
+  ) {
+    if (e.key === "Enter") {
+      e.preventDefault();
+      if (currentValue.trim()) {
+        pushPromptToHistory(currentValue);
+        onSubmit();
+      }
+      return;
+    }
+
+    if (e.key === "ArrowUp") {
+      if (promptHistory.length === 0) return;
+      e.preventDefault();
+
+      if (historyIndex === -1) {
+        setDraftInput(currentValue);
+        const nextIndex = 0;
+        setHistoryIndex(nextIndex);
+        setValue(promptHistory[promptHistory.length - 1 - nextIndex]);
+      } else if (historyIndex < promptHistory.length - 1) {
+        const nextIndex = historyIndex + 1;
+        setHistoryIndex(nextIndex);
+        setValue(promptHistory[promptHistory.length - 1 - nextIndex]);
+      }
+      return;
+    }
+
+    if (e.key === "ArrowDown") {
+      if (historyIndex === -1) return;
+      e.preventDefault();
+
+      if (historyIndex > 0) {
+        const nextIndex = historyIndex - 1;
+        setHistoryIndex(nextIndex);
+        setValue(promptHistory[promptHistory.length - 1 - nextIndex]);
+      } else if (historyIndex === 0) {
+        setHistoryIndex(-1);
+        setValue(draftInput);
+      }
+      return;
+    }
+  }
+
   const html = useMemo(
     () => uploadedHtml ?? (plan ? assembleCarousel(plan) : ""),
     [uploadedHtml, plan]
@@ -834,6 +918,7 @@ export function Wizard({ models }: { models: ModelId[] }) {
       return;
     }
     const currentRevision = revision;
+    pushPromptToHistory(currentRevision);
     addMessage("user", currentRevision);
     setRevision("");
     
@@ -1143,13 +1228,14 @@ export function Wizard({ models }: { models: ModelId[] }) {
             <div className="relative flex items-center">
               <Input
                 value={idea}
-                onChange={(e) => setIdea(e.target.value)}
+                onChange={(e) => {
+                  setIdea(e.target.value);
+                  if (historyIndex !== -1) setHistoryIndex(-1);
+                }}
                 placeholder="Ketik ide atau topik konten di sini... (misal: idempotency di API)"
                 className="pr-12 h-11 text-xs rounded-xl border-hairline"
                 disabled={pending}
-                onKeyDown={(e) => {
-                  if (e.key === "Enter") handleBriefGeneration();
-                }}
+                onKeyDown={(e) => handlePromptKeyDown(e, idea, setIdea, handleBriefGeneration)}
               />
               <Button 
                 size="icon" 
@@ -1258,13 +1344,14 @@ export function Wizard({ models }: { models: ModelId[] }) {
               <div className="flex items-center gap-2 pt-2 border-t">
                 <Input
                   value={revision}
-                  onChange={(e) => setRevision(e.target.value)}
+                  onChange={(e) => {
+                    setRevision(e.target.value);
+                    if (historyIndex !== -1) setHistoryIndex(-1);
+                  }}
                   placeholder="Ketik instruksi revisi outline ke AI..."
                   className="h-10 text-xs flex-1 rounded-xl border-hairline"
                   disabled={pending || isTyping}
-                  onKeyDown={(e) => {
-                    if (e.key === "Enter") handleRevisionSend();
-                  }}
+                  onKeyDown={(e) => handlePromptKeyDown(e, revision, setRevision, handleRevisionSend)}
                 />
                 <Button
                   size="sm"
@@ -1351,13 +1438,14 @@ export function Wizard({ models }: { models: ModelId[] }) {
               <div className="flex items-center gap-2 pt-2 border-t">
                 <Input
                   value={revision}
-                  onChange={(e) => setRevision(e.target.value)}
+                  onChange={(e) => {
+                    setRevision(e.target.value);
+                    if (historyIndex !== -1) setHistoryIndex(-1);
+                  }}
                   placeholder="Ketik instruksi revisi slide/desain ke AI..."
                   className="h-10 text-xs flex-1 rounded-xl"
                   disabled={pending || isTyping}
-                  onKeyDown={(e) => {
-                    if (e.key === "Enter") handleRevisionSend();
-                  }}
+                  onKeyDown={(e) => handlePromptKeyDown(e, revision, setRevision, handleRevisionSend)}
                 />
                 <Button
                   size="sm"
