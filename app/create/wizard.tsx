@@ -374,6 +374,11 @@ export function Wizard({ models }: { models: ModelId[] }) {
     [uploadedHtml, plan]
   );
 
+  // Memoize the markdown render tree — renderMarkdown parses the whole brief
+  // line-by-line, and it's shown in both split and preview modes. Without this
+  // it re-parses on every render (every keystroke and every 15ms typewriter tick).
+  const briefPreview = useMemo(() => renderMarkdown(brief), [brief]);
+
   // Sync editable Title & Caption when plan changes
   useEffect(() => {
     if (plan) {
@@ -439,7 +444,12 @@ export function Wizard({ models }: { models: ModelId[] }) {
       editableCaption,
       uploadedImageUrls,
     };
-    localStorage.setItem("vour_carousel_draft", JSON.stringify(draft));
+    // Debounced: coalesce rapid changes (keystrokes, 15ms typewriter ticks) into
+    // one write instead of serializing the full draft on every state change.
+    const t = setTimeout(() => {
+      localStorage.setItem("vour_carousel_draft", JSON.stringify(draft));
+    }, 400);
+    return () => clearTimeout(t);
   }, [
     step,
     idea,
@@ -1309,7 +1319,7 @@ export function Wizard({ models }: { models: ModelId[] }) {
                 {mdMode === "preview" && (
                   <div className="h-full w-full p-6 overflow-y-auto bg-card">
                     {brief ? (
-                      renderMarkdown(brief)
+                      briefPreview
                     ) : (
                       <div className="h-full flex items-center justify-center text-xs text-muted-foreground font-mono">
                         Brief outline kosong. Ketik ide di langkah 1 untuk membuat brief.
@@ -1329,7 +1339,7 @@ export function Wizard({ models }: { models: ModelId[] }) {
                     />
                     <div className="h-full w-full p-6 overflow-y-auto bg-card/60">
                       {brief ? (
-                        renderMarkdown(brief)
+                        briefPreview
                       ) : (
                         <div className="h-full flex items-center justify-center text-xs text-muted-foreground font-mono">
                           Live pratinjau markdown akan muncul di sini.
