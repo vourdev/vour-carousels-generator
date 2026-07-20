@@ -28,4 +28,10 @@ describe("prompt builders", () => {
     expect(p).toContain('{"slides":[]}');
     expect(p).toContain("shorten slide 3");
   });
+  it("briefSystem and planSystem enforce #fyp hashtag and informative content", () => {
+    expect(briefSystem).toMatch(/#fyp/);
+    expect(planSystem).toMatch(/fyp/);
+    expect(briefSystem).toMatch(/informative/i);
+    expect(planSystem).toMatch(/informative/i);
+  });
 });

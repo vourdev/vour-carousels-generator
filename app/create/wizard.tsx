@@ -156,40 +156,62 @@ function renderMarkdown(md: string) {
   
   lines.forEach((line, idx) => {
     const trimmed = line.trim();
+    if (trimmed === "---") {
+      elements.push(<hr key={idx} className="my-4 border-hairline" />);
+      return;
+    }
+
     if (trimmed.startsWith("# ")) {
-      elements.push(
-        <h1 key={idx} className="text-xl font-bold tracking-tight text-foreground border-b pb-1 mt-4 mb-2 first:mt-0 font-heading">
-          {trimmed.substring(2)}
-        </h1>
-      );
+      const title = trimmed.substring(2);
+      const isSlideHeader = title.toLowerCase().includes("slide");
+      if (isSlideHeader) {
+        elements.push(
+          <div key={idx} className="mt-5 mb-3 flex items-center gap-2 p-2.5 px-3.5 rounded-xl bg-primary/10 border border-primary/20 text-primary font-bold text-xs shadow-xs">
+            <Sparkles className="size-4 shrink-0" />
+            <span>{title}</span>
+          </div>
+        );
+      } else {
+        elements.push(
+          <h1 key={idx} className="text-base font-bold tracking-tight text-foreground border-b pb-2 mt-4 mb-3 first:mt-0 font-heading">
+            {title}
+          </h1>
+        );
+      }
     } else if (trimmed.startsWith("## ")) {
       const text = trimmed.substring(3);
-      const isSlide = text.toLowerCase().includes("slide");
+      const isEyebrow = text.toLowerCase() === "eyebrow";
+      const isHeadline = text.toLowerCase() === "headline";
+      const isHighlight = text.toLowerCase().includes("highlight");
+      const isVisual = text.toLowerCase().includes("visual");
+
       elements.push(
-        <h2 key={idx} className={`text-sm font-semibold tracking-tight mt-4 mb-1.5 font-heading ${
-          isSlide 
-            ? "text-primary border-l-2 border-primary pl-2 bg-primary/5 py-0.5 rounded-r" 
-            : "text-foreground border-b pb-0.5"
+        <h2 key={idx} className={`text-xs font-semibold uppercase tracking-wider mt-3 mb-1 font-heading ${
+          isEyebrow ? "text-indigo-400 font-mono" :
+          isHeadline ? "text-amber-400 font-bold" :
+          isHighlight ? "text-emerald-400 font-semibold" :
+          isVisual ? "text-purple-400 font-semibold" :
+          "text-muted-foreground border-b border-hairline pb-0.5"
         }`}>
           {text}
         </h2>
       );
     } else if (trimmed.startsWith("### ")) {
       elements.push(
-        <h3 key={idx} className="text-xs font-semibold text-muted-foreground mt-3 mb-1">
+        <h3 key={idx} className="text-xs font-semibold text-muted-foreground mt-2 mb-1">
           {trimmed.substring(4)}
         </h3>
       );
-    } else if (trimmed.startsWith("- ")) {
+    } else if (trimmed.startsWith("- ") || trimmed.startsWith("* ")) {
+      const text = trimmed.substring(2);
+      let content: React.ReactNode = text;
+      if (text.includes("**")) {
+        const parts = text.split("**");
+        content = parts.map((part, i) => i % 2 === 1 ? <strong key={i} className="font-bold text-primary px-1 py-0.5 rounded bg-primary/10">{part}</strong> : part);
+      }
       elements.push(
-        <li key={idx} className="text-xs list-disc ml-4 my-0.5 text-muted-foreground">
-          {trimmed.substring(2)}
-        </li>
-      );
-    } else if (trimmed.startsWith("* ")) {
-      elements.push(
-        <li key={idx} className="text-xs list-disc ml-4 my-0.5 text-muted-foreground">
-          {trimmed.substring(2)}
+        <li key={idx} className="text-xs list-disc ml-4 my-1 text-muted-foreground leading-relaxed">
+          {content}
         </li>
       );
     } else if (trimmed === "") {
@@ -198,10 +220,10 @@ function renderMarkdown(md: string) {
       let content: React.ReactNode = trimmed;
       if (trimmed.includes("**")) {
         const parts = trimmed.split("**");
-        content = parts.map((part, i) => i % 2 === 1 ? <strong key={i} className="font-bold text-foreground">{part}</strong> : part);
+        content = parts.map((part, i) => i % 2 === 1 ? <strong key={i} className="font-bold text-primary underline decoration-primary/50 underline-offset-2">{part}</strong> : part);
       }
       elements.push(
-        <p key={idx} className="text-xs text-muted-foreground leading-relaxed my-0.5">
+        <p key={idx} className="text-xs text-muted-foreground leading-relaxed my-1">
           {content}
         </p>
       );
@@ -1144,26 +1166,93 @@ export function Wizard({ models }: { models: ModelId[] }) {
 
       {/* STEP 2: BRIEF OUTLINE EDITOR COMPONENT */}
       {step === 2 && (
-        <div className="flex flex-col gap-6 w-full max-w-5xl mx-auto py-2 animate-in fade-in duration-200">
-          <Card className="shadow-sm border-hairline">
+        <div className="flex flex-col gap-6 w-full max-w-6xl mx-auto py-2 animate-in fade-in duration-200">
+          <Card className="shadow-sm border-hairline overflow-hidden">
             <CardContent className="p-6 flex flex-col gap-4">
-              <div className="flex items-center justify-between border-b pb-3">
+              {/* Header with Mode Toggles */}
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b pb-3">
                 <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground flex items-center gap-2">
                   <FileText className="size-4 text-primary" />
                   Outline Brief Editor
                 </span>
-                <span className="text-xs font-mono text-muted-foreground bg-muted/40 px-2 py-0.5 rounded border border-hairline">
-                  Markdown Enabled
-                </span>
+
+                {/* View Mode Toggle Buttons */}
+                <div className="flex items-center gap-1 bg-muted/50 p-0.5 rounded-lg border border-hairline">
+                  <button
+                    type="button"
+                    onClick={() => setMdMode("split")}
+                    className={`px-3 py-1 text-xs font-medium rounded-md transition-colors ${
+                      mdMode === "split" ? "bg-card text-foreground shadow-xs font-semibold" : "text-muted-foreground hover:text-foreground"
+                    }`}
+                  >
+                    Split View
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setMdMode("editor")}
+                    className={`px-3 py-1 text-xs font-medium rounded-md transition-colors ${
+                      mdMode === "editor" ? "bg-card text-foreground shadow-xs font-semibold" : "text-muted-foreground hover:text-foreground"
+                    }`}
+                  >
+                    Raw Editor
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setMdMode("preview")}
+                    className={`px-3 py-1 text-xs font-medium rounded-md transition-colors ${
+                      mdMode === "preview" ? "bg-card text-foreground shadow-xs font-semibold" : "text-muted-foreground hover:text-foreground"
+                    }`}
+                  >
+                    Formatted Preview
+                  </button>
+                </div>
               </div>
 
-              <Textarea
-                value={brief}
-                onChange={(e) => setBrief(e.target.value)}
-                disabled={pending || isTyping}
-                placeholder="# Judul Carousel..."
-                className="font-mono text-xs h-96 p-4 bg-canvas-soft border-hairline resize-y leading-relaxed rounded-xl shadow-inner"
-              />
+              {/* Main Content Area Based on mdMode */}
+              <div className="min-h-[420px] max-h-[550px] rounded-2xl border border-hairline overflow-hidden bg-canvas-soft shadow-inner relative">
+                {mdMode === "editor" && (
+                  <Textarea
+                    value={brief}
+                    onChange={(e) => setBrief(e.target.value)}
+                    disabled={pending || isTyping}
+                    placeholder="# Judul Carousel..."
+                    className="font-mono text-xs h-full w-full p-4 bg-transparent border-none resize-none focus-visible:ring-0 leading-relaxed overflow-y-auto"
+                  />
+                )}
+
+                {mdMode === "preview" && (
+                  <div className="h-full w-full p-6 overflow-y-auto bg-card">
+                    {brief ? (
+                      renderMarkdown(brief)
+                    ) : (
+                      <div className="h-full flex items-center justify-center text-xs text-muted-foreground font-mono">
+                        Brief outline kosong. Ketik ide di langkah 1 untuk membuat brief.
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {mdMode === "split" && (
+                  <div className="grid grid-cols-1 md:grid-cols-2 h-full divide-y md:divide-y-0 md:divide-x divide-hairline">
+                    <Textarea
+                      value={brief}
+                      onChange={(e) => setBrief(e.target.value)}
+                      disabled={pending || isTyping}
+                      placeholder="# Judul Carousel..."
+                      className="font-mono text-xs h-full w-full p-4 bg-transparent border-none resize-none focus-visible:ring-0 leading-relaxed overflow-y-auto"
+                    />
+                    <div className="h-full w-full p-6 overflow-y-auto bg-card/60">
+                      {brief ? (
+                        renderMarkdown(brief)
+                      ) : (
+                        <div className="h-full flex items-center justify-center text-xs text-muted-foreground font-mono">
+                          Live pratinjau markdown akan muncul di sini.
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                )}
+              </div>
 
               {/* Bottom AI Revision Row */}
               <div className="flex items-center gap-2 pt-2 border-t">
@@ -1171,7 +1260,7 @@ export function Wizard({ models }: { models: ModelId[] }) {
                   value={revision}
                   onChange={(e) => setRevision(e.target.value)}
                   placeholder="Ketik instruksi revisi outline ke AI..."
-                  className="h-10 text-xs flex-1 rounded-xl"
+                  className="h-10 text-xs flex-1 rounded-xl border-hairline"
                   disabled={pending || isTyping}
                   onKeyDown={(e) => {
                     if (e.key === "Enter") handleRevisionSend();
