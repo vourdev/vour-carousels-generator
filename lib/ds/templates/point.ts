@@ -7,7 +7,7 @@ export const pointTemplate = String.raw`<section data-screen-label="03 · Point"
   <div class="counter">{{counter}}</div>
 
   <div class="eyebrow mt-64">{{eyebrow}}</div>
-  <h1 class="mt-24">{{headlinePre}}<span class="a">{{accentWord}}</span>{{headlinePost}}</h1>
+  <h1 class="compact mt-24">{{headlinePre}}<span class="a">{{accentWord}}</span>{{headlinePost}}</h1>
   <p class="body-text mt-32">
     {{body}}
   </p>

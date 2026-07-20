@@ -108,22 +108,23 @@ Kesimpulan
 # Hashtag
 #fyp #<topic1> #<topic2> #webdev #backend #coding #vourdev
 
-STRICT DESIGN RULES:
+STRICT DESIGN & COPY BUDGET RULES:
 1. Always write concise, punchy, highly informative Bahasa Indonesia.
 2. Title MUST be informative, descriptive, and clearly convey the main value proposition of the carousel.
-3. Headlines MUST be short with exactly ONE key accent word wrapped in double asterisks **like this**.
-4. EVERY middle slide MUST specify a Mockup Type AND detailed Mockup Details. NEVER leave a slide without a mockup specification.
-5. VARY mockup types across slides — NEVER use the same mockup type on 3+ consecutive slides. A carousel with 6 middle slides should use at least 3 different mockup types.
-6. Caption MUST be detailed and informative, including a strong hook, key takeaway bullet points, and a Call-To-Action (Save & Share).
-7. Hashtags MUST ALWAYS include #fyp alongside topic-specific hashtags.
-8. Include visual direction (Lucide icon & color accent) per slide.
-9. Mockup type selection guide:
-   - Use Terminal for any slide that explains code, commands, configs, or API calls
-   - Use Comparison for slides comparing two approaches, old vs new, or bad vs good
-   - Use Steps for solution slides or "how to" guides (2-4 steps)
-   - Use Callout for critical warnings, key rules, or important conclusions
-   - Use BigStat for slides centered on a single impressive number or metric
-   - Use Card as the general fallback for conceptual explanations`;
+3. Headlines MUST be short (≤ 7 words) with exactly ONE key accent word wrapped in double asterisks **like this**.
+4. Body/Description MUST be concise (1-2 sentences, max 120 chars) to ensure zero vertical clipping on the 1080×1350 canvas.
+5. EVERY middle slide MUST specify a Mockup Type AND detailed Mockup Details. NEVER leave a slide without a mockup specification.
+6. VARY mockup types across slides — NEVER use the same mockup type on 3+ consecutive slides. A carousel with 6 middle slides should use at least 3 different mockup types.
+7. Mockup content budgets:
+   - Terminal: filename + 4-6 lines of code max (max 45 chars per line).
+   - Comparison: loser label/line vs winner label/line (max 50 chars each).
+   - Steps: 2-4 numbered steps max (step title ≤ 35 chars, step body ≤ 55 chars).
+   - Callout: single punchy warning/takeaway sentence (max 90 chars).
+   - BigStat: number (≤ 6 chars), unit (≤ 20 chars), caption (≤ 70 chars).
+   - Card: card title (≤ 40 chars), card body (≤ 100 chars).
+8. Caption MUST be detailed and informative, including a strong hook, key takeaway bullet points, and a Call-To-Action (Save & Share).
+9. Hashtags MUST ALWAYS include #fyp alongside topic-specific hashtags.
+10. Include visual direction (Lucide icon & color accent) per slide.`;
 
 export function briefUserPrompt(idea: string): string {
   return `Content idea:\n${idea}\n\nWrite the detailed, informative brief.`;
@@ -155,16 +156,24 @@ MOCKUP TYPES — every "point" slide MUST include a "mockup" object with one of 
 6. { type: "bigstat", number: "3×", unit?: "faster", caption: "Explanation of the metric" }
    → Large editorial number. Use for impressive metrics. Keep number ≤ 6 chars.
 
-STRICT DESIGN RULES:
-1. Eyebrow ≤ 3 words; headline short with one accentWord that appears verbatim inside the headline.
-2. EVERY "point" slide MUST HAVE A MANDATORY "mockup" OBJECT. Never omit it.
-3. VARY mockup types — do NOT use the same type on 3+ consecutive slides. A 6-slide carousel should use ≥ 3 different types.
-4. Choose contextually appropriate mockup types: Terminal for code, Comparison for vs-slides, Steps for solutions, BigStat for metrics, Callout for warnings, Card for general info.
-5. Title MUST be highly informative, descriptive, and engaging.
-6. Caption MUST be comprehensive and detailed (with hook, key takeaways bullet list, and CTA to save/share).
-7. Hashtags array MUST ALWAYS include "fyp" (e.g. ["fyp", "webdev", "backend", "softwareengineering", "vourdev"]).
-8. Use "point" for all middle slides. Deck spine: cover → points → outro.
-9. Tone colors should vary across slides: peach (neutral), mint (success), sky (tooling), amber (highlight), pink (design), stone (loser/warning).`;
+STRICT DESIGN & COPY BUDGET RULES:
+1. Eyebrow ≤ 3 words (max 30 chars); headline short (≤ 7 words, max 60 chars) with one accentWord that appears verbatim inside the headline.
+2. Body description MUST be concise (1-2 sentences, max 120 chars) to prevent vertical overflow on the 1080×1350 canvas.
+3. EVERY "point" slide MUST HAVE A MANDATORY "mockup" OBJECT. Never omit it.
+4. Mockup copy budgets:
+   - Terminal: filename + 4-6 lines of code max (max 45 chars per line).
+   - Comparison: loser label/line vs winner label/line (max 50 chars each).
+   - Steps: 2-4 numbered steps max (step title ≤ 35 chars, step body ≤ 55 chars).
+   - Callout: single punchy warning/takeaway sentence (max 90 chars).
+   - BigStat: number (≤ 6 chars), unit (≤ 20 chars), caption (≤ 70 chars).
+   - Card: card title (≤ 40 chars), card body (≤ 100 chars).
+5. VARY mockup types — do NOT use the same type on 3+ consecutive slides. A 6-slide carousel should use ≥ 3 different types.
+6. Choose contextually appropriate mockup types: Terminal for code, Comparison for vs-slides, Steps for solutions, BigStat for metrics, Callout for warnings, Card for general info.
+7. Title MUST be highly informative, descriptive, and engaging.
+8. Caption MUST be comprehensive and detailed (with hook, key takeaways bullet list, and CTA to save/share).
+9. Hashtags array MUST ALWAYS include "fyp" (e.g. ["fyp", "webdev", "backend", "softwareengineering", "vourdev"]).
+10. Use "point" for all middle slides. Deck spine: cover → points → outro.
+11. Tone colors should vary across slides: peach (neutral), mint (success), sky (tooling), amber (highlight), pink (design), stone (loser/warning).`;
 
 export function planUserPrompt(brief: string): string {
   return `Approved brief:\n${brief}\n\nProduce the slide plan.`;

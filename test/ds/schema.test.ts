@@ -100,4 +100,13 @@ describe("mockupSchema", () => {
       expect(point.mockup?.type).toBe("terminal");
     }
   });
+  it("rejects point slide body exceeding max length limit", () => {
+    const overlyLongBody = "a".repeat(200);
+    expect(() => slidePlanSchema.parse({
+      ...valid,
+      slides: [
+        { role: "point", counter: "01/01", eyebrow: "TEST", headline: "H", body: overlyLongBody },
+      ],
+    })).toThrow();
+  });
 });

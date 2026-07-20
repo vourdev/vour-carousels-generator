@@ -227,7 +227,7 @@ export const carouselCss = String.raw`
 
   /* Comparison bars: two panels side-by-side */
   .diag-bars { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; }
-  .diag-bars .panel { border: 1.5px solid #E94B19; border-radius: 20px; padding: 28px 32px; min-height: 320px; display: flex; flex-direction: column; gap: 16px; }
+  .diag-bars .panel { border: 1.5px solid #E94B19; border-radius: 20px; padding: 28px 32px; min-height: 220px; display: flex; flex-direction: column; gap: 16px; }
   .diag-bars .panel.loser { border-color: #C13B1A; }
   .diag-bars .panel .h {
     font-family: 'JetBrains Mono'; font-weight: 500; font-size: 22px;
@@ -241,6 +241,7 @@ export const carouselCss = String.raw`
   .diag-bars .panel .foot {
     font-family: 'JetBrains Mono'; font-weight: 500; font-size: 22px;
     letter-spacing: 0.14em; text-transform: uppercase; color: #E94B19;
+    word-break: break-word; overflow-wrap: anywhere;
   }
   .diag-bars .panel.loser .foot { color: #C13B1A; }
 
@@ -257,14 +258,14 @@ export const carouselCss = String.raw`
   .diag-icon-hub svg.lines .head { fill: #E94B19; }
 
   /* Terminal code block */
-  .terminal { background: #1F0904; border-radius: 20px; padding: 40px; color: #fff; font-family: 'JetBrains Mono'; }
-  .terminal-bar { display: flex; align-items: center; gap: 8px; margin-bottom: 24px; }
+  .terminal { background: #1F0904; border-radius: 20px; padding: 36px 40px; color: #fff; font-family: 'JetBrains Mono'; width: 100%; }
+  .terminal-bar { display: flex; align-items: center; gap: 8px; margin-bottom: 20px; }
   .terminal-bar .dot { width: 14px; height: 14px; border-radius: 50%; }
   .terminal-bar .dot.r { background: #FF5F56; }
   .terminal-bar .dot.y { background: #FFBD2E; }
   .terminal-bar .dot.g { background: #27C93F; }
   .terminal-bar .title { margin-left: 16px; color: rgba(255,255,255,0.55); font-size: 22px; }
-  .terminal-body { font-family: 'JetBrains Mono'; font-size: 26px; line-height: 1.7; color: #fff; white-space: pre-wrap; }
+  .terminal-body { font-family: 'JetBrains Mono'; font-size: 24px; line-height: 1.6; color: #fff; white-space: pre-wrap; word-break: break-word; overflow-wrap: anywhere; }
   .terminal-body .cmt { color: rgba(255,255,255,0.45); }
   .terminal-body .key { color: #E8B4A0; }
   .terminal-body .val { color: #B79CF2; }

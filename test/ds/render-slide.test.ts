@@ -43,7 +43,7 @@ describe("renderSlide", () => {
     expect(html).not.toContain("card-peach");
   });
 
-  it("renders a comparison mockup with loser and winner panels", () => {
+  it("renders a comparison mockup with vertical flex container and panels", () => {
     const html = renderSlide({
       role: "point", counter: "03/07", eyebrow: "VS", headline: "Compare", body: "desc",
       mockup: {
@@ -55,6 +55,8 @@ describe("renderSlide", () => {
         winnerRationale: "Enkripsi melindungi data",
       },
     });
+    expect(html).toContain("h1 class=\"compact mt-24\"");
+    expect(html).toContain("display:flex;flex-direction:column;gap:20px;width:100%");
     expect(html).toContain("diag-bars");
     expect(html).toContain("panel loser");
     expect(html).toContain("Base64");
