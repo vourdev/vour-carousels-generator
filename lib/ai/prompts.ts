@@ -48,8 +48,26 @@ You MUST follow this EXACT Markdown structure (matching Vour Dev Design System):
 ## Description
 <Explanation of the issue or context>
 
+## Mockup Type
+<Choose ONE per slide to create visual variety:>
+- Terminal — for code snippets, CLI commands, config files, JSON/YAML
+- Comparison — for before/after, good vs bad, encoding vs encryption
+- Steps — for 2-4 step tutorials, solutions, how-to guides
+- Callout — for key takeaways, important warnings, crucial rules
+- BigStat — for impressive metrics, numbers, performance stats
+- Card — for general info cards with icon, title and body text
+
+## Mockup Details
+<Provide specific content for the chosen mockup type:>
+- Terminal: filename and 4-6 code lines
+- Comparison: loser label + line vs winner label + line
+- Steps: 2-4 numbered step titles + bodies
+- Callout: icon slug + one-line takeaway text
+- BigStat: number (e.g. "3×"), unit (e.g. "faster"), caption
+- Card: icon slug, card title, card body, tone color
+
 ## Highlight
-<Key takeaway callout>
+<Key takeaway callout or card summary>
 
 ## Visual Direction
 - Icon: lucide:<icon-slug>
@@ -57,7 +75,7 @@ You MUST follow this EXACT Markdown structure (matching Vour Dev Design System):
 
 ---
 
-... Repeat for each middle point slide (Slide 3..N-1) using logical roles (Point, Comparison, Solution, Terminal) ...
+... Repeat for each middle point slide (Slide 3..N-1) using DIFFERENT mockup types per slide ...
 
 ---
 
@@ -90,13 +108,22 @@ Kesimpulan
 # Hashtag
 #fyp #<topic1> #<topic2> #webdev #backend #coding #vourdev
 
-Rules:
+STRICT DESIGN RULES:
 1. Always write concise, punchy, highly informative Bahasa Indonesia.
 2. Title MUST be informative, descriptive, and clearly convey the main value proposition of the carousel.
 3. Headlines MUST be short with exactly ONE key accent word wrapped in double asterisks **like this**.
-4. Caption MUST be detailed and informative, including a strong hook, key takeaway bullet points, and a Call-To-Action (Save & Share).
-5. Hashtags MUST ALWAYS include #fyp alongside topic-specific hashtags.
-6. Include visual direction (Lucide icon & color accent) per slide.`;
+4. EVERY middle slide MUST specify a Mockup Type AND detailed Mockup Details. NEVER leave a slide without a mockup specification.
+5. VARY mockup types across slides — NEVER use the same mockup type on 3+ consecutive slides. A carousel with 6 middle slides should use at least 3 different mockup types.
+6. Caption MUST be detailed and informative, including a strong hook, key takeaway bullet points, and a Call-To-Action (Save & Share).
+7. Hashtags MUST ALWAYS include #fyp alongside topic-specific hashtags.
+8. Include visual direction (Lucide icon & color accent) per slide.
+9. Mockup type selection guide:
+   - Use Terminal for any slide that explains code, commands, configs, or API calls
+   - Use Comparison for slides comparing two approaches, old vs new, or bad vs good
+   - Use Steps for solution slides or "how to" guides (2-4 steps)
+   - Use Callout for critical warnings, key rules, or important conclusions
+   - Use BigStat for slides centered on a single impressive number or metric
+   - Use Card as the general fallback for conceptual explanations`;
 
 export function briefUserPrompt(idea: string): string {
   return `Content idea:\n${idea}\n\nWrite the detailed, informative brief.`;
@@ -105,20 +132,45 @@ export function briefUserPrompt(idea: string): string {
 export const planSystem = `You convert an approved carousel brief into a structured slide plan for @vourdev.
 Return ONLY structured data matching the schema. Supported slide roles:
 - "cover": { eyebrow, headline, accentWord?, lede? }
-- "point": { counter (e.g. "02 / 05"), eyebrow, headline, accentWord?, body, card?: { icon (Iconify slug e.g. "lucide:repeat"), title, body, tone: peach|stone|mint|sky|pink|amber } }
+- "point": { counter (e.g. "02 / 05"), eyebrow, headline, accentWord?, body, mockup: <one of the types below> }
 - "outro": { headline, accentWord?, body? }
 
-Rules:
+MOCKUP TYPES — every "point" slide MUST include a "mockup" object with one of these types:
+
+1. { type: "card", icon: "<lucide:slug>", title: "...", body: "...", tone: "peach"|"stone"|"mint"|"sky"|"pink"|"amber" }
+   → General info card. Use for conceptual explanations.
+
+2. { type: "terminal", filename: "example.ts", lines: [{ text: "const x = 1;", style: "plain"|"key"|"val"|"kw"|"cmt"|"num" }] }
+   → Mac-style code block. Use for code, CLI, config, JSON. 4-8 lines max. Style guide: "cmt" for comments (#), "key" for object keys, "val" for string values, "kw" for keywords, "num" for numbers.
+
+3. { type: "comparison", loserLabel: "Bad Way", loserLine: "...", winnerLabel: "Good Way", winnerLine: "...", winnerRationale?: "..." }
+   → Two-panel loser vs winner. Use for before/after, bad/good comparisons.
+
+4. { type: "steps", items: [{ title: "Step title", body: "Step description" }] }
+   → 2-4 numbered step cards. Use for solution/tutorial/how-to slides.
+
+5. { type: "callout", icon: "<lucide:slug>", text: "Important one-liner" }
+   → Dark banner with icon. Use for critical warnings, key takeaways.
+
+6. { type: "bigstat", number: "3×", unit?: "faster", caption: "Explanation of the metric" }
+   → Large editorial number. Use for impressive metrics. Keep number ≤ 6 chars.
+
+STRICT DESIGN RULES:
 1. Eyebrow ≤ 3 words; headline short with one accentWord that appears verbatim inside the headline.
-2. Title MUST be highly informative, descriptive, and engaging.
-3. Caption MUST be comprehensive and detailed (with hook, key takeaways bullet list, and CTA to save/share).
-4. Hashtags array MUST ALWAYS include "fyp" (e.g. ["fyp", "webdev", "backend", "softwareengineering", "vourdev"]).
-5. Use "point" for the middle slides. Deck spine: cover → points → outro.`;
+2. EVERY "point" slide MUST HAVE A MANDATORY "mockup" OBJECT. Never omit it.
+3. VARY mockup types — do NOT use the same type on 3+ consecutive slides. A 6-slide carousel should use ≥ 3 different types.
+4. Choose contextually appropriate mockup types: Terminal for code, Comparison for vs-slides, Steps for solutions, BigStat for metrics, Callout for warnings, Card for general info.
+5. Title MUST be highly informative, descriptive, and engaging.
+6. Caption MUST be comprehensive and detailed (with hook, key takeaways bullet list, and CTA to save/share).
+7. Hashtags array MUST ALWAYS include "fyp" (e.g. ["fyp", "webdev", "backend", "softwareengineering", "vourdev"]).
+8. Use "point" for all middle slides. Deck spine: cover → points → outro.
+9. Tone colors should vary across slides: peach (neutral), mint (success), sky (tooling), amber (highlight), pink (design), stone (loser/warning).`;
 
 export function planUserPrompt(brief: string): string {
   return `Approved brief:\n${brief}\n\nProduce the slide plan.`;
 }
 
 export function reviseUserPrompt(planJson: string, message: string): string {
-  return `Current slide plan (JSON):\n${planJson}\n\nRevision request:\n${message}\n\nReturn the full revised slide plan. Fix issues by editing copy/roles — never by changing layout or CSS. Keep it on-brand and within the caps. Ensure hashtags include "fyp".`;
+  return `Current slide plan (JSON):\n${planJson}\n\nRevision request:\n${message}\n\nReturn the full revised slide plan. Fix issues by editing copy/roles — never by changing layout or CSS. Keep it on-brand and within the caps. Ensure hashtags include "fyp". EVERY point slide must have a mockup object.`;
 }
+

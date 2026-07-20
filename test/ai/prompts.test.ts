@@ -34,4 +34,20 @@ describe("prompt builders", () => {
     expect(briefSystem).toMatch(/informative/i);
     expect(planSystem).toMatch(/informative/i);
   });
+  it("planSystem documents all 6 mockup types", () => {
+    expect(planSystem).toContain('"terminal"');
+    expect(planSystem).toContain('"comparison"');
+    expect(planSystem).toContain('"steps"');
+    expect(planSystem).toContain('"callout"');
+    expect(planSystem).toContain('"bigstat"');
+    expect(planSystem).toContain('"card"');
+  });
+  it("briefSystem instructs varied mockup types", () => {
+    expect(briefSystem).toMatch(/Terminal/);
+    expect(briefSystem).toMatch(/Comparison/);
+    expect(briefSystem).toMatch(/Steps/);
+    expect(briefSystem).toMatch(/Callout/);
+    expect(briefSystem).toMatch(/BigStat/);
+    expect(briefSystem).toMatch(/VARY/i);
+  });
 });

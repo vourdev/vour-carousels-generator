@@ -25,4 +25,7 @@ export const pointTemplate = String.raw`<section data-screen-label="03 · Point"
     </div>
   </div>
   {{/card}}
+  {{#mockupHtml}}
+  MOCKUP_INJECT
+  {{/mockupHtml}}
 </section>`;
