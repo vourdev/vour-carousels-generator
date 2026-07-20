@@ -244,13 +244,13 @@ export default function HistoryClient({ initialItems, userId, betterAuthSecret }
       {/* Header and Pill Toggle */}
       <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 border-b border-hairline pb-5">
         <div>
-          <div className="flex items-center gap-2">
-            <span className="p-2 rounded-lg bg-primary/10 border border-primary/20">
-              <CalendarDays className="size-5 text-primary" />
-            </span>
+          <div className="flex items-center gap-3">
+            <Link href="/" className="size-10 rounded-full overflow-hidden bg-[#07070e] border border-white/20 shadow-md shrink-0 hover:scale-105 transition-transform">
+              <img src="/vourdev-logo.jpeg" alt="@vourdev" className="size-full object-cover" />
+            </Link>
             <div>
               <h1 className="text-xl font-bold tracking-tight">Content Calendar &amp; History</h1>
-              <p className="text-xs text-muted-foreground">Katalog konten stock dan kalender penjadwalan publish</p>
+              <p className="text-xs text-muted-foreground">Katalog konten stock dan kalender penjadwalan publish @vourdev</p>
             </div>
           </div>
         </div>

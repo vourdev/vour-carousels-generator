@@ -20,7 +20,7 @@ import type { ModelId } from "@/lib/ai/registry";
 import type { SlidePlan } from "@/lib/ds/schema";
 import { briefAction, planAction, reviseAction, uploadSingleImageAction, publishAction, getPublishingConfigAction } from "./actions";
 import { saveExportedCarouselAction, markCarouselStatusAction, deleteCarouselAction } from "@/app/history/actions";
-import { Sparkles, Brain, Zap, RotateCcw, Check, Send, Eye, FileText, LayoutGrid, User, Upload, Clock, CheckCircle2, XCircle, AlertCircle, Calendar, Globe, ArrowLeft } from "lucide-react";
+import { Sparkles, Brain, Zap, RotateCcw, Check, Send, Eye, FileText, LayoutGrid, User, Upload, Clock, CheckCircle2, XCircle, AlertCircle, Calendar, Globe, ArrowLeft, Search, ChevronDown, SlidersHorizontal } from "lucide-react";
 import { toast } from "sonner";
 
 interface Message {
@@ -29,21 +29,29 @@ interface Message {
   timestamp: string;
 }
 
-const modelDetails: Record<string, { label: string; icon: React.ReactNode }> = {
+const modelDetails: Record<string, { label: string; vendor: string; description: string; icon: React.ReactNode }> = {
   gemini: {
     label: "Gemini Flash",
+    vendor: "Google AI",
+    description: "Model cepat & cerdas dari Google (Gratis)",
     icon: <Sparkles className="size-4 text-indigo-500 shrink-0" />,
   },
   deepseek: {
     label: "DeepSeek Chat",
+    vendor: "DeepSeek AI",
+    description: "Reasoning & content model dari DeepSeek",
     icon: <Brain className="size-4 text-cyan-500 shrink-0" />,
   },
   mimo: {
     label: "MIMO",
+    vendor: "Xiaomi AI",
+    description: "OpenAI-compatible inference engine",
     icon: <Zap className="size-4 text-amber-500 shrink-0" />,
   },
   openrouter: {
     label: "OpenRouter",
+    vendor: "OpenRouter",
+    description: "Multi-vendor AI model gateway",
     icon: <Globe className="size-4 text-rose-500 shrink-0" />,
   },
 };
@@ -448,6 +456,15 @@ export function Wizard({ models }: { models: ModelId[] }) {
     }
   };
 
+  const handleDownloadAll = () => {
+    if (blobs.length > 0) {
+      downloadNamedBlobs(namedBlobs(blobs));
+      toast.success("Downloaded JPEGs locally!");
+    } else {
+      toast.error("Belum ada slide gambar yang di-export.");
+    }
+  };
+
   // Fallback to regenerate exports if they refreshed while in Step 4 or 5
   useEffect(() => {
     if (mounted && step >= 4 && exportedImages.length === 0 && html) {
@@ -818,6 +835,8 @@ export function Wizard({ models }: { models: ModelId[] }) {
       }
     });
   }
+  const [modelPopoverOpen, setModelPopoverOpen] = useState(false);
+  const [modelSearch, setModelSearch] = useState("");
 
   if (models.length === 0) {
     return (
@@ -832,130 +851,244 @@ export function Wizard({ models }: { models: ModelId[] }) {
   }
 
   return (
-    <div className="flex flex-col gap-3 lg:h-full min-h-0 flex-1">
+    <div className="flex flex-col gap-6 w-full">
+      {/* 1. TOP STEPPER HEADER BAR */}
+      <div className="bg-card border border-hairline rounded-2xl p-3 shadow-xs flex flex-wrap items-center justify-between gap-3 shrink-0">
+        <div className="flex flex-wrap items-center gap-1.5 md:gap-2">
+          {[
+            { id: 1, label: "Concept", icon: Sparkles },
+            { id: 2, label: "Brief", icon: FileText },
+            { id: 3, label: "Design", icon: LayoutGrid },
+            { id: 4, label: "Export", icon: Upload },
+            { id: 5, label: "Publish", icon: Calendar },
+          ].map((s, idx, arr) => {
+            const isCompleted = step > s.id || (s.id === 2 && brief.trim().length > 0) || (s.id === 3 && plan !== null) || (s.id === 4 && exportedImages.length > 0);
+            const isActive = step === s.id;
+            const isClickable = isCompleted || s.id === 1 || (s.id === 2 && brief) || (s.id === 3 && plan) || (s.id === 4 && plan) || (s.id === 5 && plan);
 
-      {/* Mobile-only panel toggle (desktop shows both columns side by side). */}
-      <div className="flex lg:hidden items-center gap-1 p-0.5 bg-muted/50 rounded-lg border border-hairline shrink-0">
-        <button
-          onClick={() => setMobilePanel("chat")}
-          className={`flex-1 py-2 rounded-md text-xs font-medium transition-colors ${mobilePanel === "chat" ? "bg-card text-foreground shadow-xs" : "text-muted-foreground"}`}
+            return (
+              <div key={s.id} className="flex items-center gap-1.5 md:gap-2">
+                <button
+                  disabled={!isClickable}
+                  onClick={() => {
+                    if (isClickable) {
+                      setStep(s.id);
+                      if (s.id === 2) setActiveTab("brief");
+                      if (s.id === 3) setActiveTab("preview");
+                    }
+                  }}
+                  className={`flex items-center gap-2 px-3 py-1.5 rounded-xl text-xs font-medium transition-all ${
+                    isActive
+                      ? "bg-primary text-primary-foreground shadow-sm font-semibold"
+                      : isCompleted
+                      ? "bg-muted/40 text-foreground hover:bg-muted/70 cursor-pointer border border-hairline"
+                      : "text-muted-foreground/50 cursor-not-allowed opacity-60"
+                  }`}
+                >
+                  <span className={`size-5 rounded-full flex items-center justify-center text-[10px] font-bold ${
+                    isActive ? "bg-primary-foreground text-primary" : "bg-muted text-muted-foreground"
+                  }`}>
+                    {s.id}
+                  </span>
+                  <span>{s.label}</span>
+                </button>
+                {idx < arr.length - 1 && <span className="text-muted-foreground/30 text-xs">→</span>}
+              </div>
+            );
+          })}
+        </div>
+
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={handleReset}
+          className="h-8 text-xs gap-1.5 px-3 text-muted-foreground hover:text-foreground shrink-0 border border-hairline hover:bg-muted/40"
         >
-          Chat & Controls
-        </button>
-        <button
-          onClick={() => setMobilePanel("canvas")}
-          className={`flex-1 py-2 rounded-md text-xs font-medium transition-colors ${mobilePanel === "canvas" ? "bg-card text-foreground shadow-xs" : "text-muted-foreground"}`}
-        >
-          Canvas
-        </button>
+          <RotateCcw className="size-3.5" />
+          Clear / Reset
+        </Button>
       </div>
 
-    <div className="grid lg:grid-cols-[400px_1fr] gap-4 lg:gap-6 items-stretch lg:h-full relative pb-16 lg:pb-0 flex-1 min-h-0 p-1">
+      {/* 2. FOCUSED STEP COMPONENT VIEWS */}
 
-      {/* LEFT COLUMN: Workspace sidebar & Chat console */}
-      <div className={`${mobilePanel === "chat" ? "flex" : "hidden"} lg:flex flex-col h-full gap-4 min-h-0 p-1`}>
-        
-        {/* Workspace controls & Stepper */}
-        <Card className="shadow-sm shrink-0">
-          <CardContent className="p-4 flex flex-col gap-3">
-            
-            {/* Model Selector */}
-            <div className="flex items-center justify-between gap-3 border-b pb-3">
-              <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Provider</span>
-              <Select value={model} onValueChange={(v) => setModel(v as ModelId)}>
-                <SelectTrigger className="w-40 h-8 text-xs">
-                  <div className="flex items-center gap-1.5">
-                    {model && modelDetails[model]?.icon}
-                    <SelectValue placeholder="Model" />
-                  </div>
-                </SelectTrigger>
-                <SelectContent>
-                  {models.map((m) => (
-                    <SelectItem key={m} value={m} className="text-xs">
-                      <div className="flex items-center gap-1.5">
-                        {modelDetails[m]?.icon}
-                        <span>{modelDetails[m]?.label}</span>
-                      </div>
-                    </SelectItem>
+      {/* STEP 1: CONCEPT & AI PROMPTER COMPONENT */}
+      {step === 1 && (
+        <div className="flex flex-col justify-between gap-4 w-full max-w-4xl mx-auto py-1 animate-in fade-in duration-200 min-h-[calc(100vh-220px)] md:min-h-0">
+          {/* Chat Console Feed Container */}
+          <div className={`p-4 bg-canvas-soft border border-hairline rounded-2xl flex flex-col gap-3 shadow-inner ${
+            messages.length <= 1 
+              ? "py-6 md:py-10 justify-center my-auto" 
+              : "min-h-[280px] max-h-[400px] overflow-y-auto"
+          }`}>
+            {messages.length <= 1 && (
+              <div className="text-center flex flex-col items-center gap-2.5">
+                <div className="size-11 rounded-2xl bg-primary/10 border border-primary/20 flex items-center justify-center text-primary">
+                  <Sparkles className="size-5.5 animate-pulse" />
+                </div>
+                <h3 className="font-bold text-sm md:text-base">Apa ide atau topik carousel Anda hari ini?</h3>
+                <p className="text-xs text-muted-foreground max-w-md leading-relaxed">
+                  Ketik ide topik di bawah ini atau impor berkas Markdown / HTML untuk langsung menghasilkan slide carousel profesional.
+                </p>
+                <div className="flex flex-wrap items-center justify-center gap-1.5 mt-1">
+                  {[
+                    "5 Tips Idempotency di REST API",
+                    "Koleksi Layout CSS Grid 2026",
+                    "Strategi Content Marketing Instagram",
+                    "Desain UI Glassmorphism"
+                  ].map((chip, idx) => (
+                    <button
+                      key={idx}
+                      onClick={() => setIdea(chip)}
+                      className="text-[11px] font-mono bg-card border border-hairline hover:border-primary/40 px-2.5 py-1 rounded-xl transition-colors text-muted-foreground hover:text-foreground shadow-2xs"
+                    >
+                      💡 {chip}
+                    </button>
                   ))}
-                </SelectContent>
-              </Select>
-            </div>
+                </div>
+              </div>
+            )}
 
-            {/* Visual Stepper */}
-            <div className="flex flex-col gap-2 border-b pb-2">
-              <div className="flex flex-wrap items-center gap-y-1.5 gap-x-1">
-                <span className={`flex items-center justify-center size-5 rounded-full text-[10px] font-semibold ${step >= 1 ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground"}`}>1</span>
-                <span className={`text-[11px] ${step === 1 ? "font-semibold text-foreground" : "text-muted-foreground"}`}>Concept</span>
-                <span className="text-muted-foreground/40 text-[10px] mx-0.5">→</span>
-                <span className={`flex items-center justify-center size-5 rounded-full text-[10px] font-semibold ${step >= 2 ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground"}`}>2</span>
-                <span className={`text-[11px] ${step === 2 ? "font-semibold text-foreground" : "text-muted-foreground"}`}>Brief</span>
-                <span className="text-muted-foreground/40 text-[10px] mx-0.5">→</span>
-                <span className={`flex items-center justify-center size-5 rounded-full text-[10px] font-semibold ${step >= 3 ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground"}`}>3</span>
-                <span className={`text-[11px] ${step === 3 ? "font-semibold text-foreground" : "text-muted-foreground"}`}>Design</span>
-                <span className="text-muted-foreground/40 text-[10px] mx-0.5">→</span>
-                <span className={`flex items-center justify-center size-5 rounded-full text-[10px] font-semibold ${step >= 4 ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground"}`}>4</span>
-                <span className={`text-[11px] ${step === 4 ? "font-semibold text-foreground" : "text-muted-foreground"}`}>Export</span>
-                <span className="text-muted-foreground/40 text-[10px] mx-0.5">→</span>
-                <span className={`flex items-center justify-center size-5 rounded-full text-[10px] font-semibold ${step >= 5 ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground"}`}>5</span>
-                <span className={`text-[11px] ${step === 5 ? "font-semibold text-foreground" : "text-muted-foreground"}`}>Publish</span>
+            {messages.map((msg, index) => (
+              <div
+                key={index}
+                className={`flex gap-2.5 max-w-[85%] ${msg.sender === "user" ? "self-end flex-row-reverse" : "self-start"}`}
+              >
+                <div className={`size-7 rounded-full shrink-0 flex items-center justify-center text-xs ${msg.sender === "user" ? "bg-muted text-muted-foreground border border-hairline" : "bg-primary/10 text-primary border border-primary/20"}`}>
+                  {msg.sender === "user" ? <User className="size-3.5" /> : <Sparkles className="size-3.5 text-indigo-500 animate-pulse" />}
+                </div>
+                <div className="flex flex-col gap-0.5">
+                  <div className={`p-3.5 rounded-2xl text-xs leading-relaxed shadow-sm ${
+                    msg.sender === "user" 
+                      ? "bg-primary text-primary-foreground rounded-tr-none" 
+                      : "bg-card text-card-foreground rounded-tl-none border border-hairline"
+                  }`}>
+                    {msg.text}
+                  </div>
+                  <span className="text-[9px] text-muted-foreground px-1 self-end">{msg.timestamp}</span>
+                </div>
+              </div>
+            ))}
+            {pending && (
+              <div className="flex gap-2.5 self-start max-w-[85%] animate-pulse">
+                <div className="size-7 rounded-full bg-primary/10 border border-primary/20 flex items-center justify-center">
+                  <Sparkles className="size-3.5 text-indigo-500 animate-spin" />
+                </div>
+                <div className="p-3.5 bg-card border border-hairline rounded-2xl rounded-tl-none text-xs text-muted-foreground flex items-center gap-1.5">
+                  <div className="size-1.5 rounded-full bg-primary animate-bounce delay-75" />
+                  <div className="size-1.5 rounded-full bg-primary animate-bounce delay-150" />
+                  <div className="size-1.5 rounded-full bg-primary animate-bounce delay-300" />
+                </div>
+              </div>
+            )}
+            <div ref={chatEndRef} />
+          </div>
+
+          {/* FLOATING COMPOSER PILL WITH INTEGRATED MODEL SELECTOR POPOVER */}
+          <div className="relative p-3 bg-card border border-hairline rounded-2xl shadow-lg flex flex-col gap-2.5">
+            {/* Top Toolbar Inside Composer */}
+            <div className="flex items-center justify-between gap-2 border-b pb-2">
+              {/* Model Selector Popover Button */}
+              <div className="relative">
+                <button
+                  type="button"
+                  onClick={() => setModelPopoverOpen(!modelPopoverOpen)}
+                  className="flex items-center gap-2 px-3 py-1.5 rounded-xl border border-hairline bg-muted/30 hover:bg-muted/60 text-xs transition-colors"
+                >
+                  {model && modelDetails[model]?.icon}
+                  <div className="flex items-center gap-1.5 font-medium">
+                    <span>{model && modelDetails[model]?.label}</span>
+                    <span className="text-[9px] font-mono uppercase bg-muted/80 text-muted-foreground px-1.5 py-0.5 rounded border border-hairline">
+                      {model && modelDetails[model]?.vendor}
+                    </span>
+                  </div>
+                  <ChevronDown className="size-3.5 text-muted-foreground" />
+                </button>
+
+                {/* Model Selector Popover Floating Above */}
+                {modelPopoverOpen && (
+                  <div className="absolute left-0 bottom-full mb-2 z-50 w-72 md:w-80 bg-card border border-hairline rounded-2xl shadow-2xl p-3 animate-in fade-in slide-in-from-bottom-2 duration-150">
+                    <div className="flex items-center justify-between border-b pb-2 mb-2">
+                      <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground font-mono">PILIH MODEL AI</span>
+                      <button type="button" onClick={() => setModelPopoverOpen(false)} className="text-muted-foreground text-xs hover:text-foreground">
+                        &times;
+                      </button>
+                    </div>
+
+                    {/* Search Input */}
+                    <div className="relative mb-2">
+                      <Search className="absolute left-2.5 top-2.5 size-3.5 text-muted-foreground" />
+                      <Input
+                        value={modelSearch}
+                        onChange={(e) => setModelSearch(e.target.value)}
+                        placeholder="Cari model atau vendor..."
+                        className="pl-8 h-8 text-xs bg-muted/20 border-hairline"
+                      />
+                    </div>
+
+                    {/* Filtered Models List */}
+                    <div className="space-y-1 max-h-56 overflow-y-auto pr-0.5">
+                      {models
+                        .filter((m) => {
+                          const details = modelDetails[m];
+                          if (!details) return true;
+                          const query = modelSearch.toLowerCase();
+                          return details.label.toLowerCase().includes(query) || details.vendor.toLowerCase().includes(query);
+                        })
+                        .map((m) => {
+                          const details = modelDetails[m];
+                          const isSelected = model === m;
+                          return (
+                            <button
+                              key={m}
+                              type="button"
+                              onClick={() => {
+                                setModel(m);
+                                setModelPopoverOpen(false);
+                              }}
+                              className={`w-full flex items-center justify-between p-2 rounded-xl text-xs text-left transition-colors ${
+                                isSelected ? "bg-primary/10 border border-primary/20" : "hover:bg-muted/40"
+                              }`}
+                            >
+                              <div className="flex items-center gap-2.5 min-w-0">
+                                {details?.icon}
+                                <div className="min-w-0">
+                                  <div className="flex items-center gap-1.5">
+                                    <span className="font-semibold truncate">{details?.label || m}</span>
+                                    <span className="text-[9px] font-mono uppercase text-muted-foreground bg-muted px-1.5 py-0.5 rounded border border-hairline">
+                                      {details?.vendor || "AI"}
+                                    </span>
+                                  </div>
+                                  <p className="text-[10px] text-muted-foreground truncate">{details?.description}</p>
+                                </div>
+                              </div>
+                              {isSelected && <Check className="size-4 text-primary shrink-0 ml-1" />}
+                            </button>
+                          );
+                        })}
+                    </div>
+                  </div>
+                )}
               </div>
 
-              <div className="flex justify-between items-center mt-2">
-                {step > 1 ? (
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => {
-                      if (step === 2) {
-                        setStep(1);
-                      } else if (step === 3) {
-                        setStep(2);
-                        setActiveTab("brief");
-                      } else if (step === 4) {
-                        setStep(3);
-                      } else if (step === 5) {
-                        setStep(4);
-                      }
-                    }}
-                    className="h-7 text-[10px] gap-1 px-2 text-muted-foreground hover:text-foreground shrink-0"
-                  >
-                    <ArrowLeft className="size-3" />
-                    Back
-                  </Button>
-                ) : <div />}
-                <Button variant="ghost" size="sm" onClick={handleReset} className="h-7 text-[10px] gap-1 px-2 text-muted-foreground hover:text-foreground shrink-0">
-                  <RotateCcw className="size-3" />
-                  Clear
-                </Button>
-              </div>
-            </div>
-
-          </CardContent>
-        </Card>
-
-        {/* Dynamic step instructions & workspace controls / alternative imports */}
-        {step === 1 && (
-          <Card className="shadow-sm shrink-0">
-            <CardContent className="p-4 flex flex-col gap-3">
-              <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Alternative Import</span>
-              <div className="flex flex-col gap-2">
+              {/* Import Alternative Files */}
+              <div className="flex items-center gap-1.5">
                 <Input
                   type="file"
                   accept=".md"
                   ref={fileInputRef}
                   onChange={handleFileUpload}
                   className="hidden"
-                  id="md-file-upload"
+                  id="md-upload-input"
                 />
                 <Button 
                   type="button" 
                   variant="outline" 
-                  className="w-full h-8 text-xs gap-1.5"
+                  size="sm"
+                  className="h-7 text-xs gap-1.5 px-2.5 border-hairline"
                   onClick={() => fileInputRef.current?.click()}
                 >
-                  <Upload className="size-3.5" />
-                  Upload Markdown (.md)
+                  <Upload className="size-3" />
+                  .md
                 </Button>
                 <input
                   type="file"
@@ -963,74 +1096,28 @@ export function Wizard({ models }: { models: ModelId[] }) {
                   ref={htmlInputRef}
                   onChange={handleHtmlUpload}
                   className="hidden"
-                  id="html-file-upload"
+                  id="html-upload-input"
                 />
                 <Button
                   type="button"
                   variant="outline"
-                  className="w-full h-8 text-xs gap-1.5"
+                  size="sm"
+                  className="h-7 text-xs gap-1.5 px-2.5 border-hairline"
                   onClick={() => htmlInputRef.current?.click()}
                 >
-                  <FileText className="size-3.5" />
-                  Upload HTML (.html) — skip AI
+                  <FileText className="size-3" />
+                  .html
                 </Button>
-                <p className="text-[10px] text-muted-foreground text-center">
-                  Markdown → brief editor. HTML jadi → langsung export &amp; publish.
-                </p>
-              </div>
-            </CardContent>
-          </Card>
-        )}
-
-        {/* Chat Console Feed */}
-        <div className="flex-1 overflow-y-auto pr-1 flex flex-col gap-3 min-h-0 p-3 bg-canvas-soft border border-hairline rounded-xl">
-          {messages.map((msg, index) => (
-            <div
-              key={index}
-              className={`flex gap-2 max-w-[85%] ${msg.sender === "user" ? "self-end flex-row-reverse" : "self-start"}`}
-            >
-              {/* Profile Icon */}
-              <div className={`size-6 rounded-full shrink-0 flex items-center justify-center text-xs ${msg.sender === "user" ? "bg-muted text-muted-foreground border border-hairline" : "bg-primary/10 text-primary border border-primary/20"}`}>
-                {msg.sender === "user" ? <User className="size-3.5" /> : <Sparkles className="size-3.5 text-indigo-500 animate-pulse" />}
-              </div>
-
-              {/* Message Bubble */}
-              <div className="flex flex-col gap-0.5">
-                <div className={`p-3 rounded-2xl text-xs leading-relaxed shadow-sm ${
-                  msg.sender === "user" 
-                    ? "bg-primary text-primary-foreground rounded-tr-none" 
-                    : "bg-card text-card-foreground rounded-tl-none border border-hairline"
-                }`}>
-                  {msg.text}
-                </div>
-                <span className="text-[9px] text-muted-foreground px-1 self-end">{msg.timestamp}</span>
               </div>
             </div>
-          ))}
-          {pending && (
-            <div className="flex gap-2 self-start max-w-[85%] animate-pulse">
-              <div className="size-6 rounded-full bg-primary/10 border border-primary/20 flex items-center justify-center">
-                <Sparkles className="size-3.5 text-indigo-500 animate-spin" />
-              </div>
-              <div className="p-3 bg-card border border-hairline rounded-2xl rounded-tl-none text-xs text-muted-foreground flex items-center gap-1.5">
-                <div className="size-1.5 rounded-full bg-primary animate-bounce delay-75" />
-                <div className="size-1.5 rounded-full bg-primary animate-bounce delay-150" />
-                <div className="size-1.5 rounded-full bg-primary animate-bounce delay-300" />
-              </div>
-            </div>
-          )}
-          <div ref={chatEndRef} />
-        </div>
 
-        {/* BOTTOM CHAT COMPOSER */}
-        <div className="p-3 bg-card border border-hairline rounded-xl shadow-sm flex items-center gap-2 shrink-0">
-          {step === 1 ? (
-            <div className="flex-1 relative flex items-center">
+            {/* Input & Send Action Row */}
+            <div className="relative flex items-center">
               <Input
                 value={idea}
                 onChange={(e) => setIdea(e.target.value)}
-                placeholder="Ketik ide konten di sini... (e.g. idempotency di API)"
-                className="pr-10 h-10 text-xs"
+                placeholder="Ketik ide atau topik konten di sini... (misal: idempotency di API)"
+                className="pr-12 h-11 text-xs rounded-xl border-hairline"
                 disabled={pending}
                 onKeyDown={(e) => {
                   if (e.key === "Enter") handleBriefGeneration();
@@ -1038,498 +1125,417 @@ export function Wizard({ models }: { models: ModelId[] }) {
               />
               <Button 
                 size="icon" 
-                className="absolute right-1 size-8" 
+                className="absolute right-1 size-9 rounded-lg" 
                 disabled={pending || !idea.trim() || !model}
                 onClick={handleBriefGeneration}
               >
-                <Send className="size-3.5" />
+                <Send className="size-4" />
               </Button>
             </div>
-          ) : (
-            <div className="flex-1 relative flex items-center">
-              <Input
-                value={revision}
-                onChange={(e) => setRevision(e.target.value)}
-                placeholder={
-                  step === 2
-                    ? "Ketik instruksi revisi outline..."
-                    : step === 3 || step === 4
-                    ? "Ketik instruksi revisi slide..."
-                    : "Penjadwalan aktif — gunakan panel kanan"
-                }
-                className="pr-10 h-10 text-xs"
-                disabled={pending || isTyping || step >= 5}
-                onKeyDown={(e) => {
-                  if (e.key === "Enter") handleRevisionSend();
-                }}
-              />
-              <Button 
-                size="icon" 
-                className="absolute right-1 size-8" 
-                disabled={pending || !revision.trim() || isTyping || step >= 5}
-                onClick={handleRevisionSend}
-              >
-                <Send className="size-3.5" />
-              </Button>
-            </div>
-          )}
-        </div>
-
-      </div>
-
-      {/* RIGHT COLUMN: Output display workspace canvas */}
-      <div className={`${mobilePanel === "canvas" ? "flex" : "hidden"} lg:flex flex-col h-full overflow-hidden min-h-0 border border-hairline rounded-xl bg-card shadow-sm`}>
-        
-        {/* Workspace Canvas Header Tabs */}
-        <div className="border-b bg-muted/20 px-4 py-2 flex flex-col md:flex-row md:items-center gap-2 md:justify-between shrink-0">
-          <div className="flex items-center gap-1.5 p-0.5 bg-muted/50 rounded-lg border border-hairline">
-            <button
-              onClick={() => setActiveTab("brief")}
-              className={`flex items-center gap-1.5 px-3 py-1 rounded-md text-xs font-medium transition-colors ${
-                activeTab === "brief"
-                  ? "bg-card text-foreground shadow-xs"
-                  : "text-muted-foreground hover:text-foreground"
-              }`}
-            >
-              <FileText className="size-3.5" />
-              Outline Brief
-            </button>
-            <button
-              onClick={() => setActiveTab("preview")}
-              disabled={step < 3}
-              className={`flex items-center gap-1.5 px-3 py-1 rounded-md text-xs font-medium transition-colors ${
-                activeTab === "preview"
-                  ? "bg-card text-foreground shadow-xs"
-                  : "text-muted-foreground hover:text-foreground disabled:opacity-40 disabled:cursor-not-allowed"
-              }`}
-            >
-              <LayoutGrid className="size-3.5" />
-              {step === 3 ? "Live Design Preview" : step === 4 ? "Exported JPEGs Preview" : "Schedule & Publish"}
-            </button>
           </div>
+        </div>
+      )}
 
-          {/* Contextual Action Button based on current step */}
-          <div className="flex items-center gap-2">
-            {(step === 1 && brief.trim().length > 0) && (
-              <Button
-                size="sm"
-                onClick={() => {
-                  setStep(2);
-                  addMessage("user", "Proceed with pasted/imported brief outline.");
-                  addMessage("ai", "Brief outline berhasil diimpor ke langkah 2! Silakan tinjau, edit lebih lanjut, lalu klik 'Approve & Render Slide' jika sudah siap.");
-                }}
-                className="h-7 text-xs font-medium gap-1 px-3"
-              >
-                <Check className="size-3.5" />
-                Import Brief
-              </Button>
-            )}
-            {step === 2 && (
-              <div className="flex items-center gap-2">
-                <Button
-                  size="sm"
-                  variant="outline"
-                  onClick={() => setStep(1)}
-                  className="h-7 text-xs font-medium px-3"
-                >
-                  Back
-                </Button>
-                <Button
-                  size="sm"
+      {/* STEP 2: BRIEF OUTLINE EDITOR COMPONENT */}
+      {step === 2 && (
+        <div className="flex flex-col gap-6 w-full max-w-5xl mx-auto py-2 animate-in fade-in duration-200">
+          <Card className="shadow-sm border-hairline">
+            <CardContent className="p-6 flex flex-col gap-4">
+              <div className="flex items-center justify-between border-b pb-3">
+                <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground flex items-center gap-2">
+                  <FileText className="size-4 text-primary" />
+                  Outline Brief Editor
+                </span>
+                <span className="text-xs font-mono text-muted-foreground bg-muted/40 px-2 py-0.5 rounded border border-hairline">
+                  Markdown Enabled
+                </span>
+              </div>
+
+              <Textarea
+                value={brief}
+                onChange={(e) => setBrief(e.target.value)}
+                disabled={pending || isTyping}
+                placeholder="# Judul Carousel..."
+                className="font-mono text-xs h-96 p-4 bg-canvas-soft border-hairline resize-y leading-relaxed rounded-xl shadow-inner"
+              />
+
+              {/* Bottom AI Revision Row */}
+              <div className="flex items-center gap-2 pt-2 border-t">
+                <Input
+                  value={revision}
+                  onChange={(e) => setRevision(e.target.value)}
+                  placeholder="Ketik instruksi revisi outline ke AI..."
+                  className="h-10 text-xs flex-1 rounded-xl"
                   disabled={pending || isTyping}
-                  onClick={handlePlanGeneration}
-                  className="h-7 text-xs font-medium gap-1 px-3"
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") handleRevisionSend();
+                  }}
+                />
+                <Button
+                  size="sm"
+                  variant="secondary"
+                  disabled={pending || !revision.trim() || isTyping}
+                  onClick={handleRevisionSend}
+                  className="h-10 text-xs px-4 rounded-xl gap-1.5"
                 >
-                  <Check className="size-3.5" />
-                  Approve & Render Slide
+                  <Send className="size-3.5" />
+                  Revisi Brief
                 </Button>
               </div>
-            )}
-            {step === 3 && plan && (
-              <div className="flex items-center gap-2">
+
+              {/* Action Navigation Bar */}
+              <div className="flex items-center justify-between pt-4 border-t">
+                <Button variant="outline" size="sm" onClick={() => setStep(1)} className="gap-1.5">
+                  <ArrowLeft className="size-3.5" /> Back ke Concept
+                </Button>
+
                 <Button
                   size="sm"
-                  variant="outline"
-                  onClick={() => {
-                    setStep(2);
-                    setActiveTab("brief");
-                  }}
-                  className="h-7 text-xs font-medium px-3"
+                  disabled={pending || isTyping || !brief.trim()}
+                  onClick={handlePlanGeneration}
+                  className="gap-1.5 font-semibold px-5"
                 >
-                  Back
+                  <Check className="size-4" />
+                  Approve &amp; Render Slide
                 </Button>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      )}
+
+      {/* STEP 3: LIVE DESIGN CANVAS COMPONENT */}
+      {step === 3 && plan && (
+        <div className="flex flex-col gap-6 w-full max-w-6xl mx-auto py-2 animate-in fade-in duration-200">
+          <Card className="shadow-sm border-hairline overflow-hidden">
+            <CardContent className="p-6 flex flex-col gap-6">
+              {/* Workspace Header Tabs & Controls */}
+              <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b pb-4">
+                <div className="flex items-center gap-2">
+                  <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground flex items-center gap-2">
+                    <LayoutGrid className="size-4 text-primary" />
+                    Live Design Canvas
+                  </span>
+                  <span className="text-xs font-mono text-muted-foreground bg-muted/40 px-2 py-0.5 rounded border border-hairline">
+                    {plan.slides.length} Slides
+                  </span>
+                </div>
+
+                <div className="flex items-center gap-2">
+                  <div className="inline-flex p-0.5 bg-muted/50 rounded-lg border border-hairline">
+                    <button
+                      onClick={() => setActiveTab("brief")}
+                      className={`px-3 py-1 rounded-md text-xs font-medium transition-colors ${activeTab === "brief" ? "bg-card text-foreground shadow-xs" : "text-muted-foreground"}`}
+                    >
+                      Outline Brief
+                    </button>
+                    <button
+                      onClick={() => setActiveTab("preview")}
+                      className={`px-3 py-1 rounded-md text-xs font-medium transition-colors ${activeTab === "preview" ? "bg-card text-foreground shadow-xs" : "text-muted-foreground"}`}
+                    >
+                      Live Preview
+                    </button>
+                  </div>
+                </div>
+              </div>
+
+              {/* Main Preview Frame */}
+              <div className="w-full flex justify-center py-4 bg-canvas-soft border border-hairline rounded-2xl min-h-[460px] shadow-inner">
+                {activeTab === "preview" ? (
+                  <PreviewFrame html={html} slideCount={slideCount} />
+                ) : (
+                  <Textarea
+                    value={brief}
+                    onChange={(e) => setBrief(e.target.value)}
+                    className="font-mono text-xs h-96 w-full p-4 bg-transparent border-none resize-none"
+                  />
+                )}
+              </div>
+
+              {/* AI Revision Prompt Input */}
+              <div className="flex items-center gap-2 pt-2 border-t">
+                <Input
+                  value={revision}
+                  onChange={(e) => setRevision(e.target.value)}
+                  placeholder="Ketik instruksi revisi slide/desain ke AI..."
+                  className="h-10 text-xs flex-1 rounded-xl"
+                  disabled={pending || isTyping}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") handleRevisionSend();
+                  }}
+                />
+                <Button
+                  size="sm"
+                  variant="secondary"
+                  disabled={pending || !revision.trim() || isTyping}
+                  onClick={handleRevisionSend}
+                  className="h-10 text-xs px-4 rounded-xl gap-1.5"
+                >
+                  <Send className="size-3.5" />
+                  Revisi Desain
+                </Button>
+              </div>
+
+              {/* Action Navigation Bar */}
+              <div className="flex items-center justify-between pt-4 border-t">
+                <Button variant="outline" size="sm" onClick={() => setStep(2)} className="gap-1.5">
+                  <ArrowLeft className="size-3.5" /> Back ke Brief
+                </Button>
+
                 <Button
                   size="sm"
                   disabled={pending || exportPending}
                   onClick={handleExport}
-                  className="h-7 text-xs font-medium gap-1 px-3"
+                  className="gap-1.5 font-semibold px-5"
                 >
-                  <Upload className="size-3.5" />
+                  <Upload className="size-4" />
                   {exportPending ? "Exporting..." : "Approve & Export JPEGs"}
                 </Button>
               </div>
-            )}
-            {step === 4 && (
-              <div className="flex items-center gap-2">
-                <Button
-                  size="sm"
-                  variant="outline"
-                  onClick={() => {
-                    setStep(3);
-                    addMessage("ai", "Kembali ke mode desain. Anda dapat merevisi slide kembali melalui chat console.");
-                  }}
-                  className="h-7 text-xs font-medium px-3 animate-fade-in"
-                >
-                  Revise Design (Back)
-                </Button>
-                <Button
-                  size="sm"
-                  variant="secondary"
-                  disabled={blobs.length === 0}
-                  onClick={() => {
-                    downloadNamedBlobs(namedBlobs(blobs));
-                    toast.success("Downloaded JPEGs locally!");
-                  }}
-                  className="h-7 text-xs font-medium px-3"
-                >
-                  Download JPEGs
-                </Button>
-                <Button
-                  size="sm"
-                  onClick={() => {
-                    setStep(5);
-                    setActiveTab("preview");
-                    addMessage("ai", "Langkah 5: Publish. Silakan tentukan tanggal & waktu penjadwalan, lalu klik 'Schedule to Buffer'.");
-                  }}
-                  className="h-7 text-xs font-medium px-3"
-                >
-                  Next: Schedule
-                </Button>
-              </div>
-            )}
-            {step === 5 && (
-              <Button
-                size="sm"
-                variant="outline"
-                onClick={() => {
-                  setStep(4);
-                  setActiveTab("preview");
-                }}
-                className="h-7 text-xs font-medium px-3"
-              >
-                Back to Export
-              </Button>
-            )}
-          </div>
+            </CardContent>
+          </Card>
         </div>
+      )}
 
-        {/* Workspace Canvas Main Content area */}
-        <div className="flex-1 min-h-0 relative bg-canvas-soft">
-          {activeTab === "brief" ? (
-            <div className="h-full relative flex flex-col">
-              
-              {/* Sub-header for Markdown format view toggles */}
-              <div className="flex flex-col md:flex-row md:items-center gap-1.5 md:justify-between border-b px-4 py-1.5 bg-muted/10 shrink-0">
-                <span className="text-[10px] text-muted-foreground uppercase font-semibold">Outline Format View</span>
-                <div className="flex items-center gap-1 bg-muted/40 p-0.5 rounded-md border border-hairline">
-                  <button
-                    onClick={() => setMdMode("editor")}
-                    className={`px-2 py-0.5 rounded text-[10px] font-medium transition-colors ${
-                      mdMode === "editor" ? "bg-card text-foreground shadow-xs" : "text-muted-foreground hover:text-foreground"
-                    }`}
-                  >
-                    Raw Markdown
-                  </button>
-                  <button
-                    onClick={() => setMdMode("preview")}
-                    className={`px-2 py-0.5 rounded text-[10px] font-medium transition-colors ${
-                      mdMode === "preview" ? "bg-card text-foreground shadow-xs" : "text-muted-foreground hover:text-foreground"
-                    }`}
-                  >
-                    Formatted Preview
-                  </button>
-                  <button
-                    onClick={() => setMdMode("split")}
-                    className={`px-2 py-0.5 rounded text-[10px] font-medium transition-colors ${
-                      mdMode === "split" ? "bg-card text-foreground shadow-xs" : "text-muted-foreground hover:text-foreground"
-                    }`}
-                  >
-                    Split Screen
-                  </button>
+      {/* STEP 4: JPEG EXPORT COMPONENT */}
+      {step === 4 && (
+        <div className="flex flex-col gap-6 w-full max-w-5xl mx-auto py-2 animate-in fade-in duration-200">
+          <Card className="shadow-sm border-hairline">
+            <CardContent className="p-6 flex flex-col gap-6">
+              <div className="flex items-center justify-between border-b pb-4">
+                <div>
+                  <h3 className="font-bold text-base flex items-center gap-2">
+                    <CheckCircle2 className="size-5 text-emerald-500" />
+                    JPEG Assets Ready
+                  </h3>
+                  <p className="text-xs text-muted-foreground mt-0.5">
+                    {exportedImages.length} slide berhasil di-export ke format gambar JPEG resolusi tinggi.
+                  </p>
                 </div>
+                <Button size="sm" variant="outline" onClick={handleDownloadAll} className="gap-1.5 font-mono text-xs">
+                  <Upload className="size-3.5" /> Download All ZIP
+                </Button>
               </div>
 
-              {/* Main edit and preview display wrapper */}
-              <div className="flex-1 min-h-0">
-                {mdMode === "editor" && (
-                  <Textarea
-                    value={brief}
-                    onChange={(e) => {
-                      if (!isTyping) {
-                        setBrief(e.target.value);
-                        setFinalBrief(e.target.value);
-                      }
-                    }}
-                    disabled={isTyping}
-                    placeholder="Tulis ide di panel kiri untuk menjabarkan outline brief di sini... Atau langsung upload/paste teks markdown Anda di sini."
-                    className="w-full h-full border-0 resize-none focus-visible:ring-0 font-mono text-sm leading-relaxed p-4 bg-transparent outline-none overflow-y-auto"
-                  />
-                )}
-
-                {mdMode === "preview" && (
-                  <div className="w-full h-full p-6 overflow-y-auto bg-card max-w-none">
-                    {renderMarkdown(brief)}
-                  </div>
-                )}
-
-                {mdMode === "split" && (
-                  <div className="grid grid-cols-2 divide-x divide-border h-full">
-                    <div className="h-full overflow-hidden">
-                      <Textarea
-                        value={brief}
-                        onChange={(e) => {
-                          if (!isTyping) {
-                            setBrief(e.target.value);
-                            setFinalBrief(e.target.value);
-                          }
-                        }}
-                        disabled={isTyping}
-                        placeholder="Tulis ide di panel kiri untuk menjabarkan outline brief di sini... Atau langsung upload/paste teks markdown Anda di sini."
-                        className="w-full h-full border-0 resize-none focus-visible:ring-0 font-mono text-sm leading-relaxed p-4 bg-transparent outline-none overflow-y-auto"
-                      />
+              {/* Exported JPEGs Grid */}
+              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4 py-2">
+                {exportedImages.map((src, i) => (
+                  <div key={i} className="flex flex-col gap-2 group">
+                    <div className="aspect-[4/5] rounded-xl border border-hairline overflow-hidden bg-muted relative shadow-sm group-hover:shadow-md transition-shadow">
+                      <img src={src} alt={`Slide ${i + 1}`} className="size-full object-cover" />
+                      <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                        <a
+                          href={src}
+                          download={`slide-${i + 1}.jpg`}
+                          className="text-[10px] font-mono bg-card text-foreground px-2.5 py-1 rounded-md border border-hairline shadow-xs font-semibold hover:bg-muted"
+                        >
+                          Download
+                        </a>
+                      </div>
                     </div>
-                    <div className="h-full overflow-y-auto p-6 bg-card max-w-none">
-                      {renderMarkdown(brief)}
-                    </div>
+                    <span className="text-[10px] font-mono text-center text-muted-foreground font-medium">Slide {i + 1}</span>
                   </div>
-                )}
+                ))}
               </div>
-              
-              {isTyping && (
-                <div className="absolute bottom-6 right-6 flex items-center gap-1.5 text-[11px] font-mono text-muted-foreground select-none pointer-events-none bg-card/85 p-2 rounded-lg border border-hairline shadow-sm backdrop-blur-xs z-10">
-                  <div className="size-1.5 rounded-full bg-primary animate-ping" />
-                  Streaming brief outline...
-                </div>
-              )}
-            </div>
-          ) : (
-            <div className="h-full min-h-0 w-full relative">
-              {step === 3 && (
-                <div className="h-full overflow-y-auto flex flex-col items-center justify-start p-4 md:py-8 min-h-0">
-                  {plan ? (
-                    <PreviewFrame html={html} slideCount={slideCount} />
-                  ) : (
-                    <div className="text-center p-8 text-muted-foreground">
-                      <LayoutGrid className="size-8 mx-auto mb-2 text-muted-foreground/50 animate-pulse" />
-                      <p className="text-xs">Slide preview belum siap. Setujui brief outline terlebih dahulu.</p>
-                    </div>
-                  )}
-                </div>
-              )}
 
-              {step === 4 && (
-                <div className="h-full overflow-y-auto p-6 bg-canvas-soft">
-                  <div className="max-w-4xl mx-auto space-y-4">
-                    <h3 className="text-sm font-semibold text-foreground font-heading">Exported Slides Gallery</h3>
-                    <p className="text-xs text-muted-foreground">Silakan periksa setiap slide untuk memastikan tidak ada teks terpotong atau visual rusak.</p>
-                    <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-                      {exportedImages.map((src, idx) => (
-                        <div key={idx} className="relative aspect-[4/5] rounded-lg border border-hairline overflow-hidden bg-muted shadow-sm group">
-                          <img src={src} alt={`Slide ${idx + 1}`} className="w-full h-full object-cover" />
-                          <div className="absolute bottom-2 left-2 bg-background/80 px-2 py-0.5 rounded text-[10px] font-mono border border-hairline backdrop-blur-xs">
-                            Slide {String(idx + 1).padStart(2, "0")}
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                </div>
-              )}
+              {/* Action Navigation Bar */}
+              <div className="flex items-center justify-between pt-4 border-t">
+                <Button variant="outline" size="sm" onClick={() => setStep(3)} className="gap-1.5">
+                  <ArrowLeft className="size-3.5" /> Back ke Design
+                </Button>
 
-              {step === 5 && plan && (
-                <div className="h-full overflow-y-auto p-6 bg-canvas-soft flex items-center justify-center">
-                  <div className="max-w-xl w-full space-y-6">
-                    
-                    {/* Scheduling Header */}
-                    <div>
-                      <h3 className="text-xl font-bold tracking-tight text-foreground font-heading">
-                        Schedule & Publish
-                      </h3>
-                      <p className="text-xs text-muted-foreground mt-1">
-                        Kirim gambar slide ke Cloudinary dan jadwalkan posting di Instagram & TikTok via Buffer.
-                      </p>
-                    </div>
-
-                    {/* Channel Status */}
-                    <div className="grid grid-cols-2 gap-4">
-                      <div className="bg-card border border-hairline rounded-xl p-4 shadow-xs">
-                        <div className="flex items-center justify-between">
-                          <span className="text-xs font-semibold text-muted-foreground uppercase">Instagram</span>
-                          {pubConfig?.hasIg ? (
-                            <span className="text-[10px] font-semibold text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200">
-                              Active
-                            </span>
-                          ) : (
-                            <span className="text-[10px] font-semibold text-muted-foreground bg-muted px-2 py-0.5 rounded border border-border">
-                              Not Set
-                            </span>
-                          )}
-                        </div>
-                        <p className="text-[11px] text-muted-foreground mt-1.5">
-                          {pubConfig?.hasIg 
-                            ? "Carousel JPEG dan caption akan dikirim ke Instagram."
-                            : "Set BUFFER_IG_CHANNEL_ID di .env untuk mengaktifkan."}
-                        </p>
-                      </div>
-                      
-                      <div className="bg-card border border-hairline rounded-xl p-4 shadow-xs">
-                        <div className="flex items-center justify-between">
-                          <span className="text-xs font-semibold text-muted-foreground uppercase">TikTok</span>
-                          {pubConfig?.hasTt ? (
-                            <span className="text-[10px] font-semibold text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200">
-                              Active
-                            </span>
-                          ) : (
-                            <span className="text-[10px] font-semibold text-muted-foreground bg-muted px-2 py-0.5 rounded border border-border">
-                              Not Set
-                            </span>
-                          )}
-                        </div>
-                        <p className="text-[11px] text-muted-foreground mt-1.5">
-                          {pubConfig?.hasTt
-                            ? "Carousel JPEG, judul, dan caption akan dikirim ke TikTok."
-                            : "Set BUFFER_TIKTOK_CHANNEL_ID di .env untuk mengaktifkan."}
-                        </p>
-                      </div>
-                    </div>
-
-                    {/* Date & Time Picker */}
-                    <div className="bg-card border border-hairline rounded-xl p-4 shadow-xs space-y-3">
-                      <label className="text-xs font-semibold text-muted-foreground uppercase flex items-center gap-1.5">
-                        <Clock className="size-3.5 text-primary" />
-                        Waktu Posting (dueAt)
-                      </label>
-                      <Input
-                        type="datetime-local"
-                        value={dueAt}
-                        onChange={(e) => setDueAt(e.target.value)}
-                        disabled={publishState.status === "uploading" || publishState.status === "publishing"}
-                        className="text-xs"
-                      />
-                      <p className="text-[10px] text-muted-foreground">
-                        Pilih waktu kapan Buffer akan menjadwalkan notifikasi posting ini.
-                      </p>
-                    </div>
-
-                    {/* Caption & Metadata Preview */}
-                    <div className="bg-card border border-hairline rounded-xl p-4 shadow-xs space-y-3">
-                      <div>
-                        <span className="text-xs font-semibold text-muted-foreground uppercase block">
-                          Instagram Caption & TikTok Title
-                        </span>
-                      </div>
-                      <div className="space-y-2">
-                        <div>
-                          <span className="text-[10px] font-medium text-muted-foreground uppercase block">TikTok Title</span>
-                          <Input
-                            type="text"
-                            value={editableTitle}
-                            onChange={(e) => setEditableTitle(e.target.value)}
-                            onBlur={handleSaveEdits}
-                            disabled={publishState.status === "uploading" || publishState.status === "publishing"}
-                            placeholder="Judul postingan TikTok..."
-                            className="text-xs font-mono mt-1 w-full bg-muted/20 focus-visible:ring-1 focus-visible:ring-primary border-hairline"
-                          />
-                        </div>
-                        <div>
-                          <span className="text-[10px] font-medium text-muted-foreground uppercase block">Caption (Instagram / TikTok)</span>
-                          <Textarea
-                            value={editableCaption}
-                            onChange={(e) => setEditableCaption(e.target.value)}
-                            onBlur={handleSaveEdits}
-                            disabled={publishState.status === "uploading" || publishState.status === "publishing"}
-                            placeholder="Tulis caption Anda di sini..."
-                            className="text-xs font-mono mt-1 w-full h-32 bg-muted/20 focus-visible:ring-1 focus-visible:ring-primary border-hairline resize-none"
-                          />
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* Action or Progress Panel */}
-                    <div className="bg-card border border-hairline rounded-xl p-6 shadow-xs text-center space-y-4">
-                      {publishState.status === "idle" ? (
-                        <div className="flex flex-col sm:flex-row gap-3">
-                          <Button
-                            onClick={handlePublish}
-                            className="flex-1 font-semibold"
-                            disabled={!pubConfig?.hasIg && !pubConfig?.hasTt}
-                          >
-                            Schedule to Buffer
-                          </Button>
-                          <Button
-                            onClick={handleSaveToStock}
-                            variant="outline"
-                            className="flex-1 font-semibold border-primary/40 text-primary hover:bg-primary/5"
-                          >
-                            Save to Stock Content
-                          </Button>
-                        </div>
-                      ) : null}
-
-                      {publishState.status === "uploading" || publishState.status === "publishing" ? (
-                        <div className="space-y-3">
-                          <div className="size-8 rounded-full border-2 border-primary border-t-transparent animate-spin mx-auto" />
-                          <p className="text-xs font-medium text-foreground">{publishState.progressMsg}</p>
-                        </div>
-                      ) : null}
-
-                      {publishState.status === "success" ? (
-                        <div className="space-y-3">
-                          <CheckCircle2 className="size-8 text-emerald-500 mx-auto" />
-                          <p className="text-xs font-medium text-emerald-600">{publishState.progressMsg || "Berhasil!"}</p>
-                          {publishState.igPostId || publishState.ttPostId ? (
-                            <div className="text-left text-[11px] font-mono border border-emerald-100 bg-emerald-50/50 rounded p-3 space-y-1">
-                              {publishState.igPostId ? (
-                                <div>Instagram Post ID: <span className="text-foreground font-semibold">{publishState.igPostId}</span></div>
-                              ) : null}
-                              {publishState.ttPostId ? (
-                                <div>TikTok Post ID: <span className="text-foreground font-semibold">{publishState.ttPostId}</span></div>
-                              ) : null}
-                            </div>
-                          ) : null}
-                          <Button
-                            onClick={handleReset}
-                            className="w-full mt-2 font-semibold bg-emerald-600 hover:bg-emerald-700 text-white"
-                          >
-                            Buat Konten Baru
-                          </Button>
-                        </div>
-                      ) : null}
-
-                      {publishState.status === "error" ? (
-                        <div className="space-y-3">
-                          <XCircle className="size-8 text-destructive mx-auto" />
-                          <p className="text-xs font-medium text-destructive">Gagal Mempublikasikan</p>
-                          <p className="text-[11px] text-muted-foreground border border-destructive/20 bg-destructive/5 rounded p-3 font-mono text-left max-h-32 overflow-y-auto">
-                            {publishState.errorMsg}
-                          </p>
-                          <Button onClick={handlePublish} variant="outline" className="w-full">
-                            Coba Lagi
-                          </Button>
-                        </div>
-                      ) : null}
-                    </div>
-
-                  </div>
-                </div>
-              )}
-            </div>
-          )}
+                <Button size="sm" onClick={() => setStep(5)} className="gap-1.5 font-semibold px-5">
+                  Lanjut ke Penjadwalan <span className="text-xs">→</span>
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
         </div>
+      )}
 
-      </div>
+      {/* STEP 5: SCHEDULE & PUBLISH COMPONENT */}
+      {step === 5 && (
+        <div className="flex flex-col gap-6 w-full max-w-4xl mx-auto py-2 animate-in fade-in duration-200">
+          <Card className="shadow-sm border-hairline">
+            <CardContent className="p-6 flex flex-col gap-6">
+              <div className="border-b pb-4">
+                <h3 className="font-bold text-base flex items-center gap-2">
+                  <Calendar className="size-5 text-primary" />
+                  Schedule &amp; Publish Content
+                </h3>
+                <p className="text-xs text-muted-foreground mt-0.5">
+                  Atur waktu publish ke Buffer atau simpan sebagai Stock Content lokal.
+                </p>
+              </div>
 
-    </div>
+              {/* Destination Platforms Status */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="bg-card border border-hairline rounded-xl p-4 shadow-xs">
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs font-semibold text-muted-foreground uppercase">Instagram</span>
+                    {pubConfig?.hasIg ? (
+                      <span className="text-[10px] font-semibold text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200">
+                        Active
+                      </span>
+                    ) : (
+                      <span className="text-[10px] font-semibold text-muted-foreground bg-muted px-2 py-0.5 rounded border border-border">
+                        Not Set
+                      </span>
+                    )}
+                  </div>
+                  <p className="text-[11px] text-muted-foreground mt-1.5">
+                    {pubConfig?.hasIg
+                      ? "Carousel JPEG dan caption akan dikirim ke Instagram."
+                      : "Set BUFFER_IG_CHANNEL_ID di .env untuk mengaktifkan."}
+                  </p>
+                </div>
+                
+                <div className="bg-card border border-hairline rounded-xl p-4 shadow-xs">
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs font-semibold text-muted-foreground uppercase">TikTok</span>
+                    {pubConfig?.hasTt ? (
+                      <span className="text-[10px] font-semibold text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200">
+                        Active
+                      </span>
+                    ) : (
+                      <span className="text-[10px] font-semibold text-muted-foreground bg-muted px-2 py-0.5 rounded border border-border">
+                        Not Set
+                      </span>
+                    )}
+                  </div>
+                  <p className="text-[11px] text-muted-foreground mt-1.5">
+                    {pubConfig?.hasTt
+                      ? "Carousel JPEG, judul, dan caption akan dikirim ke TikTok."
+                      : "Set BUFFER_TIKTOK_CHANNEL_ID di .env untuk mengaktifkan."}
+                  </p>
+                </div>
+              </div>
+
+              {/* Date & Time Picker */}
+              <div className="bg-card border border-hairline rounded-xl p-4 shadow-xs space-y-3">
+                <label className="text-xs font-semibold text-muted-foreground uppercase flex items-center gap-1.5">
+                  <Clock className="size-3.5 text-primary" />
+                  Waktu Posting (dueAt)
+                </label>
+                <Input
+                  type="datetime-local"
+                  value={dueAt}
+                  onChange={(e) => setDueAt(e.target.value)}
+                  disabled={publishState.status === "uploading" || publishState.status === "publishing"}
+                  className="text-xs"
+                />
+                <p className="text-[10px] text-muted-foreground">
+                  Pilih waktu kapan Buffer akan menjadwalkan notifikasi posting ini.
+                </p>
+              </div>
+
+              {/* Caption & Metadata Preview */}
+              <div className="bg-card border border-hairline rounded-xl p-4 shadow-xs space-y-3">
+                <span className="text-xs font-semibold text-muted-foreground uppercase block">
+                  Instagram Caption &amp; TikTok Title
+                </span>
+                <div className="space-y-3">
+                  <div>
+                    <span className="text-[10px] font-medium text-muted-foreground uppercase block">TikTok Title</span>
+                    <Input
+                      type="text"
+                      value={editableTitle}
+                      onChange={(e) => setEditableTitle(e.target.value)}
+                      onBlur={handleSaveEdits}
+                      disabled={publishState.status === "uploading" || publishState.status === "publishing"}
+                      placeholder="Judul postingan TikTok..."
+                      className="text-xs font-mono mt-1 w-full bg-muted/20 focus-visible:ring-1 focus-visible:ring-primary border-hairline"
+                    />
+                  </div>
+                  <div>
+                    <span className="text-[10px] font-medium text-muted-foreground uppercase block">Caption (Instagram / TikTok)</span>
+                    <Textarea
+                      value={editableCaption}
+                      onChange={(e) => setEditableCaption(e.target.value)}
+                      onBlur={handleSaveEdits}
+                      disabled={publishState.status === "uploading" || publishState.status === "publishing"}
+                      placeholder="Tulis caption Anda di sini..."
+                      className="text-xs font-mono mt-1 w-full h-32 bg-muted/20 focus-visible:ring-1 focus-visible:ring-primary border-hairline resize-none"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* Action or Progress Panel */}
+              <div className="bg-card border border-hairline rounded-xl p-6 shadow-xs text-center space-y-4">
+                {publishState.status === "idle" ? (
+                  <div className="flex flex-col sm:flex-row gap-3">
+                    <Button
+                      onClick={handlePublish}
+                      className="flex-1 font-semibold"
+                      disabled={!pubConfig?.hasIg && !pubConfig?.hasTt}
+                    >
+                      Schedule to Buffer
+                    </Button>
+                    <Button
+                      onClick={handleSaveToStock}
+                      variant="outline"
+                      className="flex-1 font-semibold border-primary/40 text-primary hover:bg-primary/5"
+                    >
+                      Save to Stock Content
+                    </Button>
+                  </div>
+                ) : null}
+
+                {publishState.status === "uploading" || publishState.status === "publishing" ? (
+                  <div className="space-y-3">
+                    <div className="size-8 rounded-full border-2 border-primary border-t-transparent animate-spin mx-auto" />
+                    <p className="text-xs font-medium text-foreground">{publishState.progressMsg}</p>
+                  </div>
+                ) : null}
+
+                {publishState.status === "success" ? (
+                  <div className="space-y-3">
+                    <CheckCircle2 className="size-8 text-emerald-500 mx-auto" />
+                    <p className="text-xs font-medium text-emerald-600">{publishState.progressMsg || "Berhasil!"}</p>
+                    {publishState.igPostId || publishState.ttPostId ? (
+                      <div className="text-left text-[11px] font-mono border border-emerald-100 bg-emerald-50/50 rounded p-3 space-y-1">
+                        {publishState.igPostId ? (
+                          <div>Instagram Post ID: <span className="text-foreground font-semibold">{publishState.igPostId}</span></div>
+                        ) : null}
+                        {publishState.ttPostId ? (
+                          <div>TikTok Post ID: <span className="text-foreground font-semibold">{publishState.ttPostId}</span></div>
+                        ) : null}
+                      </div>
+                    ) : null}
+                    <Button
+                      onClick={handleReset}
+                      className="w-full mt-2 font-semibold bg-emerald-600 hover:bg-emerald-700 text-white"
+                    >
+                      Buat Konten Baru
+                    </Button>
+                  </div>
+                ) : null}
+
+                {publishState.status === "error" ? (
+                  <div className="space-y-3">
+                    <XCircle className="size-8 text-destructive mx-auto" />
+                    <p className="text-xs font-medium text-destructive">Gagal Mempublikasikan</p>
+                    <p className="text-[11px] text-muted-foreground border border-destructive/20 bg-destructive/5 rounded p-3 font-mono text-left max-h-32 overflow-y-auto">
+                      {publishState.errorMsg}
+                    </p>
+                    <Button onClick={handlePublish} variant="outline" className="w-full">
+                      Coba Lagi
+                    </Button>
+                  </div>
+                ) : null}
+              </div>
+
+              {/* Bottom Navigation */}
+              <div className="flex items-center justify-between pt-2">
+                <Button variant="outline" size="sm" onClick={() => setStep(4)} className="gap-1.5">
+                  <ArrowLeft className="size-3.5" /> Back ke Export
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      )}
     </div>
   );
 }
