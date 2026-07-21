@@ -24,6 +24,15 @@ describe("sanitizeHookHtml", () => {
     expect(out).not.toMatch(/onerror/i);
     expect(out).toContain('src="x"');
   });
+  it("keeps non-handler attributes that merely start with 'on'", () => {
+    const html = '<div only="1" once="yes">hi</div>';
+    expect(sanitizeHookHtml(html)).toBe(html);
+  });
+  it("still strips real handlers whose names start with those letters", () => {
+    const out = sanitizeHookHtml('<div onload="a()" onclick="b()">hi</div>');
+    expect(out).not.toMatch(/onload|onclick/i);
+    expect(out).toContain(">hi</div>");
+  });
   it("keeps benign styled markup", () => {
     const html = '<div class="hook" style="color:red"><span>hi</span></div>';
     expect(sanitizeHookHtml(html)).toBe(html);
