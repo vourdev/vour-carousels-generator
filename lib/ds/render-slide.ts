@@ -37,8 +37,9 @@ function renderTerminalMockup(m: Extract<Mockup, { type: "terminal" }>): string 
   const base = fillTemplate(terminalTemplate, {
     terminalFilename: m.filename,
   });
-  // Replace sentinel with raw HTML (not via fillTemplate which escapes values)
-  return base.replace("TERMINAL_LINES_INJECT", terminalLines);
+  // Function replacer: a bare string lets $-sequences ($$, $&, $`, $') in code
+  // lines be interpreted by String.replace and corrupt output.
+  return base.replace("TERMINAL_LINES_INJECT", () => terminalLines);
 }
 
 function renderComparisonMockup(m: Extract<Mockup, { type: "comparison" }>): string {
@@ -61,8 +62,9 @@ function renderStepsMockup(m: Extract<Mockup, { type: "steps" }>): string {
       })
     )
     .join("\n");
-  // Replace sentinel with raw HTML (not via fillTemplate which escapes values)
-  return stepsTemplate.replace("STEPS_HTML_INJECT", stepsHtml);
+  // Function replacer: a bare string lets $-sequences in step copy be
+  // interpreted by String.replace and corrupt output.
+  return stepsTemplate.replace("STEPS_HTML_INJECT", () => stepsHtml);
 }
 
 function renderCalloutMockup(m: Extract<Mockup, { type: "callout" }>): string {
@@ -163,13 +165,12 @@ export function renderSlide(slide: Slide): string {
       let fragment = "";
       if (h.kind === "device") fragment = renderDeviceHook(h);
       else if (h.kind === "custom") fragment = sanitizeHookHtml(h.html);
-      else fragment = renderImageHook(h);
+      else if (h.kind === "image") fragment = renderImageHook(h);
       const base = fillTemplate(coverCompactTemplate, {
         brand,
         eyebrow: slide.eyebrow,
         ...splitHeadline(slide.headline, slide.accentWord),
         lede: slide.lede ?? "",
-        hook: "1",
       });
       // Function replacer: a bare string would let $-sequences ($$, $&, $`, $')
       // in hook fragments be interpreted by String.replace and corrupt output.
@@ -211,7 +212,9 @@ export function renderSlide(slide: Slide): string {
         mockupHtml: "1",  // truthy to activate the block
       });
       // Replace the sentinel with raw (unescaped) mockup HTML
-      return base.replace("MOCKUP_INJECT", mockupHtml);
+      // Function replacer: a bare string lets $-sequences in mockup content
+      // (code lines, step copy) be interpreted by String.replace and corrupt output.
+      return base.replace("MOCKUP_INJECT", () => mockupHtml);
     }
     case "outro": {
       const cta = slide.cta ?? { strong: "" };

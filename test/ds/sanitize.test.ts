@@ -17,6 +17,13 @@ describe("sanitizeHookHtml", () => {
     const out = sanitizeHookHtml('<a href="javascript:alert(1)">x</a>');
     expect(out).not.toMatch(/javascript:/i);
   });
+  it("strips event handlers with no whitespace before them", () => {
+    // Classic filter bypass: the handler abuts the previous attribute's closing
+    // quote, so a \s-anchored regex misses it. The delimiter must survive.
+    const out = sanitizeHookHtml('<img src="x"onerror="alert(1)">');
+    expect(out).not.toMatch(/onerror/i);
+    expect(out).toContain('src="x"');
+  });
   it("keeps benign styled markup", () => {
     const html = '<div class="hook" style="color:red"><span>hi</span></div>';
     expect(sanitizeHookHtml(html)).toBe(html);

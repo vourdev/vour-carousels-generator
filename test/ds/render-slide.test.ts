@@ -146,6 +146,28 @@ describe("renderSlide", () => {
     expect(html).not.toContain('class="sub"');
   });
 
+  it("preserves $-sequences in terminal code lines verbatim", () => {
+    const html = renderSlide({
+      role: "point", counter: "02/05", eyebrow: "E", headline: "H", body: "b",
+      mockup: { type: "terminal", filename: "sh", lines: [{ text: "echo $$ a$&b", style: "plain" }] },
+    });
+    expect(html).toContain("echo $$ a$&amp;b");
+    expect(html).not.toContain("TERMINAL_LINES_INJECT");
+  });
+
+  it("preserves $-sequences in steps copy verbatim", () => {
+    const html = renderSlide({
+      role: "point", counter: "02/05", eyebrow: "E", headline: "H", body: "b",
+      mockup: { type: "steps", items: [
+        { title: "Cost $$", body: "pay $& now" },
+        { title: "Two", body: "second" },
+      ] },
+    });
+    expect(html).toContain("Cost $$");
+    expect(html).toContain("pay $&amp; now");
+    expect(html).not.toContain("STEPS_HTML_INJECT");
+  });
+
   it("escapes user text", () => {
     const html = renderSlide({ role: "outro", headline: "<script>x", cta: { strong: "Save" } });
     expect(html).not.toContain("<script>x");
