@@ -1,13 +1,17 @@
 import { z } from "zod";
+import { normalizeIcon } from "@/lib/ds/icons";
 
 const cardTone = z.enum(["peach", "stone", "mint", "sky", "pink", "amber"]);
+
+/** Any incoming icon string is coerced to a valid allowlist slug (fallback: sparkles). */
+const iconField = z.string().transform(normalizeIcon);
 
 /* ── Mockup types ─────────────────────────────────────────────── */
 
 /** Classic InfoCard — icon + title + body on a colored card */
 const mockupCard = z.object({
   type: z.literal("card"),
-  icon: z.string(),
+  icon: iconField,
   title: z.string().max(50),
   body: z.string().max(120),
   tone: cardTone,
@@ -49,7 +53,7 @@ const mockupSteps = z.object({
 /** Dark callout banner with icon — for key takeaways/warnings */
 const mockupCallout = z.object({
   type: z.literal("callout"),
-  icon: z.string(),
+  icon: iconField,
   text: z.string().max(120),
 });
 
@@ -133,7 +137,7 @@ const pointSlide = z.object({
   /** Legacy: simple info card (backward compat — used when mockup is absent) */
   card: z
     .object({
-      icon: z.string(),
+      icon: iconField,
       title: z.string().max(50),
       body: z.string().max(120),
       tone: cardTone,
