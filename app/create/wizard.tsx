@@ -55,10 +55,10 @@ const modelDetails: Record<string, { label: string; vendor: string; description:
     icon: <Globe className="size-4 text-rose-500 shrink-0" />,
   },
   omniroute: {
-    label: "OmniRoute",
-    vendor: "OmniRoute AI",
-    description: "Unified AI model gateway & router",
-    icon: <Zap className="size-4 text-purple-500 shrink-0" />,
+    label: "Vour Model",
+    vendor: "VourDev",
+    description: "Model AI resmi @vourdev",
+    icon: <img src="/vourdev-logo.jpeg" alt="Vour" className="size-4 rounded-full object-cover shrink-0" />,
   },
 };
 
