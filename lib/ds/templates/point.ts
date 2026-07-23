@@ -16,7 +16,7 @@ export const pointTemplate = String.raw`<section data-screen-label="03 · Point"
   <div class="card card-{{cardTone}} mt-40">
     <div class="card-head">
       <div class="card-ico">
-        <iconify-icon icon="{{cardIcon}}" style="font-size:24px; color:#E94B19;"></iconify-icon>
+        ICON_INJECT
       </div>
       <div class="card-title">{{cardTitle}}</div>
     </div>

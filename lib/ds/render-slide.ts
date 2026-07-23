@@ -4,6 +4,7 @@ import { brandMarkDataUri } from "@/lib/ds/brand";
 import { coverTemplate } from "@/lib/ds/templates/cover";
 import { coverCompactTemplate } from "@/lib/ds/templates/cover-compact";
 import { sanitizeHookHtml } from "@/lib/ds/sanitize";
+import { renderIcon } from "@/lib/ds/icons";
 import { pointTemplate } from "@/lib/ds/templates/point";
 import { outroTemplate } from "@/lib/ds/templates/outro";
 import { terminalTemplate } from "@/lib/ds/templates/terminal";
@@ -68,10 +69,11 @@ function renderStepsMockup(m: Extract<Mockup, { type: "steps" }>): string {
 }
 
 function renderCalloutMockup(m: Extract<Mockup, { type: "callout" }>): string {
-  return fillTemplate(calloutTemplate, {
-    calloutIcon: m.icon,
+  const base = fillTemplate(calloutTemplate, {
     calloutText: m.text,
   });
+  // Function replacer: keep raw SVG out of String.replace $-interpretation.
+  return base.replace("ICON_INJECT", () => renderIcon(m.icon, { size: 24, color: "#E94B19" }));
 }
 
 function renderBigstatMockup(m: Extract<Mockup, { type: "bigstat" }>): string {
@@ -105,13 +107,6 @@ function renderImageHook(h: Extract<CoverHook, { kind: "image" }>): string {
   return `<div class="diag-wrap mt-40"><img src="${src}" alt="" style="max-width:100%; border-radius:20px;"></div>`;
 }
 
-function renderCardMockup(m: Extract<Mockup, { type: "card" }>): string {
-  // Card is rendered inline inside the point template, not as a separate block.
-  // This function is not called directly — card data is passed to the point template.
-  // Return empty; the point template handles it via {{#card}}…{{/card}}.
-  return "";
-}
-
 /** Render any mockup type to an HTML fragment. */
 function renderMockup(m: Mockup): string {
   switch (m.type) {
@@ -126,7 +121,8 @@ function renderMockup(m: Mockup): string {
     case "bigstat":
       return renderBigstatMockup(m);
     case "card":
-      return renderCardMockup(m);
+      // Card is rendered inline via the point template's {{#card}} block, not here.
+      return "";
   }
 }
 
@@ -140,7 +136,7 @@ function resolveMockup(slide: Extract<Slide, { role: "point" }>): Mockup {
   // Auto-fallback: generate a card from slide data so no slide is ever flat
   return {
     type: "card" as const,
-    icon: "lucide:sparkles",
+    icon: "sparkles",
     title: slide.eyebrow || "Ringkasan",
     body: slide.body,
     tone: "peach" as const,
@@ -181,19 +177,22 @@ export function renderSlide(slide: Slide): string {
 
       // For card-type mockups, render via the point template's built-in {{#card}} block
       if (mockup.type === "card") {
-        return fillTemplate(pointTemplate, {
+        const filled = fillTemplate(pointTemplate, {
           brand,
           counter: slide.counter,
           eyebrow: slide.eyebrow,
           ...splitHeadline(slide.headline, slide.accentWord),
           body: slide.body,
           card: "1",
-          cardIcon: mockup.icon || "lucide:sparkles",
           cardTitle: mockup.title || slide.eyebrow || "Ringkasan",
           cardBody: mockup.body || slide.body,
           cardTone: mockup.tone || "peach",
           mockupHtml: "",
         });
+        // Function replacer keeps raw SVG safe from $-sequence interpretation.
+        return filled.replace("ICON_INJECT", () =>
+          renderIcon(mockup.icon, { size: 24, color: "#E94B19" })
+        );
       }
 
       // For non-card mockups, render the mockup fragment and inject it after the body
@@ -205,7 +204,6 @@ export function renderSlide(slide: Slide): string {
         ...splitHeadline(slide.headline, slide.accentWord),
         body: slide.body,
         card: "",  // hide the card block
-        cardIcon: "",
         cardTitle: "",
         cardBody: "",
         cardTone: "peach",

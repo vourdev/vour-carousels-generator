@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { slidePlanSchema, mockupSchema, coverHookSchema } from "@/lib/ds/schema";
+import { slidePlanSchema, mockupSchema, slideSchema, coverHookSchema } from "@/lib/ds/schema";
 
 const valid = {
   title: "Test",
@@ -145,5 +145,27 @@ describe("coverHookSchema", () => {
   it("rejects a device hook with more than six lines", () => {
     const lines = Array.from({ length: 7 }, () => ({ text: "x", style: "plain" }));
     expect(() => coverHookSchema.parse({ kind: "device", chrome: "terminal", lines })).toThrow();
+  });
+});
+
+describe("icon coercion", () => {
+  it("strips lucide: prefix on a card mockup icon", () => {
+    const m = mockupSchema.parse({
+      type: "card", icon: "lucide:repeat", title: "T", body: "B", tone: "peach",
+    });
+    expect(m.type === "card" && m.icon).toBe("repeat");
+  });
+  it("coerces an unknown callout icon to the fallback (no throw)", () => {
+    const m = mockupSchema.parse({
+      type: "callout", icon: "lucide:made-up-xyz", text: "hi",
+    });
+    expect(m.type === "callout" && m.icon).toBe("sparkles");
+  });
+  it("coerces a legacy point card icon", () => {
+    const s = slideSchema.parse({
+      role: "point", counter: "1/1", eyebrow: "E", headline: "H", body: "b",
+      card: { icon: "lucide:box", title: "T", body: "B", tone: "mint" },
+    });
+    expect(s.role === "point" && s.card?.icon).toBe("box");
   });
 });

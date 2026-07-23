@@ -7,8 +7,29 @@ describe("samplePlan", () => {
   it("is a valid slidePlan", () => {
     expect(() => slidePlanSchema.parse(samplePlan)).not.toThrow();
   });
-  it("assembles to a full document with 3 sections", () => {
+  it("assembles to a full document with 7 sections", () => {
     const html = assembleCarousel(samplePlan);
-    expect((html.match(/<section\s/g) ?? []).length).toBe(3);
+    expect((html.match(/<section\s/g) ?? []).length).toBe(7);
+  });
+});
+
+describe("samplePlan variety", () => {
+  it("exercises at least 4 distinct mockup types", () => {
+    const types = new Set(
+      samplePlan.slides
+        .filter((s) => s.role === "point")
+        .map((s) => (s as { mockup?: { type: string } }).mockup?.type)
+        .filter(Boolean)
+    );
+    expect(types.size).toBeGreaterThanOrEqual(4);
+  });
+  it("has a text-only cover (no hook)", () => {
+    const cover = samplePlan.slides.find((s) => s.role === "cover");
+    expect(cover && "hook" in cover ? cover.hook : undefined).toBeUndefined();
+  });
+  it("assembles to inline-svg icons, no iconify", () => {
+    const html = assembleCarousel(samplePlan);
+    expect(html).toContain("<svg");
+    expect(html).not.toContain("iconify-icon");
   });
 });
