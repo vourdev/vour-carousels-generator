@@ -20,7 +20,7 @@ export const samplePlan: SlidePlan = {
       accentWord: "Retry",
       body: "Network gagal, client ulang request. Tanpa idempotency, satu aksi kejadian dua kali.",
       card: {
-        icon: "lucide:repeat",
+        icon: "repeat",
         title: "Retry-safe",
         body: "Request sama → hasil sama.",
         tone: "peach",

@@ -18,9 +18,10 @@ describe("renderSlide", () => {
 
   it("renders a point WITH a legacy card when provided", () => {
     const html = renderSlide({ role: "point", counter: "1/1", eyebrow: "E", headline: "H", body: "b",
-      card: { icon: "lucide:box", title: "Title", body: "Body", tone: "peach" } });
+      card: { icon: "box", title: "Title", body: "Body", tone: "peach" } });
     expect(html).toContain("card-peach");
-    expect(html).toContain("lucide:box");
+    expect(html).toContain("<svg");
+    expect(html).not.toContain("iconify-icon");
   });
 
   it("renders a terminal mockup with mac chrome", () => {
@@ -89,14 +90,25 @@ describe("renderSlide", () => {
       role: "point", counter: "04/07", eyebrow: "WARNING", headline: "Caution", body: "desc",
       mockup: {
         type: "callout",
-        icon: "lucide:alert-triangle",
+        icon: "alert-triangle",
         text: "Never store secrets in JWT payload",
       },
     });
     expect(html).toContain("background:#1F0904");
-    expect(html).toContain("lucide:alert-triangle");
+    expect(html).toContain("<svg");
+    expect(html).not.toContain("iconify-icon");
     expect(html).toContain("Never store secrets in JWT payload");
     expect(html).not.toContain("card-peach");
+  });
+
+  it("renders card icons as inline svg, never iconify-icon", () => {
+    const html = renderSlide({
+      role: "point", counter: "1/1", eyebrow: "E", headline: "H", body: "b",
+      mockup: { type: "card", icon: "server", title: "T", body: "B", tone: "sky" },
+    });
+    expect(html).toContain("<svg");
+    expect(html).not.toContain("iconify-icon");
+    expect(html).not.toContain("ICON_INJECT");
   });
 
   it("renders a bigstat mockup with large number", () => {
@@ -119,8 +131,8 @@ describe("renderSlide", () => {
   it("prefers mockup over legacy card field", () => {
     const html = renderSlide({
       role: "point", counter: "02/05", eyebrow: "E", headline: "H", body: "b",
-      card: { icon: "lucide:box", title: "Card Title", body: "Card Body", tone: "mint" },
-      mockup: { type: "callout", icon: "lucide:check-circle", text: "Mockup wins" },
+      card: { icon: "box", title: "Card Title", body: "Card Body", tone: "mint" },
+      mockup: { type: "callout", icon: "check-circle", text: "Mockup wins" },
     });
     expect(html).toContain("Mockup wins");
     expect(html).not.toContain("Card Title");
