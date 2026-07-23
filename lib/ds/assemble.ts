@@ -15,7 +15,6 @@ export function assembleCarousel(plan: SlidePlan): string {
 <html lang="id">
 <head>
 <meta charset="UTF-8">
-<script src="https://code.iconify.design/iconify-icon/2.1.0/iconify-icon.min.js"></script>
 <script type="application/json" id="vourdev-meta">
 ${meta}
 </script>

@@ -302,6 +302,6 @@ export const carouselCss = String.raw`
   .mock.locked .mock-body { opacity: 0.22; filter: blur(1.5px); pointer-events: none; }
   .mock-overlay { position: absolute; inset: 0; padding: 24px; display: flex; align-items: center; justify-content: center; pointer-events: none; }
   .mock-lock { display: inline-flex; align-items: center; gap: 12px; padding: 14px 22px; border-radius: 999px; background: #1F0904; color: #fff; font-family: 'JetBrains Mono'; font-weight: 500; font-size: 20px; letter-spacing: 0.08em; text-transform: uppercase; box-shadow: 0 12px 32px rgba(31,9,4,0.28); }
-  .mock-lock iconify-icon { font-size: 26px; }
+  .mock-lock svg { width: 26px; height: 26px; }
   .scene-arrow { font-family: 'JetBrains Mono'; font-size: 40px; color: #E94B19; align-self: center; }
 `;

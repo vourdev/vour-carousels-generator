@@ -1,6 +1,7 @@
 import { describe, it, expect } from "vitest";
 import type { SlidePlan } from "@/lib/ds/schema";
 import { assembleCarousel } from "@/lib/ds/assemble";
+import { samplePlan } from "@/lib/ds/sample";
 
 const plan = {
   title: 'Title "quoted"',
@@ -28,5 +29,10 @@ describe("assembleCarousel", () => {
     expect(meta.title).toBe('Title "quoted"');
     expect(meta.caption).toBe("line1\nline2");
     expect(meta.hashtags).toEqual(["backend", "api"]);
+  });
+  it("assembles without any Iconify CDN dependency", () => {
+    const html = assembleCarousel(samplePlan);
+    expect(html).not.toContain("iconify.design");
+    expect(html).not.toContain("iconify-icon");
   });
 });
