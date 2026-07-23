@@ -138,6 +138,26 @@ describe("renderSlide", () => {
     expect(html).not.toContain("Card Title");
   });
 
+  it("renders a flow mockup with nodes and arrows", () => {
+    const html = renderSlide({
+      role: "point", counter: "02/07", eyebrow: "ALUR", headline: "Flow", body: "desc",
+      mockup: {
+        type: "flow",
+        steps: [{ label: "Request" }, { label: "Handler", focus: true }, { label: "DB" }],
+        note: "Alur singkat.",
+      },
+    });
+    expect(html).toContain('class="diag-flow"');
+    expect(html).toContain('class="arrow"');
+    expect(html).toContain('class="node filled"');
+    expect(html).toContain("Handler");
+    expect(html).toContain('class="catatan');
+    expect(html).toContain("Alur singkat.");
+    expect(html).not.toContain("FLOW_NODES_INJECT");
+    expect(html).not.toContain("NOTE_INJECT");
+    expect(html).not.toContain("card-peach");
+  });
+
   it("renders an outro CTA highlight with strong + sub", () => {
     const html = renderSlide({
       role: "outro", eyebrow: "KESIMPULAN", headline: "Mulai sekarang",

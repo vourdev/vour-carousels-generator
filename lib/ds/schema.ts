@@ -65,6 +65,16 @@ const mockupBigstat = z.object({
   caption: z.string().max(90),
 });
 
+/** Flow chain — sequential nodes joined by arrows (pipelines/sequences) */
+const mockupFlow = z.object({
+  type: z.literal("flow"),
+  steps: z
+    .array(z.object({ label: z.string().max(24), focus: z.boolean().optional() }))
+    .min(2)
+    .max(5),
+  note: z.string().max(90).optional(),
+});
+
 export const mockupSchema = z.discriminatedUnion("type", [
   mockupCard,
   mockupTerminal,
@@ -72,6 +82,7 @@ export const mockupSchema = z.discriminatedUnion("type", [
   mockupSteps,
   mockupCallout,
   mockupBigstat,
+  mockupFlow,
 ]);
 
 export type Mockup = z.infer<typeof mockupSchema>;

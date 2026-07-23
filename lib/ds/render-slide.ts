@@ -12,6 +12,7 @@ import { comparisonTemplate } from "@/lib/ds/templates/comparison";
 import { stepsTemplate, stepCardPartial } from "@/lib/ds/templates/steps";
 import { calloutTemplate } from "@/lib/ds/templates/callout";
 import { bigstatTemplate } from "@/lib/ds/templates/bigstat";
+import { flowTemplate } from "@/lib/ds/templates/flow";
 import { deviceTemplate } from "@/lib/ds/templates/device";
 
 function splitHeadline(headline: string, accentWord?: string) {
@@ -23,6 +24,12 @@ function splitHeadline(headline: string, accentWord?: string) {
     accentWord,
     headlinePost: headline.slice(i + accentWord.length),
   };
+}
+
+/** Optional `.catatan` annotation strip shared by the diagram mockups. */
+function renderNote(note?: string): string {
+  if (!note) return "";
+  return `<div class="catatan mt-40"><div class="catatan-label">Catatan</div><div class="catatan-body">${escapeHtml(note)}</div></div>`;
 }
 
 /* ── Mockup renderers ─────────────────────────────────────────── */
@@ -84,6 +91,15 @@ function renderBigstatMockup(m: Extract<Mockup, { type: "bigstat" }>): string {
   });
 }
 
+function renderFlowMockup(m: Extract<Mockup, { type: "flow" }>): string {
+  const nodes = m.steps
+    .map((s) => `<div class="node${s.focus ? " filled" : ""}">${escapeHtml(s.label)}</div>`)
+    .join('<div class="arrow">→</div>');
+  return flowTemplate
+    .replace("FLOW_NODES_INJECT", () => nodes)
+    .replace("NOTE_INJECT", () => renderNote(m.note));
+}
+
 export function renderDeviceHook(h: Extract<CoverHook, { kind: "device" }>): string {
   const bodyLines = h.lines
     .map((l) => {
@@ -120,6 +136,8 @@ function renderMockup(m: Mockup): string {
       return renderCalloutMockup(m);
     case "bigstat":
       return renderBigstatMockup(m);
+    case "flow":
+      return renderFlowMockup(m);
     case "card":
       // Card is rendered inline via the point template's {{#card}} block, not here.
       return "";

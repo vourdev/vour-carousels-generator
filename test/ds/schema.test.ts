@@ -169,3 +169,17 @@ describe("icon coercion", () => {
     expect(s.role === "point" && s.card?.icon).toBe("box");
   });
 });
+
+describe("flow mockup", () => {
+  it("parses a flow with focus + note", () => {
+    const m = mockupSchema.parse({
+      type: "flow",
+      steps: [{ label: "Request" }, { label: "Handler", focus: true }, { label: "DB" }],
+      note: "Alur request masuk.",
+    });
+    expect(m.type).toBe("flow");
+  });
+  it("rejects a flow with 1 step (min 2)", () => {
+    expect(() => mockupSchema.parse({ type: "flow", steps: [{ label: "x" }] })).toThrow();
+  });
+});
