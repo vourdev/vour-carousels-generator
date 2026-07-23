@@ -107,13 +107,6 @@ function renderImageHook(h: Extract<CoverHook, { kind: "image" }>): string {
   return `<div class="diag-wrap mt-40"><img src="${src}" alt="" style="max-width:100%; border-radius:20px;"></div>`;
 }
 
-function renderCardMockup(m: Extract<Mockup, { type: "card" }>): string {
-  // Card is rendered inline inside the point template, not as a separate block.
-  // This function is not called directly — card data is passed to the point template.
-  // Return empty; the point template handles it via {{#card}}…{{/card}}.
-  return "";
-}
-
 /** Render any mockup type to an HTML fragment. */
 function renderMockup(m: Mockup): string {
   switch (m.type) {
@@ -128,7 +121,8 @@ function renderMockup(m: Mockup): string {
     case "bigstat":
       return renderBigstatMockup(m);
     case "card":
-      return renderCardMockup(m);
+      // Card is rendered inline via the point template's {{#card}} block, not here.
+      return "";
   }
 }
 

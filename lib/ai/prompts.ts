@@ -25,14 +25,21 @@ You MUST follow this EXACT Markdown structure (matching Vour Dev Design System):
 ## Description
 <Engaging hook explaining the problem or misconception in 2-3 short sentences.>
 
+### Example text-only cover (no mockup needed — still looks proportional)
+Eyebrow: ISTILAH AI
+Headline: istilah AI yang wajib lo **tau**
+Description: biar lo gak cuma nge-prompt doang tapi ngerti cara kerjanya.
+
 ## Hook Mockup
-<Describe a synthetic device frame for the cover: browser or terminal chrome, an optional label (URL or filename), and 1-6 short on-topic lines that stop the scroll.>
+<OPTIONAL — a text-only cover (eyebrow + headline + description, no hook) is a first-class,
+well-proportioned intro. Include this only when a code/UI scene strengthens the opener:
+describe a synthetic device frame for the cover: browser or terminal chrome, an optional label (URL or filename), and 1-6 short on-topic lines that stop the scroll.>
 
 ## Highlight
 <One-line punchy takeaway callout summary>
 
 ## Visual Direction
-- Icon: lucide:<icon-slug, e.g. key|shield-check|terminal|alert-triangle|layers|database>
+- Icon: <one slug from the allowlist, e.g. key|shield-check|terminal|alert-triangle|layers|database|book-open|lightbulb>
 - Accent Color: <Sky|Red|Mint|Violet|Amber>
 
 ---
@@ -73,7 +80,7 @@ You MUST follow this EXACT Markdown structure (matching Vour Dev Design System):
 <Key takeaway callout or card summary>
 
 ## Visual Direction
-- Icon: lucide:<icon-slug>
+- Icon: <one slug from the allowlist>
 - Accent Color: <Sky|Red|Mint|Violet|Amber>
 
 ---
@@ -135,7 +142,10 @@ export function briefUserPrompt(idea: string): string {
 
 export const planSystem = `You convert an approved carousel brief into a structured slide plan for @vourdev.
 Return ONLY structured data matching the schema. Supported slide roles:
-- "cover": { eyebrow, headline, accentWord?, lede?, hook } — hook is REQUIRED and MUST be a synthetic device frame:
+- "cover": { eyebrow, headline, accentWord?, lede?, hook? } — hook is OPTIONAL.
+    A text-only cover (eyebrow + headline + lede, NO hook) is a first-class, well-proportioned
+    editorial intro — omit "hook" for a clean opener. Include a "device" hook only when a
+    code/UI scene genuinely strengthens the opener:
     hook: { kind: "device", chrome: "browser"|"terminal", label?: "app.tsx"|"app.vourdev.com", lines: [{ text, style: "plain"|"key"|"val"|"kw"|"cmt"|"num" }] }
     → 1–6 short lines (≤ 52 chars each) of on-topic code/UI that stops the scroll. Use "browser" chrome for app/URL scenes, "terminal" for code/CLI.
 - "point": { counter (e.g. "02 / 05"), eyebrow, headline, accentWord?, body, mockup: <one of the types below> }
@@ -145,7 +155,7 @@ Return ONLY structured data matching the schema. Supported slide roles:
 
 MOCKUP TYPES — every "point" slide MUST include a "mockup" object with one of these types:
 
-1. { type: "card", icon: "<lucide:slug>", title: "...", body: "...", tone: "peach"|"stone"|"mint"|"sky"|"pink"|"amber" }
+1. { type: "card", icon: "<allowlisted-slug>", title: "...", body: "...", tone: "peach"|"stone"|"mint"|"sky"|"pink"|"amber" }
    → General info card. Use for conceptual explanations.
 
 2. { type: "terminal", filename: "example.ts", lines: [{ text: "const x = 1;", style: "plain"|"key"|"val"|"kw"|"cmt"|"num" }] }
@@ -157,11 +167,31 @@ MOCKUP TYPES — every "point" slide MUST include a "mockup" object with one of 
 4. { type: "steps", items: [{ title: "Step title", body: "Step description" }] }
    → 2-4 numbered step cards. Use for solution/tutorial/how-to slides.
 
-5. { type: "callout", icon: "<lucide:slug>", text: "Important one-liner" }
+5. { type: "callout", icon: "<allowlisted-slug>", text: "Important one-liner" }
    → Dark banner with icon. Use for critical warnings, key takeaways.
 
 6. { type: "bigstat", number: "3×", unit?: "faster", caption: "Explanation of the metric" }
    → Large editorial number. Use for impressive metrics. Keep number ≤ 6 chars.
+
+ICON RULES:
+- Every "icon" MUST be one of these exact slugs (the "lucide:" prefix is optional):
+  terminal, server, database, key, shield-check, lock, git-branch, code, cpu,
+  network, cloud, zap, repeat, arrow-right, alert-triangle, check-circle,
+  x-circle, circle-alert, sparkles, layers, box, workflow, timer, gauge, bug,
+  wrench, rocket, book-open, lightbulb, target, trending-up, file-code, braces,
+  webhook, refresh-cw, folder.
+- NEVER invent an icon name. If unsure, use "sparkles".
+
+VARIETY EXAMPLE (a good, non-monotone deck — mirror this diversity, not the copy):
+- cover (text-only, no hook): eyebrow "AI 101", headline "istilah AI yang wajib lo tau"
+  (accentWord "tau"), lede "biar lo gak cuma nge-prompt doang tapi ngerti cara kerjanya."
+- point → card (icon "book-open", tone "peach")
+- point → terminal (a 4-line snippet)
+- point → comparison (bad vs good)
+- point → steps (3 steps)
+- point → bigstat (one metric)
+- outro → cta { strong: "Simpan & bagikan" }
+Use ≥3 distinct mockup types and rotate tone colors across slides.
 
 STRICT DESIGN & COPY BUDGET RULES:
 1. Eyebrow ≤ 3 words (max 30 chars); headline short (≤ 7 words, max 60 chars) with one accentWord that appears verbatim inside the headline.

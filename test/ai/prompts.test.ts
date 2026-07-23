@@ -69,6 +69,21 @@ describe("planSystem", () => {
     expect(planSystem).toMatch(/cta/);
     expect(planSystem.toLowerCase()).toMatch(/call.?to.?action|cta/);
   });
+  it("enforces the icon allowlist with a sparkles fallback", () => {
+    expect(planSystem).toContain("ICON RULES");
+    expect(planSystem).toContain("sparkles");
+    expect(planSystem).not.toContain("<lucide:slug>");
+  });
+  it("makes the cover hook optional (text-only intro allowed)", () => {
+    expect(planSystem).toMatch(/hook is OPTIONAL/);
+    expect(planSystem).toMatch(/text-only cover/i);
+  });
+});
+
+describe("briefSystem intro examples", () => {
+  it("includes a text-only cover example", () => {
+    expect(briefSystem).toContain("istilah AI yang wajib lo");
+  });
 });
 
 describe("reviseSystem", () => {
