@@ -1,6 +1,7 @@
 import type { SlidePlan } from "@/lib/ds/schema";
 import { renderSlide } from "@/lib/ds/render-slide";
 import { carouselCss } from "@/lib/ds/carousel-css";
+import { carouselExtraCss } from "@/lib/ds/carousel-css-extra";
 import { inlineFontFaceCss } from "@/lib/ds/fonts-inline";
 
 export function assembleCarousel(plan: SlidePlan): string {
@@ -20,6 +21,7 @@ ${meta}
 </script>
 <style>${inlineFontFaceCss}</style>
 <style>${carouselCss}</style>
+<style>${carouselExtraCss}</style>
 </head>
 <body>
 ${body}
