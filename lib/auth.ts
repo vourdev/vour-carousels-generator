@@ -6,6 +6,10 @@ const allowSignup = process.env.ALLOW_SIGNUP === "true";
 
 export const auth = betterAuth({
   database: { dialect, type: "sqlite" },
+  // Under Vitest, quiet better-auth to error-level so expected warn logs
+  // (missing base URL, deliberate invalid-password test paths) don't pollute
+  // test output. Runtime keeps the default warn level.
+  ...(process.env.VITEST ? { logger: { level: "error" as const } } : {}),
   emailAndPassword: {
     enabled: true,
     disableSignUp: !allowSignup,
