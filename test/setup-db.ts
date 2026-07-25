@@ -5,6 +5,9 @@ const TEST_DB = "file:./.vitest-auth.db";
 export async function setup() {
   process.env.DATABASE_URL = TEST_DB;
   process.env.BETTER_AUTH_SECRET ??= "test-secret-test-secret-test-secret";
+  // Set before importing @/lib/auth below so better-auth doesn't warn about a
+  // missing base URL during global setup. Test-only; runtime is unaffected.
+  process.env.BETTER_AUTH_URL ??= "http://localhost:3000";
   // Deliberately NOT setting ALLOW_SIGNUP here: it's read once, at module-load
   // time, by lib/auth.ts to gate `disableSignUp`. Setting it globally would
   // leak into every test file's `auth` singleton (including
