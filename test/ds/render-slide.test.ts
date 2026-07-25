@@ -199,6 +199,19 @@ describe("renderSlide", () => {
     expect(html).not.toContain("card-peach");
   });
 
+  it("renders a checklist mockup with ticks", () => {
+    const html = renderSlide({
+      role: "point", counter: "07/07", eyebrow: "RECAP", headline: "Ringkasan", body: "desc",
+      mockup: { type: "checklist", items: ["Idempotency", "Retry-safe", "Key unik"], note: "Simpan ya." },
+    });
+    expect(html).toContain('class="checklist');
+    expect(html).toContain('class="tick"');
+    expect(html).toContain("Retry-safe");
+    expect(html).toContain('class="catatan');
+    expect(html).not.toContain("CHECKLIST_ITEMS_INJECT");
+    expect(html).not.toContain("card-peach");
+  });
+
   it("renders an outro CTA highlight with strong + sub", () => {
     const html = renderSlide({
       role: "outro", eyebrow: "KESIMPULAN", headline: "Mulai sekarang",

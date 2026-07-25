@@ -94,6 +94,13 @@ const mockupHub = z.object({
   note: z.string().max(90).optional(),
 });
 
+/** Recap checklist — 3–6 ticked items */
+const mockupChecklist = z.object({
+  type: z.literal("checklist"),
+  items: z.array(z.string().max(48)).min(3).max(6),
+  note: z.string().max(90).optional(),
+});
+
 export const mockupSchema = z.discriminatedUnion("type", [
   mockupCard,
   mockupTerminal,
@@ -104,6 +111,7 @@ export const mockupSchema = z.discriminatedUnion("type", [
   mockupFlow,
   mockupConcept,
   mockupHub,
+  mockupChecklist,
 ]);
 
 export type Mockup = z.infer<typeof mockupSchema>;

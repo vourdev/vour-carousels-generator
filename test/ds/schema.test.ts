@@ -218,3 +218,14 @@ describe("hub mockup", () => {
     expect(() => mockupSchema.parse({ type: "hub", center: "c", tools })).toThrow();
   });
 });
+
+describe("checklist mockup", () => {
+  it("parses a checklist with items", () => {
+    const m = mockupSchema.parse({ type: "checklist", items: ["A", "B", "C"] });
+    expect(m.type).toBe("checklist");
+  });
+  it("rejects a checklist with 7 items (max 6)", () => {
+    const items = Array.from({ length: 7 }, (_, i) => `item ${i}`);
+    expect(() => mockupSchema.parse({ type: "checklist", items })).toThrow();
+  });
+});

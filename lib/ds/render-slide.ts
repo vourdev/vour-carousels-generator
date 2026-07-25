@@ -15,6 +15,7 @@ import { bigstatTemplate } from "@/lib/ds/templates/bigstat";
 import { flowTemplate } from "@/lib/ds/templates/flow";
 import { conceptTemplate } from "@/lib/ds/templates/concept";
 import { hubTemplate } from "@/lib/ds/templates/hub";
+import { checklistTemplate } from "@/lib/ds/templates/checklist";
 import { diagLines } from "@/lib/ds/hub-lines";
 import { deviceTemplate } from "@/lib/ds/templates/device";
 
@@ -128,6 +129,15 @@ function renderHubMockup(m: Extract<Mockup, { type: "hub" }>): string {
     .replace("NOTE_INJECT", () => renderNote(m.note));
 }
 
+function renderChecklistMockup(m: Extract<Mockup, { type: "checklist" }>): string {
+  const items = m.items
+    .map((i) => `<li><span class="tick">✓</span> ${escapeHtml(i)}</li>`)
+    .join("");
+  return checklistTemplate
+    .replace("CHECKLIST_ITEMS_INJECT", () => items)
+    .replace("NOTE_INJECT", () => renderNote(m.note));
+}
+
 export function renderDeviceHook(h: Extract<CoverHook, { kind: "device" }>): string {
   const bodyLines = h.lines
     .map((l) => {
@@ -170,6 +180,8 @@ function renderMockup(m: Mockup): string {
       return renderConceptMockup(m);
     case "hub":
       return renderHubMockup(m);
+    case "checklist":
+      return renderChecklistMockup(m);
     case "card":
       // Card is rendered inline via the point template's {{#card}} block, not here.
       return "";
