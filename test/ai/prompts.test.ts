@@ -35,7 +35,7 @@ describe("prompt builders", () => {
     expect(briefSystem).toMatch(/informative/i);
     expect(planSystem).toMatch(/informative/i);
   });
-  it("planSystem documents all 6 mockup types", () => {
+  it("planSystem documents all 10 mockup types", () => {
     expect(planSystem).toContain('"terminal"');
     expect(planSystem).toContain('"comparison"');
     expect(planSystem).toContain('"steps"');

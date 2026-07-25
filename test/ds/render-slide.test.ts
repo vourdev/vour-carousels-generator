@@ -212,6 +212,18 @@ describe("renderSlide", () => {
     expect(html).not.toContain("card-peach");
   });
 
+  it("does not let user text equal to a sentinel corrupt injection", () => {
+    // A checklist item literally equal to the later NOTE_INJECT sentinel must
+    // render as its own list item, and the real note must still render — proving
+    // the single-pass injector never re-scans injected content.
+    const html = renderSlide({
+      role: "point", counter: "1/1", eyebrow: "E", headline: "H", body: "b",
+      mockup: { type: "checklist", items: ["NOTE_INJECT", "real"], note: "actual note" },
+    });
+    expect(html).toContain('<li><span class="tick">✓</span> NOTE_INJECT</li>');
+    expect(html).toContain('class="catatan-body">actual note<');
+  });
+
   it("renders an outro CTA highlight with strong + sub", () => {
     const html = renderSlide({
       role: "outro", eyebrow: "KESIMPULAN", headline: "Mulai sekarang",

@@ -36,6 +36,18 @@ function renderNote(note?: string): string {
   return `<div class="catatan mt-40"><div class="catatan-label">Catatan</div><div class="catatan-body">${escapeHtml(note)}</div></div>`;
 }
 
+/**
+ * Replace each sentinel exactly once in a single left-to-right pass over the
+ * template. Because injected content is never re-scanned, user text that
+ * happens to equal another sentinel token cannot mis-target a later replace
+ * (which sequential `String.replace(str, …)` calls would allow). The function
+ * replacer also keeps `$`-sequences in the injected values verbatim.
+ */
+function injectSentinels(template: string, map: Record<string, string>): string {
+  const tokens = Object.keys(map).sort((a, b) => b.length - a.length);
+  return template.replace(new RegExp(tokens.join("|"), "g"), (t) => map[t]);
+}
+
 /* ── Mockup renderers ─────────────────────────────────────────── */
 
 function renderTerminalMockup(m: Extract<Mockup, { type: "terminal" }>): string {
@@ -99,19 +111,21 @@ function renderFlowMockup(m: Extract<Mockup, { type: "flow" }>): string {
   const nodes = m.steps
     .map((s) => `<div class="node${s.focus ? " filled" : ""}">${escapeHtml(s.label)}</div>`)
     .join('<div class="arrow">→</div>');
-  return flowTemplate
-    .replace("FLOW_NODES_INJECT", () => nodes)
-    .replace("NOTE_INJECT", () => renderNote(m.note));
+  return injectSentinels(flowTemplate, {
+    FLOW_NODES_INJECT: nodes,
+    NOTE_INJECT: renderNote(m.note),
+  });
 }
 
 function renderConceptMockup(m: Extract<Mockup, { type: "concept" }>): string {
   const children = m.children.map((c) => `<div class="node">${escapeHtml(c)}</div>`).join("");
   const lines = diagLines(m.children.length, { viewH: 380, midY: 200, endY: 300 });
-  return conceptTemplate
-    .replace("CONCEPT_PARENT_INJECT", () => escapeHtml(m.parent))
-    .replace("CONCEPT_LINES_INJECT", () => lines)
-    .replace("CONCEPT_CHILDREN_INJECT", () => children)
-    .replace("NOTE_INJECT", () => renderNote(m.note));
+  return injectSentinels(conceptTemplate, {
+    CONCEPT_PARENT_INJECT: escapeHtml(m.parent),
+    CONCEPT_LINES_INJECT: lines,
+    CONCEPT_CHILDREN_INJECT: children,
+    NOTE_INJECT: renderNote(m.note),
+  });
 }
 
 function renderHubMockup(m: Extract<Mockup, { type: "hub" }>): string {
@@ -122,20 +136,22 @@ function renderHubMockup(m: Extract<Mockup, { type: "hub" }>): string {
     )
     .join("");
   const lines = diagLines(m.tools.length, { viewH: 400, midY: 220, endY: 320 });
-  return hubTemplate
-    .replace("HUB_CENTER_INJECT", () => escapeHtml(m.center))
-    .replace("HUB_LINES_INJECT", () => lines)
-    .replace("HUB_TOOLS_INJECT", () => tools)
-    .replace("NOTE_INJECT", () => renderNote(m.note));
+  return injectSentinels(hubTemplate, {
+    HUB_CENTER_INJECT: escapeHtml(m.center),
+    HUB_LINES_INJECT: lines,
+    HUB_TOOLS_INJECT: tools,
+    NOTE_INJECT: renderNote(m.note),
+  });
 }
 
 function renderChecklistMockup(m: Extract<Mockup, { type: "checklist" }>): string {
   const items = m.items
     .map((i) => `<li><span class="tick">✓</span> ${escapeHtml(i)}</li>`)
     .join("");
-  return checklistTemplate
-    .replace("CHECKLIST_ITEMS_INJECT", () => items)
-    .replace("NOTE_INJECT", () => renderNote(m.note));
+  return injectSentinels(checklistTemplate, {
+    CHECKLIST_ITEMS_INJECT: items,
+    NOTE_INJECT: renderNote(m.note),
+  });
 }
 
 export function renderDeviceHook(h: Extract<CoverHook, { kind: "device" }>): string {
