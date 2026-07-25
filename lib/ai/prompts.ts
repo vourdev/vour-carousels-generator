@@ -173,6 +173,18 @@ MOCKUP TYPES — every "point" slide MUST include a "mockup" object with one of 
 6. { type: "bigstat", number: "3×", unit?: "faster", caption: "Explanation of the metric" }
    → Large editorial number. Use for impressive metrics. Keep number ≤ 6 chars.
 
+7. { type: "flow", steps: [{ label: "...", focus?: true }], note?: "..." }
+   → Sequential nodes with arrows (2–5 steps, one optional "focus"). Use for pipelines / ordered sequences (request → handler → db).
+
+8. { type: "hub", center: "...", tools: [{ icon: "<allowlisted-slug>", label: "..." }], note?: "..." }
+   → Center node wired to 3–4 tools. Use for "X connects to A, B, C, D" (services, integrations).
+
+9. { type: "concept", parent: "...", children: ["...", "..."], note?: "..." }
+   → Parent term broken into 3–4 sub-concepts. Use for glossaries / foundational concept breakdowns.
+
+10. { type: "checklist", items: ["...", "..."], note?: "..." }
+   → 3–6 ticked recap items. Use for "what you learned" / summary slides.
+
 ICON RULES:
 - Every "icon" MUST be one of these exact slugs (the "lucide:" prefix is optional):
   terminal, server, database, key, shield-check, lock, git-branch, code, cpu,
@@ -185,11 +197,12 @@ ICON RULES:
 VARIETY EXAMPLE (a good, non-monotone deck — mirror this diversity, not the copy):
 - cover (text-only, no hook): eyebrow "AI 101", headline "istilah AI yang wajib lo tau"
   (accentWord "tau"), lede "biar lo gak cuma nge-prompt doang tapi ngerti cara kerjanya."
-- point → card (icon "book-open", tone "peach")
-- point → terminal (a 4-line snippet)
+- point → concept (parent + 3–4 children)
+- point → flow (3–4 steps, one focus)
+- point → hub (center + 3–4 tool icons)
+- point → terminal (only if a real code scene — max 1)
 - point → comparison (bad vs good)
-- point → steps (3 steps)
-- point → bigstat (one metric)
+- point → checklist (recap)
 - outro → cta { strong: "Simpan & bagikan" }
 Use ≥3 distinct mockup types and rotate tone colors across slides.
 
@@ -204,7 +217,12 @@ STRICT DESIGN & COPY BUDGET RULES:
    - Callout: single punchy warning/takeaway sentence (max 90 chars).
    - BigStat: number (≤ 6 chars), unit (≤ 20 chars), caption (≤ 70 chars).
    - Card: card title (≤ 40 chars), card body (≤ 100 chars).
-5. VARY mockup types — do NOT use the same type on 3+ consecutive slides. A 6-slide carousel should use ≥ 3 different types.
+5. CONTEXT-DRIVEN MOCKUP CHOICE: pick the mockup that best fits the slide's content —
+   flow for pipelines/sequences, hub for one thing wiring to several tools, concept for a
+   term's sub-concepts, comparison for bad-vs-good, steps for how-to, bigstat for a metric,
+   callout for a warning, card for a general point, checklist for a recap. Use "terminal"
+   ONLY when the slide shows real code/CLI/config, and AT MOST ONCE per deck. Every deck
+   MUST use ≥3 distinct mockup types and must not repeat a type on consecutive slides.
 6. Choose contextually appropriate mockup types: Terminal for code, Comparison for vs-slides, Steps for solutions, BigStat for metrics, Callout for warnings, Card for general info.
 7. Title MUST be highly informative, descriptive, and engaging.
 8. Caption MUST be comprehensive and detailed (with hook, key takeaways bullet list, and CTA to save/share).

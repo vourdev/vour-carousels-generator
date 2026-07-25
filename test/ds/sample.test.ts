@@ -7,9 +7,9 @@ describe("samplePlan", () => {
   it("is a valid slidePlan", () => {
     expect(() => slidePlanSchema.parse(samplePlan)).not.toThrow();
   });
-  it("assembles to a full document with 7 sections", () => {
+  it("assembles to a full document with 8 sections", () => {
     const html = assembleCarousel(samplePlan);
-    expect((html.match(/<section\s/g) ?? []).length).toBe(7);
+    expect((html.match(/<section\s/g) ?? []).length).toBe(8);
   });
 });
 
@@ -22,6 +22,16 @@ describe("samplePlan variety", () => {
         .filter(Boolean)
     );
     expect(types.size).toBeGreaterThanOrEqual(4);
+  });
+  it("uses the new diagram mockups (flow/hub/concept/checklist)", () => {
+    const types = new Set(
+      samplePlan.slides
+        .filter((s) => s.role === "point")
+        .map((s) => (s as { mockup?: { type: string } }).mockup?.type)
+    );
+    for (const t of ["flow", "hub", "concept", "checklist"]) {
+      expect(types.has(t), t).toBe(true);
+    }
   });
   it("has a text-only cover (no hook)", () => {
     const cover = samplePlan.slides.find((s) => s.role === "cover");

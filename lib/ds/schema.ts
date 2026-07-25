@@ -65,6 +65,42 @@ const mockupBigstat = z.object({
   caption: z.string().max(90),
 });
 
+/** Flow chain — sequential nodes joined by arrows (pipelines/sequences) */
+const mockupFlow = z.object({
+  type: z.literal("flow"),
+  steps: z
+    .array(z.object({ label: z.string().max(24), focus: z.boolean().optional() }))
+    .min(2)
+    .max(5),
+  note: z.string().max(90).optional(),
+});
+
+/** Concept hub — parent node → 3–4 child pills (term glossaries) */
+const mockupConcept = z.object({
+  type: z.literal("concept"),
+  parent: z.string().max(20),
+  children: z.array(z.string().max(18)).min(3).max(4),
+  note: z.string().max(90).optional(),
+});
+
+/** Icon hub — center node → 3–4 tool icons via dashed arrows */
+const mockupHub = z.object({
+  type: z.literal("hub"),
+  center: z.string().max(20),
+  tools: z
+    .array(z.object({ icon: iconField, label: z.string().max(16) }))
+    .min(3)
+    .max(4),
+  note: z.string().max(90).optional(),
+});
+
+/** Recap checklist — 3–6 ticked items */
+const mockupChecklist = z.object({
+  type: z.literal("checklist"),
+  items: z.array(z.string().max(48)).min(3).max(6),
+  note: z.string().max(90).optional(),
+});
+
 export const mockupSchema = z.discriminatedUnion("type", [
   mockupCard,
   mockupTerminal,
@@ -72,6 +108,10 @@ export const mockupSchema = z.discriminatedUnion("type", [
   mockupSteps,
   mockupCallout,
   mockupBigstat,
+  mockupFlow,
+  mockupConcept,
+  mockupHub,
+  mockupChecklist,
 ]);
 
 export type Mockup = z.infer<typeof mockupSchema>;

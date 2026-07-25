@@ -169,3 +169,63 @@ describe("icon coercion", () => {
     expect(s.role === "point" && s.card?.icon).toBe("box");
   });
 });
+
+describe("flow mockup", () => {
+  it("parses a flow with focus + note", () => {
+    const m = mockupSchema.parse({
+      type: "flow",
+      steps: [{ label: "Request" }, { label: "Handler", focus: true }, { label: "DB" }],
+      note: "Alur request masuk.",
+    });
+    expect(m.type).toBe("flow");
+  });
+  it("rejects a flow with 1 step (min 2)", () => {
+    expect(() => mockupSchema.parse({ type: "flow", steps: [{ label: "x" }] })).toThrow();
+  });
+});
+
+describe("concept mockup", () => {
+  it("parses a concept with 4 children", () => {
+    const m = mockupSchema.parse({
+      type: "concept", parent: "HTTP",
+      children: ["GET", "POST", "PUT", "DELETE"],
+    });
+    expect(m.type).toBe("concept");
+  });
+  it("rejects a concept with 2 children (min 3)", () => {
+    expect(() => mockupSchema.parse({ type: "concept", parent: "x", children: ["a", "b"] })).toThrow();
+  });
+});
+
+describe("hub mockup", () => {
+  it("parses a hub and coerces tool icons to the allowlist", () => {
+    const m = mockupSchema.parse({
+      type: "hub", center: "API",
+      tools: [
+        { icon: "lucide:database", label: "DB" },
+        { icon: "made-up-xyz", label: "Cache" },
+        { icon: "cloud", label: "CDN" },
+      ],
+    });
+    expect(m.type).toBe("hub");
+    if (m.type === "hub") {
+      expect(m.tools[0].icon).toBe("database");
+      expect(m.tools[1].icon).toBe("sparkles");
+    }
+  });
+  it("rejects a hub with 5 tools (max 4)", () => {
+    const tools = Array.from({ length: 5 }, () => ({ icon: "box", label: "x" }));
+    expect(() => mockupSchema.parse({ type: "hub", center: "c", tools })).toThrow();
+  });
+});
+
+describe("checklist mockup", () => {
+  it("parses a checklist with items", () => {
+    const m = mockupSchema.parse({ type: "checklist", items: ["A", "B", "C"] });
+    expect(m.type).toBe("checklist");
+  });
+  it("rejects a checklist with 7 items (max 6)", () => {
+    const items = Array.from({ length: 7 }, (_, i) => `item ${i}`);
+    expect(() => mockupSchema.parse({ type: "checklist", items })).toThrow();
+  });
+});

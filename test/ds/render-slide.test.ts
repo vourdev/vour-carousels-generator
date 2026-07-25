@@ -138,6 +138,80 @@ describe("renderSlide", () => {
     expect(html).not.toContain("Card Title");
   });
 
+  it("renders a flow mockup with nodes and arrows", () => {
+    const html = renderSlide({
+      role: "point", counter: "02/07", eyebrow: "ALUR", headline: "Flow", body: "desc",
+      mockup: {
+        type: "flow",
+        steps: [{ label: "Request" }, { label: "Handler", focus: true }, { label: "DB" }],
+        note: "Alur singkat.",
+      },
+    });
+    expect(html).toContain('class="diag-flow"');
+    expect(html).toContain('class="arrow"');
+    expect(html).toContain('class="node filled"');
+    expect(html).toContain("Handler");
+    expect(html).toContain('class="catatan');
+    expect(html).toContain("Alur singkat.");
+    expect(html).not.toContain("FLOW_NODES_INJECT");
+    expect(html).not.toContain("NOTE_INJECT");
+    expect(html).not.toContain("card-peach");
+  });
+
+  it("renders a concept mockup with parent + child nodes", () => {
+    const html = renderSlide({
+      role: "point", counter: "03/07", eyebrow: "TERM", headline: "HTTP", body: "desc",
+      mockup: { type: "concept", parent: "HTTP", children: ["GET", "POST", "PUT", "DELETE"], note: "4 verb inti." },
+    });
+    expect(html).toContain('class="diag-hub"');
+    expect(html).toContain('class="node filled big"');
+    expect(html).toContain('class="children"');
+    expect(html).toContain('class="lines"');
+    expect(html).toContain("DELETE");
+    expect(html).toContain('class="catatan');
+    expect(html).not.toContain("CONCEPT_CHILDREN_INJECT");
+    expect(html).not.toContain("CONCEPT_LINES_INJECT");
+    expect(html).not.toContain("CONCEPT_PARENT_INJECT");
+    expect(html).not.toContain("card-peach");
+  });
+
+  it("renders a hub mockup with inline-svg tool glyphs", () => {
+    const html = renderSlide({
+      role: "point", counter: "04/07", eyebrow: "HUB", headline: "API", body: "desc",
+      mockup: {
+        type: "hub", center: "API",
+        tools: [
+          { icon: "database", label: "DB" },
+          { icon: "cloud", label: "CDN" },
+          { icon: "server", label: "Node" },
+        ],
+      },
+    });
+    expect(html).toContain('class="diag-icon-hub"');
+    expect(html).toContain('class="glyph"');
+    expect(html).toContain("<svg");
+    expect(html).toContain('class="lines"');
+    expect(html).toContain("CDN");
+    expect(html).not.toContain("iconify-icon");
+    expect(html).not.toContain("HUB_TOOLS_INJECT");
+    expect(html).not.toContain("HUB_LINES_INJECT");
+    expect(html).not.toContain("HUB_CENTER_INJECT");
+    expect(html).not.toContain("card-peach");
+  });
+
+  it("renders a checklist mockup with ticks", () => {
+    const html = renderSlide({
+      role: "point", counter: "07/07", eyebrow: "RECAP", headline: "Ringkasan", body: "desc",
+      mockup: { type: "checklist", items: ["Idempotency", "Retry-safe", "Key unik"], note: "Simpan ya." },
+    });
+    expect(html).toContain('class="checklist');
+    expect(html).toContain('class="tick"');
+    expect(html).toContain("Retry-safe");
+    expect(html).toContain('class="catatan');
+    expect(html).not.toContain("CHECKLIST_ITEMS_INJECT");
+    expect(html).not.toContain("card-peach");
+  });
+
   it("renders an outro CTA highlight with strong + sub", () => {
     const html = renderSlide({
       role: "outro", eyebrow: "KESIMPULAN", headline: "Mulai sekarang",

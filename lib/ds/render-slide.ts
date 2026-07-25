@@ -12,6 +12,11 @@ import { comparisonTemplate } from "@/lib/ds/templates/comparison";
 import { stepsTemplate, stepCardPartial } from "@/lib/ds/templates/steps";
 import { calloutTemplate } from "@/lib/ds/templates/callout";
 import { bigstatTemplate } from "@/lib/ds/templates/bigstat";
+import { flowTemplate } from "@/lib/ds/templates/flow";
+import { conceptTemplate } from "@/lib/ds/templates/concept";
+import { hubTemplate } from "@/lib/ds/templates/hub";
+import { checklistTemplate } from "@/lib/ds/templates/checklist";
+import { diagLines } from "@/lib/ds/hub-lines";
 import { deviceTemplate } from "@/lib/ds/templates/device";
 
 function splitHeadline(headline: string, accentWord?: string) {
@@ -23,6 +28,12 @@ function splitHeadline(headline: string, accentWord?: string) {
     accentWord,
     headlinePost: headline.slice(i + accentWord.length),
   };
+}
+
+/** Optional `.catatan` annotation strip shared by the diagram mockups. */
+function renderNote(note?: string): string {
+  if (!note) return "";
+  return `<div class="catatan mt-40"><div class="catatan-label">Catatan</div><div class="catatan-body">${escapeHtml(note)}</div></div>`;
 }
 
 /* ── Mockup renderers ─────────────────────────────────────────── */
@@ -84,6 +95,49 @@ function renderBigstatMockup(m: Extract<Mockup, { type: "bigstat" }>): string {
   });
 }
 
+function renderFlowMockup(m: Extract<Mockup, { type: "flow" }>): string {
+  const nodes = m.steps
+    .map((s) => `<div class="node${s.focus ? " filled" : ""}">${escapeHtml(s.label)}</div>`)
+    .join('<div class="arrow">→</div>');
+  return flowTemplate
+    .replace("FLOW_NODES_INJECT", () => nodes)
+    .replace("NOTE_INJECT", () => renderNote(m.note));
+}
+
+function renderConceptMockup(m: Extract<Mockup, { type: "concept" }>): string {
+  const children = m.children.map((c) => `<div class="node">${escapeHtml(c)}</div>`).join("");
+  const lines = diagLines(m.children.length, { viewH: 380, midY: 200, endY: 300 });
+  return conceptTemplate
+    .replace("CONCEPT_PARENT_INJECT", () => escapeHtml(m.parent))
+    .replace("CONCEPT_LINES_INJECT", () => lines)
+    .replace("CONCEPT_CHILDREN_INJECT", () => children)
+    .replace("NOTE_INJECT", () => renderNote(m.note));
+}
+
+function renderHubMockup(m: Extract<Mockup, { type: "hub" }>): string {
+  const tools = m.tools
+    .map(
+      (t) =>
+        `<div class="tool"><div class="glyph">${renderIcon(t.icon)}</div><div class="label">${escapeHtml(t.label)}</div></div>`
+    )
+    .join("");
+  const lines = diagLines(m.tools.length, { viewH: 400, midY: 220, endY: 320 });
+  return hubTemplate
+    .replace("HUB_CENTER_INJECT", () => escapeHtml(m.center))
+    .replace("HUB_LINES_INJECT", () => lines)
+    .replace("HUB_TOOLS_INJECT", () => tools)
+    .replace("NOTE_INJECT", () => renderNote(m.note));
+}
+
+function renderChecklistMockup(m: Extract<Mockup, { type: "checklist" }>): string {
+  const items = m.items
+    .map((i) => `<li><span class="tick">✓</span> ${escapeHtml(i)}</li>`)
+    .join("");
+  return checklistTemplate
+    .replace("CHECKLIST_ITEMS_INJECT", () => items)
+    .replace("NOTE_INJECT", () => renderNote(m.note));
+}
+
 export function renderDeviceHook(h: Extract<CoverHook, { kind: "device" }>): string {
   const bodyLines = h.lines
     .map((l) => {
@@ -120,6 +174,14 @@ function renderMockup(m: Mockup): string {
       return renderCalloutMockup(m);
     case "bigstat":
       return renderBigstatMockup(m);
+    case "flow":
+      return renderFlowMockup(m);
+    case "concept":
+      return renderConceptMockup(m);
+    case "hub":
+      return renderHubMockup(m);
+    case "checklist":
+      return renderChecklistMockup(m);
     case "card":
       // Card is rendered inline via the point template's {{#card}} block, not here.
       return "";
