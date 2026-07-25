@@ -13,6 +13,8 @@ import { stepsTemplate, stepCardPartial } from "@/lib/ds/templates/steps";
 import { calloutTemplate } from "@/lib/ds/templates/callout";
 import { bigstatTemplate } from "@/lib/ds/templates/bigstat";
 import { flowTemplate } from "@/lib/ds/templates/flow";
+import { conceptTemplate } from "@/lib/ds/templates/concept";
+import { diagLines } from "@/lib/ds/hub-lines";
 import { deviceTemplate } from "@/lib/ds/templates/device";
 
 function splitHeadline(headline: string, accentWord?: string) {
@@ -100,6 +102,16 @@ function renderFlowMockup(m: Extract<Mockup, { type: "flow" }>): string {
     .replace("NOTE_INJECT", () => renderNote(m.note));
 }
 
+function renderConceptMockup(m: Extract<Mockup, { type: "concept" }>): string {
+  const children = m.children.map((c) => `<div class="node">${escapeHtml(c)}</div>`).join("");
+  const lines = diagLines(m.children.length, { viewH: 380, midY: 200, endY: 300 });
+  return conceptTemplate
+    .replace("CONCEPT_PARENT_INJECT", () => escapeHtml(m.parent))
+    .replace("CONCEPT_LINES_INJECT", () => lines)
+    .replace("CONCEPT_CHILDREN_INJECT", () => children)
+    .replace("NOTE_INJECT", () => renderNote(m.note));
+}
+
 export function renderDeviceHook(h: Extract<CoverHook, { kind: "device" }>): string {
   const bodyLines = h.lines
     .map((l) => {
@@ -138,6 +150,8 @@ function renderMockup(m: Mockup): string {
       return renderBigstatMockup(m);
     case "flow":
       return renderFlowMockup(m);
+    case "concept":
+      return renderConceptMockup(m);
     case "card":
       // Card is rendered inline via the point template's {{#card}} block, not here.
       return "";

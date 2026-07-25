@@ -75,6 +75,14 @@ const mockupFlow = z.object({
   note: z.string().max(90).optional(),
 });
 
+/** Concept hub — parent node → 3–4 child pills (term glossaries) */
+const mockupConcept = z.object({
+  type: z.literal("concept"),
+  parent: z.string().max(20),
+  children: z.array(z.string().max(18)).min(3).max(4),
+  note: z.string().max(90).optional(),
+});
+
 export const mockupSchema = z.discriminatedUnion("type", [
   mockupCard,
   mockupTerminal,
@@ -83,6 +91,7 @@ export const mockupSchema = z.discriminatedUnion("type", [
   mockupCallout,
   mockupBigstat,
   mockupFlow,
+  mockupConcept,
 ]);
 
 export type Mockup = z.infer<typeof mockupSchema>;

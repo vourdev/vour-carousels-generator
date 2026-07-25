@@ -183,3 +183,16 @@ describe("flow mockup", () => {
     expect(() => mockupSchema.parse({ type: "flow", steps: [{ label: "x" }] })).toThrow();
   });
 });
+
+describe("concept mockup", () => {
+  it("parses a concept with 4 children", () => {
+    const m = mockupSchema.parse({
+      type: "concept", parent: "HTTP",
+      children: ["GET", "POST", "PUT", "DELETE"],
+    });
+    expect(m.type).toBe("concept");
+  });
+  it("rejects a concept with 2 children (min 3)", () => {
+    expect(() => mockupSchema.parse({ type: "concept", parent: "x", children: ["a", "b"] })).toThrow();
+  });
+});

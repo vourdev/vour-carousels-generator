@@ -158,6 +158,23 @@ describe("renderSlide", () => {
     expect(html).not.toContain("card-peach");
   });
 
+  it("renders a concept mockup with parent + child nodes", () => {
+    const html = renderSlide({
+      role: "point", counter: "03/07", eyebrow: "TERM", headline: "HTTP", body: "desc",
+      mockup: { type: "concept", parent: "HTTP", children: ["GET", "POST", "PUT", "DELETE"], note: "4 verb inti." },
+    });
+    expect(html).toContain('class="diag-hub"');
+    expect(html).toContain('class="node filled big"');
+    expect(html).toContain('class="children"');
+    expect(html).toContain('class="lines"');
+    expect(html).toContain("DELETE");
+    expect(html).toContain('class="catatan');
+    expect(html).not.toContain("CONCEPT_CHILDREN_INJECT");
+    expect(html).not.toContain("CONCEPT_LINES_INJECT");
+    expect(html).not.toContain("CONCEPT_PARENT_INJECT");
+    expect(html).not.toContain("card-peach");
+  });
+
   it("renders an outro CTA highlight with strong + sub", () => {
     const html = renderSlide({
       role: "outro", eyebrow: "KESIMPULAN", headline: "Mulai sekarang",
