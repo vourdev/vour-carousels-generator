@@ -83,6 +83,17 @@ const mockupConcept = z.object({
   note: z.string().max(90).optional(),
 });
 
+/** Icon hub — center node → 3–4 tool icons via dashed arrows */
+const mockupHub = z.object({
+  type: z.literal("hub"),
+  center: z.string().max(20),
+  tools: z
+    .array(z.object({ icon: iconField, label: z.string().max(16) }))
+    .min(3)
+    .max(4),
+  note: z.string().max(90).optional(),
+});
+
 export const mockupSchema = z.discriminatedUnion("type", [
   mockupCard,
   mockupTerminal,
@@ -92,6 +103,7 @@ export const mockupSchema = z.discriminatedUnion("type", [
   mockupBigstat,
   mockupFlow,
   mockupConcept,
+  mockupHub,
 ]);
 
 export type Mockup = z.infer<typeof mockupSchema>;

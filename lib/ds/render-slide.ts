@@ -14,6 +14,7 @@ import { calloutTemplate } from "@/lib/ds/templates/callout";
 import { bigstatTemplate } from "@/lib/ds/templates/bigstat";
 import { flowTemplate } from "@/lib/ds/templates/flow";
 import { conceptTemplate } from "@/lib/ds/templates/concept";
+import { hubTemplate } from "@/lib/ds/templates/hub";
 import { diagLines } from "@/lib/ds/hub-lines";
 import { deviceTemplate } from "@/lib/ds/templates/device";
 
@@ -112,6 +113,21 @@ function renderConceptMockup(m: Extract<Mockup, { type: "concept" }>): string {
     .replace("NOTE_INJECT", () => renderNote(m.note));
 }
 
+function renderHubMockup(m: Extract<Mockup, { type: "hub" }>): string {
+  const tools = m.tools
+    .map(
+      (t) =>
+        `<div class="tool"><div class="glyph">${renderIcon(t.icon)}</div><div class="label">${escapeHtml(t.label)}</div></div>`
+    )
+    .join("");
+  const lines = diagLines(m.tools.length, { viewH: 400, midY: 220, endY: 320 });
+  return hubTemplate
+    .replace("HUB_CENTER_INJECT", () => escapeHtml(m.center))
+    .replace("HUB_LINES_INJECT", () => lines)
+    .replace("HUB_TOOLS_INJECT", () => tools)
+    .replace("NOTE_INJECT", () => renderNote(m.note));
+}
+
 export function renderDeviceHook(h: Extract<CoverHook, { kind: "device" }>): string {
   const bodyLines = h.lines
     .map((l) => {
@@ -152,6 +168,8 @@ function renderMockup(m: Mockup): string {
       return renderFlowMockup(m);
     case "concept":
       return renderConceptMockup(m);
+    case "hub":
+      return renderHubMockup(m);
     case "card":
       // Card is rendered inline via the point template's {{#card}} block, not here.
       return "";

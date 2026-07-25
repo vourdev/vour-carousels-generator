@@ -196,3 +196,25 @@ describe("concept mockup", () => {
     expect(() => mockupSchema.parse({ type: "concept", parent: "x", children: ["a", "b"] })).toThrow();
   });
 });
+
+describe("hub mockup", () => {
+  it("parses a hub and coerces tool icons to the allowlist", () => {
+    const m = mockupSchema.parse({
+      type: "hub", center: "API",
+      tools: [
+        { icon: "lucide:database", label: "DB" },
+        { icon: "made-up-xyz", label: "Cache" },
+        { icon: "cloud", label: "CDN" },
+      ],
+    });
+    expect(m.type).toBe("hub");
+    if (m.type === "hub") {
+      expect(m.tools[0].icon).toBe("database");
+      expect(m.tools[1].icon).toBe("sparkles");
+    }
+  });
+  it("rejects a hub with 5 tools (max 4)", () => {
+    const tools = Array.from({ length: 5 }, () => ({ icon: "box", label: "x" }));
+    expect(() => mockupSchema.parse({ type: "hub", center: "c", tools })).toThrow();
+  });
+});

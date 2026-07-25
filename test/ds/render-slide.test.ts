@@ -175,6 +175,30 @@ describe("renderSlide", () => {
     expect(html).not.toContain("card-peach");
   });
 
+  it("renders a hub mockup with inline-svg tool glyphs", () => {
+    const html = renderSlide({
+      role: "point", counter: "04/07", eyebrow: "HUB", headline: "API", body: "desc",
+      mockup: {
+        type: "hub", center: "API",
+        tools: [
+          { icon: "database", label: "DB" },
+          { icon: "cloud", label: "CDN" },
+          { icon: "server", label: "Node" },
+        ],
+      },
+    });
+    expect(html).toContain('class="diag-icon-hub"');
+    expect(html).toContain('class="glyph"');
+    expect(html).toContain("<svg");
+    expect(html).toContain('class="lines"');
+    expect(html).toContain("CDN");
+    expect(html).not.toContain("iconify-icon");
+    expect(html).not.toContain("HUB_TOOLS_INJECT");
+    expect(html).not.toContain("HUB_LINES_INJECT");
+    expect(html).not.toContain("HUB_CENTER_INJECT");
+    expect(html).not.toContain("card-peach");
+  });
+
   it("renders an outro CTA highlight with strong + sub", () => {
     const html = renderSlide({
       role: "outro", eyebrow: "KESIMPULAN", headline: "Mulai sekarang",
