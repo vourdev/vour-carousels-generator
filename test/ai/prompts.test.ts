@@ -42,6 +42,10 @@ describe("prompt builders", () => {
     expect(planSystem).toContain('"callout"');
     expect(planSystem).toContain('"bigstat"');
     expect(planSystem).toContain('"card"');
+    expect(planSystem).toContain('"flow"');
+    expect(planSystem).toContain('"hub"');
+    expect(planSystem).toContain('"concept"');
+    expect(planSystem).toContain('"checklist"');
   });
   it("briefSystem instructs varied mockup types", () => {
     expect(briefSystem).toMatch(/Terminal/);
@@ -77,6 +81,11 @@ describe("planSystem", () => {
   it("makes the cover hook optional (text-only intro allowed)", () => {
     expect(planSystem).toMatch(/hook is OPTIONAL/);
     expect(planSystem).toMatch(/text-only cover/i);
+  });
+  it("makes mockup choice context-driven and caps terminal at once per deck", () => {
+    expect(planSystem).toMatch(/CONTEXT-DRIVEN MOCKUP CHOICE/);
+    expect(planSystem).toMatch(/ONLY when the slide shows real code/);
+    expect(planSystem).toMatch(/AT MOST ONCE per deck/);
   });
 });
 
