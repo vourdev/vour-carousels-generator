@@ -1,5 +1,3 @@
-import { chromium } from "playwright";
-
 const SLIDE_W = 1080;
 const SLIDE_H = 1350;
 const READY_TIMEOUT_MS = 6000;
@@ -13,6 +11,7 @@ export async function captureCarouselServer(
   html: string,
   opts: { pixelRatio?: number; quality?: number } = {}
 ): Promise<Buffer[]> {
+  const { chromium } = await import("playwright");
   const pixelRatio = opts.pixelRatio ?? 2;
   const quality = opts.quality ?? 92;
 
