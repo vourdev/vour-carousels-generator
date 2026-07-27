@@ -1,4 +1,5 @@
 import { toBlob } from "html-to-image";
+import { inlineFontFaceCss } from "@/lib/ds/fonts-inline";
 
 const SLIDE_W = 1080;
 const SLIDE_H = 1350;
@@ -74,6 +75,17 @@ export async function captureCarousel(
         width: SLIDE_W,
         height: SLIDE_H,
         skipFonts: false,
+        // html-to-image's automatic used-font detection walks the cloned
+        // tree checking `child instanceof HTMLElement` — but `HTMLElement`
+        // here resolves to the *parent* window's constructor while the
+        // slide DOM lives in this hidden iframe's own realm, so the check
+        // is always false and traversal never descends past <section>.
+        // Only the section's own inherited font-family (Nunito) ends up
+        // "used", so every other embedded font (Sora, JetBrains Mono) gets
+        // silently dropped from the exported image — text falls back to
+        // the browser's default serif. Passing fontEmbedCSS explicitly
+        // skips that broken auto-detection entirely.
+        fontEmbedCSS: inlineFontFaceCss,
       });
       if (!blob) throw new Error("html-to-image returned no blob");
       blobs.push(blob);
