@@ -823,6 +823,7 @@ export function Wizard({ models }: { models: ModelId[] }) {
       if (text) {
         setBrief(text);
         setFinalBrief(text);
+        setUploadedHtml(null);
         setStep(2);
         setActiveTab("brief");
         setMdMode("split");
@@ -870,6 +871,7 @@ export function Wizard({ models }: { models: ModelId[] }) {
         const res = await briefAction(currentIdea, model as ModelId);
         setFinalBrief(res);
         setIsTyping(true);
+        setUploadedHtml(null);
         setStep(2);
         setActiveTab("brief");
         addMessage("ai", "Brief outline berhasil dibuat! Silakan tinjau draf markdown di panel kanan. Anda bisa langsung mengedit teksnya atau ketik revisi di kolom chat.");
@@ -910,6 +912,7 @@ export function Wizard({ models }: { models: ModelId[] }) {
         const generatedPlan = await planAction(brief, model as ModelId);
         setPlan(generatedPlan);
         setApproved(false);
+        setUploadedHtml(null);
         setStep(3);
         setActiveTab("preview");
         addMessage("ai", "Slide deck HTML berhasil dirender! Anda sekarang dapat meninjau visualnya pada tab 'Live Design Preview'. Jika butuh penyesuaian, ketik revisi Anda di kolom chat.");

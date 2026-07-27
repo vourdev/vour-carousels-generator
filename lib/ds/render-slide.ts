@@ -135,7 +135,7 @@ function renderHubMockup(m: Extract<Mockup, { type: "hub" }>): string {
         `<div class="tool"><div class="glyph">${renderIcon(t.icon)}</div><div class="label">${escapeHtml(t.label)}</div></div>`
     )
     .join("");
-  const lines = diagLines(m.tools.length, { viewH: 400, midY: 220, endY: 320 });
+  const lines = diagLines(m.tools.length, { viewH: 400, midY: 220, endY: 320, dashed: true });
   return injectSentinels(hubTemplate, {
     HUB_CENTER_INJECT: escapeHtml(m.center),
     HUB_LINES_INJECT: lines,
