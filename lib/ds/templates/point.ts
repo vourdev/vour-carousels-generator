@@ -1,5 +1,5 @@
 // Verbatim <section> markup for the point role, copied from
-// "Vour Dev Design System/bundle/TEMPLATE-editorial-v3.html" (§ "SLIDE · POINT (with full info card)").
+// "design-system/TEMPLATE-editorial-v3.html" (§ "SLIDE · POINT (with full info card)").
 // [bracket] placeholders rewritten as {{slot}} markers matching Slide["point"] fields.
 // The info card is always present in the source markup; it is wrapped in
 // {{#card}}…{{/card}} here so slides without a `card` field omit it entirely.

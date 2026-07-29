@@ -1,5 +1,5 @@
 // BigStat mockup — one standout metric in editorial style.
-// Adapted from "Vour Dev Design System" BigStat component.
+// Adapted from "design-system" BigStat component.
 export const bigstatTemplate = String.raw`<div class="diag-wrap mt-40">
     <div style="text-align:center;width:100%;padding:24px 0">
       <div style="font-family:'Sora',sans-serif;font-weight:800;font-size:96px;color:#E94B19;line-height:1">{{bigstatNumber}}</div>

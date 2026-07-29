@@ -1,5 +1,5 @@
 // Comparison bars mockup — two stacked panels: loser (stone) vs winner (peach).
-// Adapted from "Vour Dev Design System/bundle/TEMPLATE-editorial-v3.html" (§ "D4 · Comparison bars").
+// Adapted from "design-system/TEMPLATE-editorial-v3.html" (§ "D4 · Comparison bars").
 export const comparisonTemplate = String.raw`<div class="diag-wrap mt-40">
   <div style="display:flex;flex-direction:column;gap:20px;width:100%">
     <div class="diag-bars" style="width:100%">

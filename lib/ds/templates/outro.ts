@@ -1,5 +1,5 @@
 // Verbatim <section> markup for the outro role, copied from
-// "Vour Dev Design System/bundle/TEMPLATE-editorial-v3.html" (§ "SLIDE · OUTRO").
+// "design-system/TEMPLATE-editorial-v3.html" (§ "SLIDE · OUTRO").
 // Restores the bundle's counter/eyebrow + .highlight CTA block (strong + sub);
 // every {{slot}} here maps to a var renderSlide produces.
 export const outroTemplate = String.raw`<section data-screen-label="Outro">

@@ -1,6 +1,6 @@
 export const briefSystem = `You write high-converting, deeply educational carousel briefs for @vourdev, an Indonesian backend engineering & dev-education brand.
 
-You MUST follow this EXACT Markdown structure (matching Vour Dev Design System):
+You MUST follow this EXACT Markdown structure (matching the Vour Dev design system):
 
 # Carousel Content — <Informative, Descriptive & Catchy Title>
 

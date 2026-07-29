@@ -1,5 +1,5 @@
 // Numbered step cards mockup — orange-circled step badges.
-// Adapted from "Vour Dev Design System" NumberedStep component + Solution recipe.
+// Adapted from "design-system" NumberedStep component + Solution recipe.
 // Steps are injected as raw HTML via STEPS_HTML_INJECT sentinel.
 export const stepsTemplate = String.raw`<div class="diag-wrap mt-40">
     <div style="display:flex;flex-direction:column;gap:16px;width:100%">STEPS_HTML_INJECT</div>

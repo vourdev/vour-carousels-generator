@@ -1,5 +1,5 @@
 // Icon-hub mockup — center → tool glyphs. Adapted from
-// "Vour Dev Design System/bundle/TEMPLATE-editorial-v3.html" (§ "D5 · Icon hub").
+// "design-system/TEMPLATE-editorial-v3.html" (§ "D5 · Icon hub").
 // Tool glyphs are injected as inline allowlist SVGs; `.glyph svg` CSS sizes/colors them.
 export const hubTemplate = String.raw`<div class="diag-wrap mt-40">
     <div class="diag-icon-hub">

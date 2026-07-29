@@ -1,4 +1,4 @@
-// Verbatim from "Vour Dev Design System/bundle/TEMPLATE-editorial-v3.html" <style> block.
+// Verbatim from "design-system/TEMPLATE-editorial-v3.html" <style> block.
 // DO NOT EDIT — regenerate by re-copying if the design system updates.
 export const carouselCss = String.raw`
   /* ════════════════════════════════════════════════════════

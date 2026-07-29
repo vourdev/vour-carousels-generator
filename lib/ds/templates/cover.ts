@@ -1,5 +1,5 @@
 // Verbatim <section> markup for the cover role, copied from
-// "Vour Dev Design System/bundle/TEMPLATE-editorial-v3.html" (§ "SLIDE 1 · COVER").
+// "design-system/TEMPLATE-editorial-v3.html" (§ "SLIDE 1 · COVER").
 // [bracket] placeholders rewritten as {{slot}} markers matching Slide["cover"] fields.
 export const coverTemplate = String.raw`<section data-screen-label="01 · Cover" class="cover-editorial">
   <div class="brand-row">

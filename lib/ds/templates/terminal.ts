@@ -1,5 +1,5 @@
 // Terminal mockup — Mac-style window with syntax-highlighted code lines.
-// Adapted from "Vour Dev Design System/bundle/TEMPLATE-editorial-v3.html" (§ "D8 · Terminal code").
+// Adapted from "design-system/TEMPLATE-editorial-v3.html" (§ "D8 · Terminal code").
 // Lines are injected as raw HTML via TERMINAL_LINES_INJECT sentinel (since fillTemplate escapes values).
 export const terminalTemplate = String.raw`<div class="diag-wrap mt-40">
     <div class="terminal">
