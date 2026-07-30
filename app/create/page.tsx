@@ -8,7 +8,7 @@ export default async function CreatePage() {
   await requireSession();
   const models = availableModels().filter((m) => m === "omniroute");
   return (
-    <main className="mx-auto max-w-[1400px] min-h-screen p-4 md:p-6 flex flex-col gap-6">
+    <main className="mx-auto max-w-350 min-h-screen p-4 md:p-6 flex flex-col gap-6">
       <div className="flex items-center justify-between shrink-0 border-b border-hairline pb-4">
         <div className="flex items-center gap-3">
           <Link href="/" className="size-10 rounded-full overflow-hidden bg-[#07070e] border border-white/20 shadow-md shrink-0 hover:scale-105 transition-transform">
