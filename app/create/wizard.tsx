@@ -300,6 +300,11 @@ export function Wizard({
   const [bankTopics, setBankTopics] = useState<Topic[]>([]);
   const initialTopicApplied = useRef(false);
 
+  // Step-1 brief generation runs outside useTransition so it can be cancelled:
+  // bumping the run id makes the in-flight result a no-op when it lands.
+  const [briefPending, setBriefPending] = useState(false);
+  const genRunRef = useRef(0);
+
   // Prompt history state (terminal-style ArrowUp / ArrowDown navigation)
   const [promptHistory, setPromptHistory] = useState<string[]>([]);
   const [historyIndex, setHistoryIndex] = useState<number>(-1);
@@ -535,13 +540,11 @@ export function Wizard({
     }
   }, [step]);
 
-  // Step 1: load pickable Topic Bank entries (queued/idea) for the chips row.
+  // Step 1: load pickable Topic Bank entries (queued/idea) for the dropdown.
   useEffect(() => {
     if (!mounted || step !== 1) return;
-    listTopicsAction({ limit: 30 })
-      .then((all) =>
-        setBankTopics(all.filter((t) => t.status === "idea" || t.status === "queued").slice(0, 6))
-      )
+    listTopicsAction({ limit: 50 })
+      .then((all) => setBankTopics(all.filter((t) => t.status === "idea" || t.status === "queued")))
       .catch(() => {});
   }, [mounted, step]);
 
@@ -955,17 +958,39 @@ export function Wizard({
     const currentIdea = idea;
     addMessage("user", currentIdea);
     setIdea("");
+    runBriefGeneration(
+      () => briefAction(currentIdea, model as ModelId),
+      "Gagal memproses"
+    );
+  }
 
-    start(async () => {
-      try {
-        const res = await briefAction(currentIdea, model as ModelId);
+  /** Cancellable brief run: result is discarded if the user hit Stop meanwhile. */
+  function runBriefGeneration(fn: () => Promise<string>, errorLabel: string) {
+    const runId = ++genRunRef.current;
+    setBriefPending(true);
+    fn()
+      .then((res) => {
+        if (genRunRef.current !== runId) return; // cancelled — ignore the result
         applyBriefResult(res);
-      } catch (e) {
+      })
+      .catch((e) => {
+        if (genRunRef.current !== runId) return;
         const msg = e instanceof Error ? e.message : "failed";
         toast.error(msg);
-        addMessage("ai", `Gagal memproses: ${summarizeError(msg)}`);
-      }
-    });
+        addMessage("ai", `${errorLabel}: ${summarizeError(msg)}`);
+      })
+      .finally(() => {
+        if (genRunRef.current === runId) setBriefPending(false);
+      });
+  }
+
+  /** Stop button (step 1): abandon the in-flight brief generation. */
+  function handleCancelGeneration() {
+    genRunRef.current++;
+    setBriefPending(false);
+    if (typewriterIntervalRef.current) clearInterval(typewriterIntervalRef.current);
+    setIsTyping(false);
+    addMessage("ai", "Generasi dibatalkan. Silakan ketik ide baru atau pilih topic lain.");
   }
 
   /** Topic Bank trigger: expand a saved topic straight into a brief (gate 1). */
@@ -977,16 +1002,10 @@ export function Wizard({
     setTopicId(t.id);
     setTopicTitle(t.title);
     addMessage("user", `Buat carousel dari topic: ${t.title}`);
-    start(async () => {
-      try {
-        const res = await expandTopicBriefAction(t.id, model as ModelId);
-        applyBriefResult(res);
-      } catch (e) {
-        const msg = e instanceof Error ? e.message : "failed";
-        toast.error(msg);
-        addMessage("ai", `Gagal memproses topic: ${summarizeError(msg)}`);
-      }
-    });
+    runBriefGeneration(
+      () => expandTopicBriefAction(t.id, model as ModelId),
+      "Gagal memproses topic"
+    );
   }
 
   function handlePlanGeneration() {
@@ -1149,26 +1168,6 @@ export function Wizard({
                   Ketik ide topik di bawah ini atau impor berkas Markdown / HTML untuk langsung menghasilkan slide carousel profesional.
                 </p>
                
-                {bankTopics.length > 0 && (
-                  <div className="flex flex-col items-center gap-1.5 mt-2">
-                    <span className="text-[10px] font-mono uppercase tracking-wider text-muted-foreground">
-                      Dari Topic Bank
-                    </span>
-                    <div className="flex flex-wrap items-center justify-center gap-1.5">
-                      {bankTopics.map((t) => (
-                        <button
-                          key={t.id}
-                          onClick={() => startBriefFromTopic(t)}
-                          disabled={pending || !model}
-                          className="text-[11px] font-mono bg-primary/5 border border-primary/20 hover:border-primary/50 px-2.5 py-1 rounded-xl transition-colors text-foreground shadow-2xs disabled:opacity-50"
-                          title={t.description || t.title}
-                        >
-                          📌 {t.title}
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-                )}
               </div>
             )}
 
@@ -1192,16 +1191,27 @@ export function Wizard({
                 </div>
               </div>
             ))}
-            {pending && (
-              <div className="flex gap-2.5 self-start max-w-[85%] animate-pulse">
-                <div className="size-7 rounded-full bg-primary/10 border border-primary/20 flex items-center justify-center">
+            {(pending || briefPending) && (
+              <div className="flex items-center gap-2.5 self-start max-w-[85%]">
+                <div className="size-7 rounded-full bg-primary/10 border border-primary/20 flex items-center justify-center animate-pulse">
                   <Sparkles className="size-3.5 text-indigo-500 animate-spin" />
                 </div>
-                <div className="p-3.5 bg-card border border-hairline rounded-2xl rounded-tl-none text-xs text-muted-foreground flex items-center gap-1.5">
+                <div className="p-3.5 bg-card border border-hairline rounded-2xl rounded-tl-none text-xs text-muted-foreground flex items-center gap-1.5 animate-pulse">
                   <div className="size-1.5 rounded-full bg-primary animate-bounce delay-75" />
                   <div className="size-1.5 rounded-full bg-primary animate-bounce delay-150" />
                   <div className="size-1.5 rounded-full bg-primary animate-bounce delay-300" />
                 </div>
+                {briefPending && (
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    className="h-7 text-xs gap-1 px-2.5 border-hairline text-muted-foreground hover:text-destructive"
+                    onClick={handleCancelGeneration}
+                  >
+                    <XCircle className="size-3.5" />
+                    Stop
+                  </Button>
+                )}
               </div>
             )}
             <div ref={chatEndRef} />
@@ -1294,8 +1304,29 @@ export function Wizard({
                 )}
               </div>
 
-              {/* Import Alternative Files */}
-              <div className="flex items-center gap-1.5">
+              {/* Topic Bank dropdown + Import Alternative Files */}
+              <div className="flex items-center gap-1.5 min-w-0">
+                {bankTopics.length > 0 && (
+                  <Select
+                    value=""
+                    onValueChange={(id) => {
+                      const t = bankTopics.find((b) => b.id === id);
+                      if (t) startBriefFromTopic(t);
+                    }}
+                    disabled={pending || briefPending || !model}
+                  >
+                    <SelectTrigger className="h-7 w-40 md:w-56 text-xs border-hairline bg-primary/5">
+                      <SelectValue placeholder="📌 Dari Topic Bank…" />
+                    </SelectTrigger>
+                    <SelectContent className="max-h-64">
+                      {bankTopics.map((t) => (
+                        <SelectItem key={t.id} value={t.id} className="text-xs">
+                          {t.title}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                )}
                 <Input
                   type="file"
                   accept=".md"
@@ -1345,13 +1376,13 @@ export function Wizard({
                 }}
                 placeholder="Ketik ide atau topik konten di sini... (misal: idempotency di API)"
                 className="pr-12 h-11 text-xs rounded-xl border-hairline"
-                disabled={pending}
+                disabled={pending || briefPending}
                 onKeyDown={(e) => handlePromptKeyDown(e, idea, setIdea, handleBriefGeneration)}
               />
               <Button 
                 size="icon" 
                 className="absolute right-1 size-9 rounded-lg" 
-                disabled={pending || !idea.trim() || !model}
+                disabled={pending || briefPending || !idea.trim() || !model}
                 onClick={handleBriefGeneration}
               >
                 <Send className="size-4" />
