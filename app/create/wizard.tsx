@@ -20,6 +20,13 @@ import type { ModelId } from "@/lib/ai/registry";
 import type { SlidePlan } from "@/lib/ds/schema";
 import { briefAction, planAction, reviseAction, uploadSingleImageAction, publishAction, getPublishingConfigAction } from "./actions";
 import { saveExportedCarouselAction, markCarouselStatusAction, deleteCarouselAction } from "@/app/history/actions";
+import {
+  expandTopicBriefAction,
+  linkTopicCarouselAction,
+  listTopicsAction,
+  markTopicPublishedAction,
+} from "@/app/topics/actions";
+import type { Topic } from "@/lib/topics/bank";
 import { Sparkles, Brain, Zap, RotateCcw, Check, Send, Eye, FileText, LayoutGrid, User, Upload, Clock, CheckCircle2, XCircle, AlertCircle, Calendar, Globe, ArrowLeft, Search, ChevronDown, SlidersHorizontal } from "lucide-react";
 import { toast } from "sonner";
 
@@ -233,7 +240,13 @@ function renderMarkdown(md: string) {
   return <div className="space-y-0.5">{elements}</div>;
 }
 
-export function Wizard({ models }: { models: ModelId[] }) {
+export function Wizard({
+  models,
+  initialTopic,
+}: {
+  models: ModelId[];
+  initialTopic?: Topic | null;
+}) {
   const [mounted, setMounted] = useState(false);
   const [step, setStep] = useState<number>(1);
   const [model, setModel] = useState<ModelId | "">(models[0] ?? "");
@@ -280,6 +293,12 @@ export function Wizard({ models }: { models: ModelId[] }) {
 
   const [editableTitle, setEditableTitle] = useState("");
   const [editableCaption, setEditableCaption] = useState("");
+
+  // Topic Bank linkage — set when the wizard is started from a saved topic.
+  const [topicId, setTopicId] = useState<string | null>(null);
+  const [topicTitle, setTopicTitle] = useState<string | null>(null);
+  const [bankTopics, setBankTopics] = useState<Topic[]>([]);
+  const initialTopicApplied = useRef(false);
 
   // Prompt history state (terminal-style ArrowUp / ArrowDown navigation)
   const [promptHistory, setPromptHistory] = useState<string[]>([]);
@@ -417,6 +436,8 @@ export function Wizard({ models }: { models: ModelId[] }) {
         if (parsed.editableTitle) setEditableTitle(parsed.editableTitle);
         if (parsed.editableCaption) setEditableCaption(parsed.editableCaption);
         if (parsed.uploadedImageUrls) setUploadedImageUrls(parsed.uploadedImageUrls);
+        if (parsed.topicId) setTopicId(parsed.topicId);
+        if (parsed.topicTitle) setTopicTitle(parsed.topicTitle);
       } catch (e) {
         console.error("Failed to parse saved draft", e);
       }
@@ -443,6 +464,8 @@ export function Wizard({ models }: { models: ModelId[] }) {
       editableTitle,
       editableCaption,
       uploadedImageUrls,
+      topicId,
+      topicTitle,
     };
     // Debounced: coalesce rapid changes (keystrokes, 15ms typewriter ticks) into
     // one write instead of serializing the full draft on every state change.
@@ -467,6 +490,8 @@ export function Wizard({ models }: { models: ModelId[] }) {
     editableTitle,
     editableCaption,
     uploadedImageUrls,
+    topicId,
+    topicTitle,
   ]);
 
   // Auto-scroll chat feed to bottom
@@ -509,6 +534,30 @@ export function Wizard({ models }: { models: ModelId[] }) {
       getPublishingConfigAction().then(setPubConfig).catch(console.error);
     }
   }, [step]);
+
+  // Step 1: load pickable Topic Bank entries (queued/idea) for the chips row.
+  useEffect(() => {
+    if (!mounted || step !== 1) return;
+    listTopicsAction({ limit: 30 })
+      .then((all) =>
+        setBankTopics(all.filter((t) => t.status === "idea" || t.status === "queued").slice(0, 6))
+      )
+      .catch(() => {});
+  }, [mounted, step]);
+
+  // Arriving via /create?topic=… — auto-start the brief from that topic.
+  useEffect(() => {
+    if (!mounted || !initialTopic || initialTopicApplied.current) return;
+    initialTopicApplied.current = true;
+    if (step !== 1 || brief) {
+      toast.info(
+        `Ada draft yang sedang berjalan. Reset dulu untuk mulai dari topic "${initialTopic.title}".`
+      );
+      return;
+    }
+    startBriefFromTopic(initialTopic);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [mounted, initialTopic, step, brief]);
 
   // Clean up object URLs on unmount/re-export
   useEffect(() => {
@@ -561,6 +610,12 @@ export function Wizard({ models }: { models: ModelId[] }) {
             imageUrls: [], // Defer upload to Cloudinary until publishing
           });
           setCarouselId(id);
+          // Topic Bank trigger: mark the source topic as generated + link it.
+          if (topicId) {
+            linkTopicCarouselAction(topicId, id).catch((err) =>
+              console.error("failed to link topic to carousel", err)
+            );
+          }
         } catch (err) {
           console.error("history save failed", err);
         }
@@ -666,6 +721,10 @@ export function Wizard({ models }: { models: ModelId[] }) {
           title: editableTitle,
           caption: editableCaption,
         }).catch(console.error);
+      }
+      // Topic Bank trigger: the source topic is now published/scheduled.
+      if (topicId) {
+        markTopicPublishedAction(topicId).catch(console.error);
       }
 
       addMessage(
@@ -791,6 +850,8 @@ export function Wizard({ models }: { models: ModelId[] }) {
     setDueAt("");
     setCarouselId(null);
     setUploadedHtml(null);
+    setTopicId(null);
+    setTopicTitle(null);
     setPublishState({ status: "idle", progressMsg: "" });
     setMessages([
       {
@@ -860,46 +921,70 @@ export function Wizard({ models }: { models: ModelId[] }) {
     e.target.value = "";
   }
 
+  function applyBriefResult(res: string) {
+    setFinalBrief(res);
+    setIsTyping(true);
+    setUploadedHtml(null);
+    setStep(2);
+    setActiveTab("brief");
+    addMessage("ai", "Brief outline berhasil dibuat! Silakan tinjau draf markdown di panel kanan. Anda bisa langsung mengedit teksnya atau ketik revisi di kolom chat.");
+
+    if (typewriterIntervalRef.current) {
+      clearInterval(typewriterIntervalRef.current);
+    }
+
+    let currentText = "";
+    let i = 0;
+    typewriterIntervalRef.current = setInterval(() => {
+      if (i < res.length) {
+        currentText += res.substring(i, i + 4);
+        setBrief(currentText);
+        i += 4;
+      } else {
+        setBrief(res);
+        setIsTyping(false);
+        if (typewriterIntervalRef.current) {
+          clearInterval(typewriterIntervalRef.current);
+        }
+      }
+    }, 15);
+  }
+
   function handleBriefGeneration() {
     if (!idea.trim() || !model) return;
     const currentIdea = idea;
     addMessage("user", currentIdea);
     setIdea("");
-    
+
     start(async () => {
       try {
         const res = await briefAction(currentIdea, model as ModelId);
-        setFinalBrief(res);
-        setIsTyping(true);
-        setUploadedHtml(null);
-        setStep(2);
-        setActiveTab("brief");
-        addMessage("ai", "Brief outline berhasil dibuat! Silakan tinjau draf markdown di panel kanan. Anda bisa langsung mengedit teksnya atau ketik revisi di kolom chat.");
-
-        if (typewriterIntervalRef.current) {
-          clearInterval(typewriterIntervalRef.current);
-        }
-
-        let currentText = "";
-        let i = 0;
-        typewriterIntervalRef.current = setInterval(() => {
-          if (i < res.length) {
-            currentText += res.substring(i, i + 4);
-            setBrief(currentText);
-            i += 4;
-          } else {
-            setBrief(res);
-            setIsTyping(false);
-            if (typewriterIntervalRef.current) {
-              clearInterval(typewriterIntervalRef.current);
-            }
-          }
-        }, 15);
-
+        applyBriefResult(res);
       } catch (e) {
         const msg = e instanceof Error ? e.message : "failed";
         toast.error(msg);
         addMessage("ai", `Gagal memproses: ${summarizeError(msg)}`);
+      }
+    });
+  }
+
+  /** Topic Bank trigger: expand a saved topic straight into a brief (gate 1). */
+  function startBriefFromTopic(t: { id: string; title: string }) {
+    if (!model) {
+      toast.error("Pilih model AI dulu");
+      return;
+    }
+    setTopicId(t.id);
+    setTopicTitle(t.title);
+    addMessage("user", `Buat carousel dari topic: ${t.title}`);
+    start(async () => {
+      try {
+        const res = await expandTopicBriefAction(t.id, model as ModelId);
+        applyBriefResult(res);
+      } catch (e) {
+        const msg = e instanceof Error ? e.message : "failed";
+        toast.error(msg);
+        addMessage("ai", `Gagal memproses topic: ${summarizeError(msg)}`);
       }
     });
   }
@@ -1035,6 +1120,14 @@ export function Wizard({ models }: { models: ModelId[] }) {
         </Button>
       </div>
 
+      {topicTitle && (
+        <div className="w-full max-w-4xl mx-auto -mt-2">
+          <span className="inline-flex items-center gap-1.5 text-[11px] font-mono bg-primary/5 border border-primary/20 text-muted-foreground px-2.5 py-1 rounded-xl">
+            📌 Topic Bank: <span className="text-foreground font-semibold">{topicTitle}</span>
+          </span>
+        </div>
+      )}
+
       {/* 2. FOCUSED STEP COMPONENT VIEWS */}
 
       {/* STEP 1: CONCEPT & AI PROMPTER COMPONENT */}
@@ -1055,22 +1148,27 @@ export function Wizard({ models }: { models: ModelId[] }) {
                 <p className="text-xs text-muted-foreground max-w-md leading-relaxed">
                   Ketik ide topik di bawah ini atau impor berkas Markdown / HTML untuk langsung menghasilkan slide carousel profesional.
                 </p>
-                <div className="flex flex-wrap items-center justify-center gap-1.5 mt-1">
-                  {[
-                    "5 Tips Idempotency di REST API",
-                    "Koleksi Layout CSS Grid 2026",
-                    "Strategi Content Marketing Instagram",
-                    "Desain UI Glassmorphism"
-                  ].map((chip, idx) => (
-                    <button
-                      key={idx}
-                      onClick={() => setIdea(chip)}
-                      className="text-[11px] font-mono bg-card border border-hairline hover:border-primary/40 px-2.5 py-1 rounded-xl transition-colors text-muted-foreground hover:text-foreground shadow-2xs"
-                    >
-                      💡 {chip}
-                    </button>
-                  ))}
-                </div>
+               
+                {bankTopics.length > 0 && (
+                  <div className="flex flex-col items-center gap-1.5 mt-2">
+                    <span className="text-[10px] font-mono uppercase tracking-wider text-muted-foreground">
+                      Dari Topic Bank
+                    </span>
+                    <div className="flex flex-wrap items-center justify-center gap-1.5">
+                      {bankTopics.map((t) => (
+                        <button
+                          key={t.id}
+                          onClick={() => startBriefFromTopic(t)}
+                          disabled={pending || !model}
+                          className="text-[11px] font-mono bg-primary/5 border border-primary/20 hover:border-primary/50 px-2.5 py-1 rounded-xl transition-colors text-foreground shadow-2xs disabled:opacity-50"
+                          title={t.description || t.title}
+                        >
+                          📌 {t.title}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                )}
               </div>
             )}
 
