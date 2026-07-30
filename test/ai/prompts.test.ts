@@ -29,6 +29,15 @@ describe("prompt builders", () => {
     expect(p).toContain('{"slides":[]}');
     expect(p).toContain("shorten slide 3");
   });
+  it("enforces exactly 5 hashtags with fyp first and vourdev last (TikTok cap)", () => {
+    for (const sys of [briefSystem, planSystem, reviseSystem]) {
+      expect(sys).toMatch(/EXACTLY 5/);
+      expect(sys).toMatch(/TikTok accepts at most 5/);
+      expect(sys).toMatch(/"fyp" first/);
+      expect(sys).toMatch(/"vourdev" last/);
+    }
+    expect(briefSystem).toContain("#fyp #<topic1> #<topic2> #<topic3> #vourdev");
+  });
   it("briefSystem and planSystem enforce #fyp hashtag and informative content", () => {
     expect(briefSystem).toMatch(/#fyp/);
     expect(planSystem).toMatch(/fyp/);
