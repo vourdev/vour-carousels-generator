@@ -27,7 +27,7 @@ import {
   markTopicPublishedAction,
 } from "@/app/topics/actions";
 import type { Topic } from "@/lib/topics/bank";
-import { Sparkles, Brain, Zap, RotateCcw, Check, Send, Eye, FileText, LayoutGrid, User, Upload, Clock, CheckCircle2, XCircle, AlertCircle, Calendar, Globe, ArrowLeft, Search, ChevronDown, SlidersHorizontal } from "lucide-react";
+import { Sparkles, Brain, Zap, RotateCcw, Check, Send, Eye, FileText, LayoutGrid, User, Upload, Clock, CheckCircle2, XCircle, AlertCircle, Calendar, Globe, ArrowLeft, Search, ChevronDown, SlidersHorizontal, Square } from "lucide-react";
 import { toast } from "sonner";
 
 interface Message {
@@ -298,12 +298,15 @@ export function Wizard({
   const [topicId, setTopicId] = useState<string | null>(null);
   const [topicTitle, setTopicTitle] = useState<string | null>(null);
   const [bankTopics, setBankTopics] = useState<Topic[]>([]);
+  const [topicPopoverOpen, setTopicPopoverOpen] = useState(false);
+  const [topicSearch, setTopicSearch] = useState("");
   const initialTopicApplied = useRef(false);
 
   // Step-1 brief generation runs outside useTransition so it can be cancelled:
   // bumping the run id makes the in-flight result a no-op when it lands.
   const [briefPending, setBriefPending] = useState(false);
   const genRunRef = useRef(0);
+  const abortRef = useRef<AbortController | null>(null);
 
   // Prompt history state (terminal-style ArrowUp / ArrowDown navigation)
   const [promptHistory, setPromptHistory] = useState<string[]>([]);
@@ -824,6 +827,7 @@ export function Wizard({
   };
 
   async function handleReset() {
+    abortRef.current?.abort();
     if (typewriterIntervalRef.current) {
       clearInterval(typewriterIntervalRef.current);
     }
@@ -845,6 +849,7 @@ export function Wizard({
     setEditableTitle("");
     setEditableCaption("");
     setIsTyping(false);
+    setBriefPending(false);
     setActiveTab("brief");
     setMdMode("split");
     setBlobs([]);
@@ -959,22 +964,31 @@ export function Wizard({
     addMessage("user", currentIdea);
     setIdea("");
     runBriefGeneration(
-      () => briefAction(currentIdea, model as ModelId),
-      "Gagal memproses"
+      (signal) => fetchBrief(currentIdea, signal),
+      "Gagal memproses",
     );
   }
 
   /** Cancellable brief run: result is discarded if the user hit Stop meanwhile. */
-  function runBriefGeneration(fn: () => Promise<string>, errorLabel: string) {
+  function runBriefGeneration(
+    fetchFn: (signal: AbortSignal) => Promise<string>,
+    errorLabel: string,
+  ) {
+    // Abort any in-flight request first
+    abortRef.current?.abort();
+    const controller = new AbortController();
+    abortRef.current = controller;
     const runId = ++genRunRef.current;
     setBriefPending(true);
-    fn()
-      .then((res) => {
-        if (genRunRef.current !== runId) return; // cancelled — ignore the result
-        applyBriefResult(res);
+
+    fetchFn(controller.signal)
+      .then((brief) => {
+        if (genRunRef.current !== runId) return;
+        applyBriefResult(brief);
       })
       .catch((e) => {
         if (genRunRef.current !== runId) return;
+        if (e.name === "AbortError") return;
         const msg = e instanceof Error ? e.message : "failed";
         toast.error(msg);
         addMessage("ai", `${errorLabel}: ${summarizeError(msg)}`);
@@ -984,8 +998,37 @@ export function Wizard({
       });
   }
 
-  /** Stop button (step 1): abandon the in-flight brief generation. */
+  async function fetchBrief(idea: string, signal: AbortSignal): Promise<string> {
+    const r = await fetch("/api/generate-brief", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ idea, modelId: model }),
+      signal,
+    });
+    if (!r.ok) {
+      const data = await r.json().catch(() => ({}));
+      throw new Error(data.error || `HTTP ${r.status}`);
+    }
+    return (await r.json()).brief;
+  }
+
+  async function fetchBriefFromTopic(topicId: string, signal: AbortSignal): Promise<string> {
+    const r = await fetch("/api/generate-brief-from-topic", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ topicId, modelId: model }),
+      signal,
+    });
+    if (!r.ok) {
+      const data = await r.json().catch(() => ({}));
+      throw new Error(data.error || `HTTP ${r.status}`);
+    }
+    return (await r.json()).brief;
+  }
+
+/** Stop button (step 1): abandon the in-flight brief generation. */
   function handleCancelGeneration() {
+    abortRef.current?.abort();
     genRunRef.current++;
     setBriefPending(false);
     if (typewriterIntervalRef.current) clearInterval(typewriterIntervalRef.current);
@@ -1003,8 +1046,8 @@ export function Wizard({
     setTopicTitle(t.title);
     addMessage("user", `Buat carousel dari topic: ${t.title}`);
     runBriefGeneration(
-      () => expandTopicBriefAction(t.id, model as ModelId),
-      "Gagal memproses topic"
+      (signal) => fetchBriefFromTopic(t.id, signal),
+      "Gagal memproses topic",
     );
   }
 
@@ -1201,17 +1244,6 @@ export function Wizard({
                   <div className="size-1.5 rounded-full bg-primary animate-bounce delay-150" />
                   <div className="size-1.5 rounded-full bg-primary animate-bounce delay-300" />
                 </div>
-                {briefPending && (
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    className="h-7 text-xs gap-1 px-2.5 border-hairline text-muted-foreground hover:text-destructive"
-                    onClick={handleCancelGeneration}
-                  >
-                    <XCircle className="size-3.5" />
-                    Stop
-                  </Button>
-                )}
               </div>
             )}
             <div ref={chatEndRef} />
@@ -1307,25 +1339,69 @@ export function Wizard({
               {/* Topic Bank dropdown + Import Alternative Files */}
               <div className="flex items-center gap-1.5 min-w-0">
                 {bankTopics.length > 0 && (
-                  <Select
-                    value=""
-                    onValueChange={(id) => {
-                      const t = bankTopics.find((b) => b.id === id);
-                      if (t) startBriefFromTopic(t);
-                    }}
-                    disabled={pending || briefPending || !model}
-                  >
-                    <SelectTrigger className="h-7 w-40 md:w-56 text-xs border-hairline bg-primary/5">
-                      <SelectValue placeholder="📌 Dari Topic Bank…" />
-                    </SelectTrigger>
-                    <SelectContent className="max-h-64">
-                      {bankTopics.map((t) => (
-                        <SelectItem key={t.id} value={t.id} className="text-xs">
-                          {t.title}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                  <div className="relative">
+                    <button
+                      type="button"
+                      onClick={() => setTopicPopoverOpen(!topicPopoverOpen)}
+                      disabled={pending || briefPending || !model}
+                      className="flex items-center gap-2 px-3 py-1.5 rounded-xl border border-hairline bg-primary/5 hover:bg-primary/10 text-xs transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      <span className="font-medium text-muted-foreground">📌 Dari Topic Bank…</span>
+                      <ChevronDown className="size-3.5 text-muted-foreground" />
+                    </button>
+
+                    {/* Topic Bank Popover Floating Above */}
+                    {topicPopoverOpen && (
+                      <div className="absolute left-0 bottom-full mb-2 z-50 w-72 md:w-80 bg-card border border-hairline rounded-2xl shadow-2xl p-3 animate-in fade-in slide-in-from-bottom-2 duration-150">
+                        <div className="flex items-center justify-between border-b pb-2 mb-2">
+                          <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground font-mono">PILIH TOPIC</span>
+                          <button type="button" onClick={() => setTopicPopoverOpen(false)} className="text-muted-foreground text-xs hover:text-foreground">
+                            &times;
+                          </button>
+                        </div>
+
+                        {/* Search Input */}
+                        <div className="relative mb-2">
+                          <Search className="absolute left-2.5 top-2.5 size-3.5 text-muted-foreground" />
+                          <Input
+                            value={topicSearch}
+                            onChange={(e) => setTopicSearch(e.target.value)}
+                            placeholder="Cari topic..."
+                            className="pl-8 h-8 text-xs bg-muted/20 border-hairline"
+                          />
+                        </div>
+
+                        {/* Filtered Topics List */}
+                        <div className="space-y-1 max-h-64 overflow-y-auto pr-0.5">
+                          {bankTopics
+                            .filter((t) =>
+                              t.title.toLowerCase().includes(topicSearch.toLowerCase())
+                            )
+                            .map((t) => (
+                              <button
+                                key={t.id}
+                                type="button"
+                                onClick={() => {
+                                  startBriefFromTopic(t);
+                                  setTopicPopoverOpen(false);
+                                }}
+                                className="w-full flex items-center gap-2.5 p-2 rounded-xl text-xs text-left transition-colors hover:bg-muted/40"
+                              >
+                                <span className="font-medium truncate">{t.title}</span>
+                                <span className="text-[9px] font-mono uppercase text-muted-foreground bg-muted px-1.5 py-0.5 rounded border border-hairline">
+                                  {t.status}
+                                </span>
+                              </button>
+                            ))}
+                          {bankTopics.filter((t) => t.title.toLowerCase().includes(topicSearch.toLowerCase())).length === 0 && (
+                            <div className="p-2 text-center text-xs text-muted-foreground">
+                              Tidak ada topic yang cocok
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    )}
+                  </div>
                 )}
                 <Input
                   type="file"
@@ -1376,16 +1452,16 @@ export function Wizard({
                 }}
                 placeholder="Ketik ide atau topik konten di sini... (misal: idempotency di API)"
                 className="pr-12 h-11 text-xs rounded-xl border-hairline"
-                disabled={pending || briefPending}
+                disabled={pending}
                 onKeyDown={(e) => handlePromptKeyDown(e, idea, setIdea, handleBriefGeneration)}
               />
               <Button 
                 size="icon" 
-                className="absolute right-1 size-9 rounded-lg" 
-                disabled={pending || briefPending || !idea.trim() || !model}
-                onClick={handleBriefGeneration}
+                className="absolute right-1 size-9 rounded-lg z-10" 
+                disabled={!model}
+                onClick={briefPending ? handleCancelGeneration : handleBriefGeneration}
               >
-                <Send className="size-4" />
+                {briefPending ? <Square className="size-4" /> : <Send className="size-4" />}
               </Button>
             </div>
           </div>

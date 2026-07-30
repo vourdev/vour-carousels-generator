@@ -3,7 +3,7 @@ import { availableModels } from "@/lib/ai/registry";
 import { LogoutButton } from "./logout-button";
 import { KeyboardNav } from "./keyboard-nav";
 import Link from "next/link";
-import { ArrowUpRight, Sparkles, Clock, Calendar, CheckCircle2, Zap, Layers, Share2, Brain, Globe } from "lucide-react";
+import { ArrowUpRight, Sparkles, Clock, Calendar, CheckCircle2, Zap, Layers, Share2, Brain, Globe, Lightbulb } from "lucide-react";
 
 const gradientBorder: React.CSSProperties = {
   padding: 1,
@@ -110,11 +110,22 @@ export default async function Home() {
             </Link>
 
             <Link
+              href="/topics"
+              className="inline-flex items-center gap-2 px-6 py-3.5 rounded-2xl bg-card border border-hairline text-foreground font-medium text-sm hover:bg-muted/50 transition-colors shadow-2xs"
+            >
+              <Lightbulb className="size-4 text-muted-foreground" />
+              <span>Topic Bank</span>
+              <kbd className="ml-2 rounded border border-border bg-muted/50 px-2 py-0.5 text-[10px] font-mono text-muted-foreground">
+                T
+              </kbd>
+            </Link>
+            
+            <Link
               href="/history"
               className="inline-flex items-center gap-2 px-6 py-3.5 rounded-2xl bg-card border border-hairline text-foreground font-medium text-sm hover:bg-muted/50 transition-colors shadow-2xs"
             >
               <Calendar className="size-4 text-muted-foreground" />
-              <span>Kalender &amp; History</span>
+              <span>History</span>
               <kbd className="ml-2 rounded border border-border bg-muted/50 px-2 py-0.5 text-[10px] font-mono text-muted-foreground">
                 H
               </kbd>
@@ -123,7 +134,45 @@ export default async function Home() {
         </div>
 
         {/* FEATURE HIGHLIGHT TILES */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-4">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 pt-4">
+          {/* Tile 0: Topic Bank */}
+          <Link
+            href="/topics"
+            className="group relative overflow-hidden rounded-3xl border border-hairline bg-card/50 p-6 md:p-8 backdrop-blur-md transition-all duration-300 hover:border-amber-500/40 hover:shadow-xl hover:-translate-y-1"
+          >
+            <span aria-hidden style={gradientBorder} className="pointer-events-none absolute inset-0 rounded-3xl opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
+            <div className="flex items-center justify-between">
+              <div className="size-12 rounded-2xl bg-amber-500/10 border border-amber-500/20 flex items-center justify-center text-amber-500 group-hover:scale-110 transition-transform">
+                <Lightbulb className="size-6" />
+              </div>
+              <kbd className="rounded-xl border border-border bg-muted/50 px-2.5 py-1 font-mono text-xs font-semibold text-muted-foreground">
+                Shortcut T
+              </kbd>
+            </div>
+
+            <div className="mt-6 space-y-2">
+              <h3 className="text-xl font-bold tracking-tight flex items-center gap-2">
+                Topic Bank
+                <ArrowUpRight className="size-5 text-muted-foreground transition-transform group-hover:-translate-y-0.5 group-hover:translate-x-0.5" />
+              </h3>
+              <p className="text-xs md:text-sm text-muted-foreground leading-relaxed">
+                Generate 7 topic ideas per minggu via AI. Kelola content calendar dan queue topics untuk daily posting.
+              </p>
+            </div>
+
+            <div className="mt-6 pt-4 border-t border-hairline flex flex-wrap items-center gap-2">
+              <span className="text-[10px] font-mono px-2.5 py-1 rounded-lg bg-muted text-muted-foreground border border-hairline">
+                AI Topic Generator
+              </span>
+              <span className="text-[10px] font-mono px-2.5 py-1 rounded-lg bg-muted text-muted-foreground border border-hairline">
+                Weekly Planner
+              </span>
+              <span className="text-[10px] font-mono px-2.5 py-1 rounded-lg bg-muted text-muted-foreground border border-hairline">
+                Batch Brief Gen
+              </span>
+            </div>
+          </Link>
+        
           {/* Tile 1: Create Studio */}
           <Link
             href="/create"
@@ -240,10 +289,12 @@ export default async function Home() {
         <p>© 2026 @vourdev carousel studio. All rights reserved.</p>
         <p className="flex items-center gap-2">
           <span>Tekan</span>
+          <kbd className="px-1.5 py-0.5 rounded border border-border bg-muted font-bold text-foreground">T</kbd>
+          <span>Topic Bank,</span>
           <kbd className="px-1.5 py-0.5 rounded border border-border bg-muted font-bold text-foreground">C</kbd>
-          <span>untuk Create studio,</span>
+          <span>Create,</span>
           <kbd className="px-1.5 py-0.5 rounded border border-border bg-muted font-bold text-foreground">H</kbd>
-          <span>untuk History</span>
+          <span>History</span>
         </p>
       </footer>
     </div>
