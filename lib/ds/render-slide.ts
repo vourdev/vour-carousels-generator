@@ -21,6 +21,11 @@ import { quoteTemplate } from "@/lib/ds/templates/quote";
 import { dataTableTemplate } from "@/lib/ds/templates/datatable";
 import { commandListTemplate } from "@/lib/ds/templates/commandlist";
 import { timelineTemplate } from "@/lib/ds/templates/timeline";
+import { promptCardTemplate } from "@/lib/ds/templates/promptcard";
+import { folderTreeTemplate } from "@/lib/ds/templates/foldertree";
+import { commandPaletteTemplate } from "@/lib/ds/templates/commandpalette";
+import { databaseTemplate } from "@/lib/ds/templates/database";
+import { gitBranchTemplate } from "@/lib/ds/templates/gitbranch";
 import { diagLines } from "@/lib/ds/hub-lines";
 import { deviceTemplate } from "@/lib/ds/templates/device";
 
@@ -215,6 +220,59 @@ function renderTimelineMockup(m: Extract<Mockup, { type: "timeline" }>): string 
   });
 }
 
+function renderPromptcardMockup(m: Extract<Mockup, { type: "promptcard" }>): string {
+  return fillTemplate(promptCardTemplate, { label: m.label, body: m.body });
+}
+
+function renderFolderTreeMockup(m: Extract<Mockup, { type: "foldertree" }>): string {
+  const lines = m.lines
+    .map((l) => {
+      const escaped = escapeHtml(l.text);
+      return l.active ? `<span class="on">${escaped}</span>` : escaped;
+    })
+    .join("\n");
+  // Function replacer keeps $-sequences in path text verbatim.
+  return folderTreeTemplate.replace("TREE_LINES_INJECT", () => lines);
+}
+
+function renderCommandPaletteMockup(m: Extract<Mockup, { type: "commandpalette" }>): string {
+  const rows = m.rows
+    .map((r) => {
+      const icon = renderIcon(r.icon, { size: 28, color: "#FF6A3D" });
+      const key = r.active ? `<span class="k">↵</span>` : "";
+      return `<div class="row${r.active ? " on" : ""}">${icon}${escapeHtml(r.label)}${key}</div>`;
+    })
+    .join("");
+  return injectSentinels(commandPaletteTemplate, {
+    CMDP_QUERY_INJECT: escapeHtml(m.query),
+    CMDP_ROWS_INJECT: rows,
+  });
+}
+
+function renderDatabaseMockup(m: Extract<Mockup, { type: "database" }>): string {
+  const headIcon = renderIcon("database", { size: 26, color: "#F7F1E8" });
+  const renderTable = (t: (typeof m.tables)[number]) => {
+    const rows = t.rows
+      .map(
+        (r) =>
+          `<div class="tr"><span>${escapeHtml(r.col)}</span><span class="ty">${escapeHtml(r.type)}</span></div>`
+      )
+      .join("");
+    return `<div class="table"><div class="th">${headIcon}${escapeHtml(t.name)}</div>${rows}</div>`;
+  };
+  const [a, b] = m.tables;
+  const tables = `${renderTable(a)}<span class="rel">${escapeHtml(m.relation)}</span>${renderTable(b)}`;
+  // Function replacer keeps $-sequences in column text verbatim.
+  return databaseTemplate.replace("DB_TABLES_INJECT", () => tables);
+}
+
+function renderGitBranchMockup(m: Extract<Mockup, { type: "gitbranch" }>): string {
+  return injectSentinels(gitBranchTemplate, {
+    GIT_BRANCH_INJECT: escapeHtml(m.branch.name),
+    GIT_MERGE_INJECT: escapeHtml(m.mergeLabel),
+  });
+}
+
 export function renderDeviceHook(h: Extract<CoverHook, { kind: "device" }>): string {
   const bodyLines = h.lines
     .map((l) => {
@@ -269,6 +327,16 @@ function renderMockup(m: Mockup): string {
       return renderCommandListMockup(m);
     case "timeline":
       return renderTimelineMockup(m);
+    case "promptcard":
+      return renderPromptcardMockup(m);
+    case "foldertree":
+      return renderFolderTreeMockup(m);
+    case "commandpalette":
+      return renderCommandPaletteMockup(m);
+    case "database":
+      return renderDatabaseMockup(m);
+    case "gitbranch":
+      return renderGitBranchMockup(m);
     case "card":
       // Card is rendered inline via the point template's {{#card}} block, not here.
       return "";

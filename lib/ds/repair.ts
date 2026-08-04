@@ -42,6 +42,10 @@ const MOCKUP_ARRAY_MAX: Record<string, { key: string; max: number }> = {
   browser: { key: "cards", max: 4 },
   datatable: { key: "rows", max: 4 },
   commandlist: { key: "rows", max: 6 },
+  foldertree: { key: "lines", max: 8 },
+  commandpalette: { key: "rows", max: 5 },
+  database: { key: "tables", max: 2 },
+  gitbranch: { key: "main", max: 6 },
 };
 
 /** Recursively strip banned dashes from every string leaf (v1.0 voice rule). */

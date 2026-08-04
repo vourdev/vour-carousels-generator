@@ -74,4 +74,51 @@ export const carouselExtraCss = String.raw`
   .tl-card.new .d { color: #EE4B1A; }
   .tl-card .h { font-family: 'Sora'; font-weight: 700; font-size: 36px; color: #1C0A05; margin-top: 14px; line-height: 1.15; }
   .tl-card .t { font-family: 'Inter'; font-size: 26px; color: #3D2419; margin-top: 12px; line-height: 1.4; }
+
+  /* ═══ v1.0 TASK-1 mockups — promptcard · foldertree · commandpalette · database · gitbranch ═══ */
+
+  /* Prompt card — copy-paste AI prompt, 2px ember border + corner label */
+  .prompt { position: relative; border: 2px solid #EE4B1A; border-radius: 20px;
+    padding: 44px 40px 40px; background: #FFFDF9; }
+  .prompt .lbl { position: absolute; top: -16px; left: 32px; background: #FBF6EF; padding: 0 14px;
+    font-family: 'JetBrains Mono'; font-size: 20px; letter-spacing: 0.18em;
+    text-transform: uppercase; color: #EE4B1A; }
+  .prompt pre { font-family: 'JetBrains Mono'; font-size: 30px; line-height: 1.55;
+    color: #1C0A05; white-space: pre-wrap; }
+
+  /* Folder tree — mono directory listing, active row Ember */
+  .tree { width: 100%; background: #FFFDF9; border: 1.5px solid rgba(28,10,5,0.14);
+    border-radius: 20px; padding: 40px 44px; font-family: 'JetBrains Mono'; font-size: 30px;
+    line-height: 1.7; color: #3D2419; white-space: pre-wrap; }
+  .tree .on { color: #EE4B1A; font-weight: 600; }
+
+  /* Command palette — Cmd+K menu on Ink surface */
+  .cmdp { width: 100%; background: #1F1A15; border: 1.5px solid #2B241D; border-radius: 20px;
+    overflow: hidden; box-shadow: 0 30px 70px rgba(0,0,0,0.4); }
+  .cmdp .search { padding: 28px 32px; border-bottom: 1px solid #2B241D;
+    display: flex; align-items: center; gap: 16px; }
+  .cmdp .search .car { color: #FF6A3D; font-family: 'JetBrains Mono'; font-size: 30px; }
+  .cmdp .search .q { font-family: 'JetBrains Mono'; font-size: 30px; color: #F7F1E8; }
+  .cmdp .row { padding: 22px 32px; display: flex; align-items: center; gap: 20px;
+    font-family: 'JetBrains Mono'; font-size: 28px; color: rgba(247,241,232,0.72); }
+  .cmdp .row.on { background: #2B241D; color: #F7F1E8; }
+  .cmdp .row svg { flex: none; }
+  .cmdp .row .k { margin-left: auto; font-size: 20px; color: rgba(247,241,232,0.45); }
+
+  /* Database — two related tables + relation glyph */
+  .db { width: 100%; display: flex; align-items: center; justify-content: center;
+    gap: 48px; flex-wrap: wrap; }
+  .db .table { border: 1.5px solid #1C0A05; border-radius: 16px; overflow: hidden;
+    min-width: 300px; background: #FFFDF9; }
+  .db .table .th { background: #14110E; color: #F7F1E8; font-family: 'JetBrains Mono';
+    font-size: 26px; padding: 16px 24px; display: flex; align-items: center; gap: 12px; }
+  .db .table .tr { padding: 14px 24px; font-family: 'JetBrains Mono'; font-size: 24px;
+    color: #3D2419; border-top: 1px solid rgba(28,10,5,0.10);
+    display: flex; justify-content: space-between; gap: 24px; }
+  .db .table .tr .ty { color: #A48C7E; }
+  .db .rel { font-family: 'JetBrains Mono'; font-size: 28px; color: #EE4B1A; }
+
+  /* Git branch — fixed 2-branch SVG diagram */
+  .git { width: 100%; position: relative; padding: 40px 20px; }
+  .git svg { width: 100%; height: 300px; display: block; }
 `;
