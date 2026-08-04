@@ -79,7 +79,7 @@ const mockupFlow = z.object({
 const mockupConcept = z.object({
   type: z.literal("concept"),
   parent: z.string().max(20),
-  children: z.array(z.string().max(18)).min(3).max(4),
+  children: z.array(z.string().max(18)).min(2).max(4),
   note: z.string().max(90).optional(),
 });
 
@@ -89,7 +89,7 @@ const mockupHub = z.object({
   center: z.string().max(20),
   tools: z
     .array(z.object({ icon: iconField, label: z.string().max(16) }))
-    .min(3)
+    .min(2)
     .max(4),
   note: z.string().max(90).optional(),
 });
@@ -97,8 +97,58 @@ const mockupHub = z.object({
 /** Recap checklist — 3–6 ticked items */
 const mockupChecklist = z.object({
   type: z.literal("checklist"),
-  items: z.array(z.string().max(48)).min(3).max(6),
+  items: z.array(z.string().max(48)).min(2).max(6),
   note: z.string().max(90).optional(),
+});
+
+/** Browser window — product mockup: url bar + 2–4 stat cards (dashboard look) */
+const mockupBrowser = z.object({
+  type: z.literal("browser"),
+  url: z.string().max(40),
+  cards: z
+    .array(z.object({ label: z.string().max(24), value: z.string().max(16) }))
+    .min(2)
+    .max(4),
+  note: z.string().max(90).optional(),
+});
+
+/** Quote inset — editorial pull-quote (EB Garamond) with optional attribution */
+const mockupQuote = z.object({
+  type: z.literal("quote"),
+  quote: z.string().max(180),
+  author: z.string().max(40).optional(),
+});
+
+/** Data table — ✗/✓ two-column comparison (2–4 rows): "jangan / lakukan" */
+const mockupDataTable = z.object({
+  type: z.literal("datatable"),
+  noLabel: z.string().max(20).default("Jangan"),
+  okLabel: z.string().max(20).default("Lakukan"),
+  rows: z
+    .array(z.object({ no: z.string().max(50), ok: z.string().max(50) }))
+    .min(2)
+    .max(4),
+});
+
+/** Command list — mono `cmd → desc` rows (2–6): CLI menus, shortcut lists */
+const mockupCommandList = z.object({
+  type: z.literal("commandlist"),
+  rows: z
+    .array(z.object({ cmd: z.string().max(24), desc: z.string().max(48) }))
+    .min(2)
+    .max(6),
+  note: z.string().max(90).optional(),
+});
+
+/** Timeline — two dated cards side-by-side (then / now, dulu / sekarang) */
+const mockupTimeline = z.object({
+  type: z.literal("timeline"),
+  oldLabel: z.string().max(20),
+  oldTitle: z.string().max(30),
+  oldBody: z.string().max(90),
+  newLabel: z.string().max(20),
+  newTitle: z.string().max(30),
+  newBody: z.string().max(90),
 });
 
 export const mockupSchema = z.discriminatedUnion("type", [
@@ -112,6 +162,11 @@ export const mockupSchema = z.discriminatedUnion("type", [
   mockupConcept,
   mockupHub,
   mockupChecklist,
+  mockupBrowser,
+  mockupQuote,
+  mockupDataTable,
+  mockupCommandList,
+  mockupTimeline,
 ]);
 
 export type Mockup = z.infer<typeof mockupSchema>;

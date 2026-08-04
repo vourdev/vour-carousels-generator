@@ -11,7 +11,7 @@ export default async function CreatePage({
   searchParams: Promise<{ topic?: string }>;
 }) {
   const [session, { topic: topicId }] = await Promise.all([requireSession(), searchParams]);
-  const models = availableModels().filter((m) => m === "omniroute");
+  const models = availableModels().filter((m) => m === "vour-high" || m === "vour-lite");
   const initialTopic = topicId ? await getTopic(topicId, session.user.id) : null;
   return (
     <main className="mx-auto max-w-350 min-h-screen p-4 md:p-6 flex flex-col gap-6">

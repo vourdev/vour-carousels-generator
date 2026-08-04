@@ -1,5 +1,6 @@
 import { generateText, generateObject, type LanguageModel } from "ai";
 import { slidePlanSchema, type SlidePlan } from "@/lib/ds/schema";
+import { repairSlidePlan } from "@/lib/ds/repair";
 import {
   briefSystem,
   briefUserPrompt,
@@ -80,7 +81,7 @@ export async function generateSlidePlan(brief: string, model: LanguageModel): Pr
         prompt: planUserPrompt(brief),
       });
       const parsed = extractAndParseJson(text);
-      return slidePlanSchema.parse(parsed);
+      return repairSlidePlan(parsed);
     }
   });
 }
@@ -107,7 +108,7 @@ export async function reviseSlidePlan(
         prompt: reviseUserPrompt(JSON.stringify(plan), message),
       });
       const parsed = extractAndParseJson(text);
-      return slidePlanSchema.parse(parsed);
+      return repairSlidePlan(parsed);
     }
   });
 }

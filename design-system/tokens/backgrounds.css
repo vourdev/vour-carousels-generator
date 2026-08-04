@@ -1,10 +1,37 @@
 :root {
-  /* ── Editorial slide background — cream + soft corner halo, NO grid. ── */
-  --bg-editorial:
-    radial-gradient(55% 40% at 100% 0%, rgba(233,75,25,0.06), transparent 65%),
-    radial-gradient(60% 50% at 10% 100%, rgba(233,75,25,0.04), transparent 70%),
+  /* ════════════════════════════════════════════════════════
+     Vour v1.0 · Background treatments — DESIGN.md §8.
+     Two surfaces (Paper / Ink), five treatments.
+     One treatment per slide; never combine.
+     ════════════════════════════════════════════════════════ */
+
+  /* ── Paper (default) — flat cream ── */
+  --bg-paper: #FBF6EF;
+
+  /* ── Paper + halo — the signature background ── */
+  --bg-paper-halo:
+    radial-gradient(55% 40% at 100% 0%, rgba(238,75,26,0.06), transparent 65%),
+    radial-gradient(60% 50% at 10% 100%, rgba(238,75,26,0.04), transparent 70%),
     #FBF6EF;
 
-  /* ── App canvas (the DS tab itself). ── */
+  /* ── Ink — flat dark (terminals, dark callouts, rhythm slide) ── */
+  --bg-ink: #14110E;
+
+  /* ── Blueprint — Ink + faint 40px grid (max 1 per deck) ── */
+  --bg-blueprint:
+    linear-gradient(rgba(247,241,232,0.05) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(247,241,232,0.05) 1px, transparent 1px),
+    #14110E;
+  --bg-blueprint-size: 40px 40px, 40px 40px, auto;
+
+  /* ── Terminal — Ink + faint top-edge lighten ── */
+  --bg-terminal:
+    linear-gradient(rgba(247,241,232,0.03), transparent 120px),
+    #14110E;
+
+  /* ── App canvas (the DS tab itself) ── */
   --bg-app: #FBF6EF;
+
+  /* ── LEGACY ALIAS ── */
+  --bg-editorial: var(--bg-paper-halo);
 }

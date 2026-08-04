@@ -4,7 +4,9 @@
 
 > **Self-contained build procedure.** Pair with `DESIGN.md`. Together those two files are everything an AI agent needs to produce on-brand @vourdev carousels.
 >
-> **Update 4 changes:** synthwave surface fully retired. `IconTile`, `CtaCircle`, `--fs-hero`, `--fs-title-tt`, and the `--pad-tt-*` tokens are gone. `--fs-title-lg` (128) / `--fs-title` (104) / `--fs-title-sm` (88) is the new headline scale. Editorial cream is the only surface. Both Instagram AND TikTok photo carousels use the same **1080 × 1350** canvas. There is no separate TikTok reframe.
+> **v1.0 note:** design rules now live in the rewritten `DESIGN.md` (v1.0 "Engineering Editorial"). Where THIS file cites old section numbers (§13–§19 of the legacy doc), consult `DESIGN.legacy-update7.md` for the archived spec — component vocabulary is unchanged, only palette hues (Ember `#EE4B1A`, ink `#1C0A05`, dark `#14110E`) and fonts (Inter body, EB Garamond stamps) moved. Both Instagram AND TikTok photo carousels use the same **1080 × 1350** canvas.
+>
+> **Skill gate (mandatory):** before building ANY carousel from a brief, load the `design-taste-frontend` skill if available and run its anti-slop rules on the copy + composition. Precedence: `DESIGN.md` > `design-taste-frontend` > this file's defaults.
 
 ---
 

@@ -1,0 +1,288 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<title>Docker Build Lambat — Vour Showcase (v1.0)</title>
+<script type="application/json" id="vourdev-meta">
+{
+  "title": "Kenapa Docker Build Kamu Lambat",
+  "caption": "Build Docker kamu lambat bukan karena mesin. Masalahnya di urutan perintah Dockerfile. Salah urut, cache jebol tiap kali build. Geser buat lihat cara benerinnya.\n\nSave biar nggak lupa pas nulis Dockerfile berikutnya.",
+  "hashtags": ["docker", "devops", "backend", "webdev"]
+}
+</script>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Sora:wght@600;700;800&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500;600&family=EB+Garamond:ital,wght@1,500&display=swap">
+<script src="https://code.iconify.design/iconify-icon/2.1.0/iconify-icon.min.js"></script>
+<style>
+  /* ═══ Vour Design System v1.0 — self-contained tokens ═══ */
+  :root{
+    --ember:#EE4B1A; --ember-bright:#FF6A3D;
+    --paper:#FBF6EF; --paper-raised:#FFFDF9; --paper-sunken:#F2EADD;
+    --ink-900:#14110E; --ink-800:#1F1A15; --ink-700:#2B241D;
+    --ink:#1C0A05; --ink-soft:#3D2419; --ink-muted:#6E4B3E; --ink-faint:#A48C7E;
+    --cream:#F7F1E8; --cream-soft:rgba(247,241,232,.72); --cream-muted:rgba(247,241,232,.45);
+    --card-peach:#FBE9D9; --card-mint:#E3F1E1; --card-sky:#DEEAF7; --card-amber:#FBE7B0; --card-stone:#EDE7DA;
+    --line-ink:#1C0A05; --line-mint:#4E9E5C; --line-red:#C13B1A; --line-muted:#A48C7E;
+    --border:rgba(28,10,5,.14); --hairline:rgba(28,10,5,.10); --icon-tile:rgba(28,10,5,.06);
+    --font-display:'Sora',system-ui,sans-serif; --font-body:'Inter',system-ui,sans-serif;
+    --font-mono:'JetBrains Mono',ui-monospace,monospace; --font-serif:'EB Garamond',Georgia,serif;
+  }
+  *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+  body{background:#d9d2c7;font-family:var(--font-body);-webkit-font-smoothing:antialiased;}
+  .deck{display:flex;flex-direction:column;align-items:center;gap:48px;padding:48px;}
+
+  /* ── slide shell ── */
+  .slide{
+    width:1080px;height:1350px;position:relative;overflow:hidden;
+    padding:96px 80px 80px;display:flex;flex-direction:column;
+    background:
+      radial-gradient(55% 40% at 100% 0%, rgba(238,75,26,.06), transparent 65%),
+      radial-gradient(60% 50% at 10% 100%, rgba(238,75,26,.04), transparent 70%),
+      var(--paper);
+    color:var(--ink);
+  }
+  .slide.ink{
+    background:linear-gradient(rgba(247,241,232,.03),transparent 200px),var(--ink-900);
+    color:var(--cream);
+  }
+  .slide.blueprint{
+    background:
+      linear-gradient(rgba(247,241,232,.05) 1px,transparent 1px),
+      linear-gradient(90deg,rgba(247,241,232,.05) 1px,transparent 1px),
+      var(--ink-900);
+    background-size:40px 40px,40px 40px,auto;color:var(--cream);
+  }
+
+  /* ── shared atoms ── */
+  .counter{font-family:var(--font-mono);font-size:24px;color:var(--ink-faint);letter-spacing:0;}
+  .slide.ink .counter{color:var(--cream-muted);}
+  .eyebrow{font-family:var(--font-mono);font-size:24px;font-weight:500;letter-spacing:.18em;
+    text-transform:uppercase;color:var(--ember);}
+  .slide.ink .eyebrow{color:var(--ember-bright);}
+  .stamp{font-family:var(--font-serif);font-style:italic;font-weight:500;font-size:28px;color:var(--ink-muted);}
+  .slide.ink .stamp{color:var(--cream-soft);}
+  h1{font-family:var(--font-display);font-weight:800;letter-spacing:-.025em;line-height:1.02;}
+  .hero{font-size:128px;line-height:.98;}
+  .compact{font-size:88px;line-height:1.04;}
+  .a{color:var(--ember);}
+  .slide.ink .a{color:var(--ember-bright);}
+  .lede{font-family:var(--font-body);font-weight:500;font-size:40px;line-height:1.3;color:var(--ink-soft);}
+  .body{font-family:var(--font-body);font-weight:500;font-size:32px;line-height:1.4;color:var(--ink-soft);}
+  .slide.ink .body{color:var(--cream-soft);}
+  .brandrow{display:flex;align-items:center;gap:16px;}
+  .disc{width:72px;height:72px;border-radius:50%;overflow:hidden;background:#07070e;flex:none;}
+  .disc.sm{width:44px;height:44px;}
+  .disc img{width:100%;height:100%;object-fit:cover;display:block;}
+  .wordmark{font-family:var(--font-display);font-weight:700;font-size:32px;letter-spacing:.02em;color:var(--ink);}
+  .cta{font-family:var(--font-mono);font-size:24px;color:var(--ink-muted);}
+  .slide.ink .cta{color:var(--cream-muted);}
+  .grow{flex:1;min-height:0;}
+  .diag-wrap{flex:1;min-height:0;display:flex;flex-direction:column;justify-content:center;}
+  .top{display:flex;justify-content:space-between;align-items:flex-start;}
+
+  /* ── terminal ── */
+  .terminal{background:var(--ink-800);border:1.5px solid var(--ink-700);border-radius:20px;
+    padding:36px 40px;box-shadow:0 24px 60px rgba(0,0,0,.35);}
+  .slide:not(.ink) .terminal{background:var(--ink-900);box-shadow:0 24px 60px rgba(28,10,5,.12);}
+  .dots{display:flex;gap:8px;margin-bottom:28px;}
+  .dots i{width:14px;height:14px;border-radius:50%;display:block;}
+  .term-title{font-family:var(--font-mono);font-size:20px;color:var(--cream-muted);margin-left:16px;}
+  pre{font-family:var(--font-mono);font-size:28px;line-height:1.6;color:var(--cream);white-space:pre;}
+  .cmt{color:var(--cream-muted);} .kw{color:var(--ember-bright);} .val{color:#B79CF2;}
+  .key{color:#E8B4A0;} .ok{color:#7FD0A0;}
+  .ln-hot{background:rgba(238,75,26,.14);border-radius:6px;display:inline-block;padding:0 8px;margin:0 -8px;}
+  .ln-good{background:rgba(78,158,92,.16);border-radius:6px;display:inline-block;padding:0 8px;margin:0 -8px;}
+
+  /* ── layer stack diagram ── */
+  .layers{display:flex;flex-direction:column;gap:14px;}
+  .layer{border:1.5px solid var(--line-ink);border-radius:16px;background:var(--paper-raised);
+    padding:24px 32px;display:flex;align-items:center;gap:24px;}
+  .layer .lbl{font-family:var(--font-mono);font-size:26px;color:var(--ink);}
+  .layer .tag{margin-left:auto;font-family:var(--font-mono);font-size:22px;color:var(--ink-muted);}
+  .layer.hot{border-color:var(--ember);background:var(--ember);}
+  .layer.hot .lbl,.layer.hot .tag{color:#fff;}
+  .layer.cold{opacity:.55;}
+
+  /* ── comparison panels ── */
+  .cmp{display:grid;grid-template-columns:1fr 1fr;gap:24px;}
+  .panel{border-radius:24px;padding:36px 32px;display:flex;flex-direction:column;gap:20px;}
+  .panel.lose{background:var(--card-stone);}
+  .panel.win{background:var(--card-peach);border:2px solid var(--ember);}
+  .panel .plabel{font-family:var(--font-mono);font-size:22px;letter-spacing:.12em;text-transform:uppercase;}
+  .panel.lose .plabel{color:var(--ink-faint);}
+  .panel.win .plabel{color:var(--ember);}
+  .panel .pval{font-family:var(--font-display);font-weight:800;font-size:96px;line-height:1;color:var(--ink);}
+  .panel .pnote{font-family:var(--font-body);font-size:26px;color:var(--ink-soft);}
+
+  /* ── big stat ── */
+  .stat{display:flex;flex-direction:column;justify-content:center;height:100%;}
+  .stat .from{font-family:var(--font-mono);font-size:36px;color:var(--ink-muted);margin-bottom:8px;}
+  .stat .bigrow{display:flex;align-items:baseline;gap:24px;}
+  .stat .big{font-family:var(--font-display);font-weight:800;font-size:360px;line-height:.85;color:var(--ember);letter-spacing:-.04em;}
+  .stat .unit{font-family:var(--font-display);font-weight:700;font-size:80px;color:var(--ink);}
+  .stat .cap{font-family:var(--font-body);font-size:32px;color:var(--ink-soft);margin-top:24px;max-width:820px;}
+
+  /* ── checklist ── */
+  .checklist{display:flex;flex-direction:column;gap:28px;}
+  .check{display:flex;align-items:center;gap:24px;font-family:var(--font-display);font-weight:500;font-size:40px;color:var(--ink);}
+  .tick{width:48px;height:48px;border-radius:12px;background:var(--card-mint);flex:none;
+    display:flex;align-items:center;justify-content:center;color:var(--line-mint);font-size:28px;}
+
+  /* ── highlight panel ── */
+  .hl{background:var(--card-peach);border-radius:20px;padding:28px 32px;}
+  .hl .strong{font-family:var(--font-display);font-weight:700;font-size:32px;color:var(--ember);}
+  .hl .sub{font-family:var(--font-body);font-weight:500;font-size:26px;color:var(--ink-soft);margin-top:8px;}
+
+  /* ── catatan ── */
+  .catatan{border:1.5px solid var(--ember);border-radius:16px;padding:24px 32px;}
+  .catatan .cl{font-family:var(--font-mono);font-size:22px;letter-spacing:.18em;text-transform:uppercase;color:var(--ember);}
+  .catatan .cb{font-family:var(--font-display);font-weight:700;font-size:32px;color:var(--ink);margin-top:8px;}
+
+  .mt24{margin-top:24px;} .mt32{margin-top:32px;} .mt40{margin-top:40px;} .mt48{margin-top:48px;} .mt64{margin-top:64px;}
+</style>
+</head>
+<body>
+<div class="deck">
+
+  <!-- 01 · COVER — Paper + halo · hero -->
+  <section class="slide">
+    <div class="top">
+      <div class="brandrow"><div class="disc"><img src="assets/vourdev-logo.jpeg" alt="@vourdev"></div><span class="wordmark">@vourdev</span></div>
+      <span class="stamp">Engineering Notes</span>
+    </div>
+    <div class="grow" style="display:flex;flex-direction:column;justify-content:center;">
+      <div class="eyebrow">PERFORMANCE</div>
+      <h1 class="hero mt24">Docker<br><span class="a">Lambat.</span></h1>
+      <div class="lede mt32" style="max-width:820px;">Masalahnya bukan mesin kamu.<br>Masalahnya satu baris di Dockerfile.</div>
+    </div>
+    <div class="cta">Geser →</div>
+  </section>
+
+  <!-- 02 · PROBLEM — Paper · text-only -->
+  <section class="slide">
+    <div class="counter">02 / 08</div>
+    <div class="grow" style="display:flex;flex-direction:column;justify-content:center;">
+      <div class="eyebrow">MASALAHNYA</div>
+      <h1 class="mt24" style="font-size:104px;">Tiap Build Mulai Dari <span class="a">Nol.</span></h1>
+      <div class="body mt32" style="max-width:840px;">Ganti satu huruf di kode, `npm install` jalan ulang penuh.</div>
+      <div class="body mt24" style="max-width:840px;">Nunggu 3 menit buat sesuatu yang harusnya instan.</div>
+    </div>
+    <div class="cta">Kenapa? Slide berikutnya.</div>
+  </section>
+
+  <!-- 03 · TERMINAL — Ink surface · the slow Dockerfile -->
+  <section class="slide ink">
+    <div class="counter">03 / 08</div>
+    <div class="eyebrow mt48">DOCKERFILE</div>
+    <h1 class="compact mt24">Baris Ini Yang <span class="a">Jebol.</span></h1>
+    <div class="body mt32" style="max-width:820px;">Copy semua file dulu, install belakangan. Cache-nya rusak.</div>
+    <div class="diag-wrap mt40">
+      <div class="terminal">
+        <div class="dots"><i style="background:#FF5F56"></i><i style="background:#FFBD2E"></i><i style="background:#27C93F"></i><span class="term-title">Dockerfile</span></div>
+<pre><span class="kw">FROM</span> node:20-alpine
+<span class="kw">WORKDIR</span> /app
+<span class="ln-hot"><span class="kw">COPY</span> . .            <span class="cmt"># ← semua kode masuk</span></span>
+<span class="ln-hot"><span class="kw">RUN</span> npm install     <span class="cmt"># ← cache mati di sini</span></span>
+<span class="kw">CMD</span> [<span class="val">"npm"</span>, <span class="val">"start"</span>]</pre>
+      </div>
+    </div>
+    <div class="cta">Ganti kode apa pun → dua baris ini ngulang.</div>
+  </section>
+
+  <!-- 04 · MENTAL MODEL — Paper · layer stack diagram -->
+  <section class="slide">
+    <div class="counter">04 / 08</div>
+    <div class="eyebrow mt48">CARA KERJANYA</div>
+    <h1 class="compact mt24">Tiap Baris Jadi Satu <span class="a">Layer.</span></h1>
+    <div class="body mt32" style="max-width:820px;">Docker cache per layer. Satu layer berubah, semua di bawahnya ikut ulang.</div>
+    <div class="diag-wrap mt40">
+      <div class="layers">
+        <div class="layer"><span class="lbl">FROM node:20-alpine</span><span class="tag">cached</span></div>
+        <div class="layer"><span class="lbl">WORKDIR /app</span><span class="tag">cached</span></div>
+        <div class="layer hot"><span class="lbl">COPY . .</span><span class="tag">berubah →</span></div>
+        <div class="layer cold"><span class="lbl">RUN npm install</span><span class="tag">ikut ulang</span></div>
+        <div class="layer cold"><span class="lbl">CMD npm start</span><span class="tag">ikut ulang</span></div>
+      </div>
+      <div class="catatan mt40"><div class="cl">Catatan</div><div class="cb">Layer paling sering berubah, taruh paling bawah.</div></div>
+    </div>
+  </section>
+
+  <!-- 05 · THE FIX — Ink surface · reordered Dockerfile -->
+  <section class="slide ink">
+    <div class="counter">05 / 08</div>
+    <div class="eyebrow mt48">URUTAN BENAR</div>
+    <h1 class="compact mt24">Copy <span class="a">package.json</span> Dulu.</h1>
+    <div class="body mt32" style="max-width:820px;">Install duluan pakai file yang jarang berubah. Kode masuk belakangan.</div>
+    <div class="diag-wrap mt40">
+      <div class="terminal">
+        <div class="dots"><i style="background:#FF5F56"></i><i style="background:#FFBD2E"></i><i style="background:#27C93F"></i><span class="term-title">Dockerfile</span></div>
+<pre><span class="kw">FROM</span> node:20-alpine
+<span class="kw">WORKDIR</span> /app
+<span class="ln-good"><span class="kw">COPY</span> package*.json ./  <span class="cmt"># jarang berubah</span></span>
+<span class="ln-good"><span class="kw">RUN</span> npm install        <span class="ok"># ← ke-cache</span></span>
+<span class="kw">COPY</span> . .               <span class="cmt"># kode berubah, aman</span>
+<span class="kw">CMD</span> [<span class="val">"npm"</span>, <span class="val">"start"</span>]</pre>
+      </div>
+    </div>
+    <div class="cta">Sekarang npm install cuma jalan kalau dependency berubah.</div>
+  </section>
+
+  <!-- 06 · COMPARISON — Paper · before/after panels -->
+  <section class="slide">
+    <div class="counter">06 / 08</div>
+    <div class="eyebrow mt48">SEBELUM / SESUDAH</div>
+    <h1 class="compact mt24">Cache <span class="a">Kepakai</span> Lagi.</h1>
+    <div class="diag-wrap mt40">
+      <div class="cmp">
+        <div class="panel lose">
+          <span class="plabel">Salah urut</span>
+          <span class="pval">3:12</span>
+          <span class="pnote">npm install jalan tiap build. Setiap. Kali.</span>
+        </div>
+        <div class="panel win">
+          <span class="plabel">Urut benar</span>
+          <span class="pval">0:12</span>
+          <span class="pnote">Layer dependency di-skip. Cuma kode yang di-copy ulang.</span>
+        </div>
+      </div>
+    </div>
+    <div class="cta">Angka nyata dari project Next.js 200 dependency.</div>
+  </section>
+
+  <!-- 07 · BIG STAT — Paper · numeral -->
+  <section class="slide">
+    <div class="counter">07 / 08</div>
+    <div class="eyebrow mt48">HASILNYA</div>
+    <div class="diag-wrap">
+      <div class="stat">
+        <span class="from">dari 3 menit, tinggal</span>
+        <div class="bigrow"><span class="big">12</span><span class="unit">detik</span></div>
+        <span class="cap">Satu baris dipindah. 15× lebih cepat, tanpa upgrade apa pun.</span>
+      </div>
+    </div>
+    <div class="cta">Bukan sulap. Cuma paham cara cache kerja.</div>
+  </section>
+
+  <!-- 08 · RECAP + OUTRO — Paper · checklist + highlight + brand -->
+  <section class="slide">
+    <div class="counter">08 / 08</div>
+    <div class="eyebrow mt48">CATATAN AKHIR</div>
+    <h1 class="mt24" style="font-size:88px;line-height:1.04;">Tiga Hal Yang <span class="a">Nempel.</span></h1>
+    <div class="checklist mt40">
+      <div class="check"><span class="tick"><iconify-icon icon="lucide:check"></iconify-icon></span>Urut dari yang jarang berubah.</div>
+      <div class="check"><span class="tick"><iconify-icon icon="lucide:check"></iconify-icon></span>COPY package.json sebelum install.</div>
+      <div class="check"><span class="tick"><iconify-icon icon="lucide:check"></iconify-icon></span>Kode masuk paling akhir.</div>
+    </div>
+    <div class="hl mt48">
+      <div class="strong">Dockerfile itu urutan, bukan daftar.</div>
+      <div class="sub">Urutannya nentuin cache. Cache nentuin kecepatan.</div>
+    </div>
+    <div class="grow"></div>
+    <div class="top" style="align-items:center;">
+      <div class="brandrow"><div class="disc"><img src="assets/vourdev-logo.jpeg" alt="@vourdev"></div><span class="wordmark">@vourdev</span></div>
+      <span class="cta">Next: multi-stage build →</span>
+    </div>
+  </section>
+
+</div>
+</body>
+</html>

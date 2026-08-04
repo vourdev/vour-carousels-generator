@@ -1,4 +1,5 @@
-/* Webfonts loaded from Google Fonts at runtime.
-   Sora (display), Nunito (body), JetBrains Mono (mono/eyebrows/code).
+/* Vour v1.0 webfonts — Google Fonts at runtime.
+   Sora (display) · Inter (body/UI) · JetBrains Mono (code/eyebrow/counter)
+   · EB Garamond italic (signature serif — issue numbers, series labels, pull-quotes).
    Production print-ready surfaces should host local .woff2 binaries. */
-@import url("https://fonts.googleapis.com/css2?family=Sora:wght@600;700;800&family=Nunito:wght@500;700&family=JetBrains+Mono:wght@400;500;600&display=swap");
+@import url("https://fonts.googleapis.com/css2?family=Sora:wght@600;700;800&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500;600&family=EB+Garamond:ital,wght@1,500&display=swap");

@@ -61,6 +61,18 @@ const modelDetails: Record<string, { label: string; vendor: string; description:
     description: "Multi-vendor AI model gateway",
     icon: <Globe className="size-4 text-rose-500 shrink-0" />,
   },
+  "vour-high": {
+    label: "Vour High",
+    vendor: "OmniRoute",
+    description: "High-quality model - Best results",
+    icon: <Sparkles className="size-4 text-purple-500 shrink-0" />,
+  },
+  "vour-lite": {
+    label: "Vour Lite",
+    vendor: "OmniRoute",
+    description: "Fast learning model - Quick generation",
+    icon: <Zap className="size-4 text-emerald-500 shrink-0" />,
+  },
   omniroute: {
     label: "Vour Model",
     vendor: "VourDev",

@@ -1,940 +1,681 @@
-# Vour Dev — DESIGN.md  ·  Update 7
+# VOUR — Design System
 
-> **THIS FILE IS THE SINGLE SOURCE OF TRUTH.** `SKILL.md` is a thin pointer; `MAKING_CAROUSELS.md` is the build procedure. **If a rule is in SKILL.md, DESIGN.md, and MAKING_CAROUSELS.md at the same time, DESIGN.md wins.** Never restate design rules in SKILL.md — that is the historical source of the "skill and design.md conflict with one another" bug.
->
-> **What changed in Update 7.**
->
-> **Update 7 is a mockup-catalog expansion.** No new palette, no new surface — editorial cream + `--ed-orange` is still the only surface. Update 7 adds **eleven new mockup roles** to §19 so future carousels have real visual variety without inventing off-brand elements slide by slide. The 9 diagram roles (§13) and the 5 image / editorial mockups from Update 6 (§18) are all unchanged — the new roles sit alongside them in the picker menu.
->
-> The new roles are `NumeralHero` · `StackedContrast` · `HistoryTimeline` · `AnnotatedIllustration` · `BrowserMockup` · `StampBadge` · `CommandList` · `PromptCard` · `DataTable` · `CatalogList` · `QuoteInset`. Each ships as a reference slide (`slides/18-…` through `slides/28-…`) and a specimen card (`guidelines/update7-mockup-…`) on the Mockups · Update 7 tab.
->
-> **What changed in Update 6.**
->
-> 1. **§16 · Slide-introduction contract.** Every slide's intro block (counter → eyebrow → headline → description) has a hard character / word / line cap per size. Text tends to run too long by default — the caps are stricter than Update 5 and marked with `HARD`. If it doesn't fit, **cut copy, never shrink font.**
-> 2. **§17 · Single-mockup-fills-the-full-width rule.** When a slide carries ONE mockup, it MUST span the whole `.diag-wrap` (100% width). Never place one mockup in a half-column with the other side empty. Two mockups → 1fr / 1fr grid. Three or four → `MediaGrid` 2×2. More than four → split slides.
-> 3. **§18 · Extended mockup catalog.** Beyond terminal + diagram + info-card + charts, five new mockup roles now ship: `ImagePlate` full-bleed, `ImagePlatePair` before/after, `MediaGrid` 2×2 gallery, `BigStat` single metric, `PullQuote` standout quote, `SplitPanel` image + text. Every new role obeys §14 + §17.
-> 4. **`SKILL.md` is now a stub.** All rules moved into DESIGN.md so there is only one place to look. `SKILL.md` only carries skill metadata + the workflow contract (read DESIGN.md first, then MAKING_CAROUSELS.md).
->
-> **What still holds from earlier updates.** Every constraint that governed the editorial surface — opaque icon containers, pinned single-value type + spacing, the base64 brand mark, no AI-slop gradients, casual Indonesian voice, the §13 diagram vocabulary, the §14 mockup proportion contract, the §15 `vourdev-meta` automation block — is unchanged.
->
-> If a constraint conflicts with your prompt, **ask before breaking it.**
+> **Version 1.0 · "Engineering Editorial"**
+> The single source of truth for every visual that carries the Vour name.
+> `SKILL.md` is a thin pointer. `MAKING_CAROUSELS.md` is the build procedure. **If a rule appears in more than one file, this file wins.**
+
+> **Migration note.** This is a full rewrite of the previous editorial-cream system (archived at `DESIGN.legacy-update7.md`, "Update 7"). The *physics* are preserved — 1080×1350 canvas, 8px grid, screenshot-safe rendering (no `backdrop-filter`), Iconify-only glyphs, and the `vourdev-meta` export block. The *taste* is elevated: a dual-surface palette, a four-role type system with an editorial serif, an expanded component + layout library, a motion system, and strict AI-generation rules. The `tokens/*.css` files and `TEMPLATE-editorial-v3.html` should be regenerated from §17 to match — until then, treat this document as the intended target, not the current CSS state.
 
 ---
 
 ## System prompt (paste verbatim into your AI tool)
 
-> You are the **@vourdev carousel design system, Update 4**. You generate self-contained, swipeable HTML carousels sized 1080×1350, exported as images for Instagram and TikTok photo posts (both display at 4:5 in the feed).
+> You are the **Vour Design System**. You produce self-contained visuals — primarily 1080×1350 swipeable carousels exported as images for Instagram and TikTok (both display 4:5 in-feed). Vour is a developer-first software brand: Next.js, React, Angular, backend, AI workflow, architecture, developer productivity.
 >
-> Always stay on-brand:
+> Non-negotiables:
+> - **Two surfaces only: Paper (warm cream) and Ink (warm near-black).** Never pure `#FFFFFF` or `#000000`. Never a second theme, never a synthwave/neon variant.
+> - **One hero accent: Ember `#EE4B1A`.** Max three colors on any single slide (surface + ink + one accent/tint). Ember never touches body copy.
+> - **Type:** Sora (display), Inter (body/UI), JetBrains Mono (code/eyebrow/counter), EB Garamond (signature serif — issue numbers, series labels, pull-quotes only). Max two weights per slide.
+> - **8px grid.** Every gap/padding/margin is a canonical token from §7. Never invent intermediates.
+> - **One idea per slide. One accent word per headline. One visual focus per viewport.**
+> - **No AI slop:** no multi-hue gradients, no bouncy springs, no `#000`/`#fff` surfaces, no hand-rolled SVG icons, no centered body paragraphs, no emoji inline with body copy, no drop-shadow on the brand mark.
 >
-> - **One surface: editorial.** Warm cream `#FBF6EF` paper + soft corner halo, `#E94B19` accents. No dark variant, no violet bloom, no synthwave, no grid.
-> - **Every icon sits on an opaque card or sub-tile.** Never let the paper halo show through the icon background. See §5.
-> - **Type:** Sora (display, 700/800) + Nunito (body, 500/700) + JetBrains Mono (code, eyebrows, counters). Max two weights per slide.
-> - **Voice:** casual Indonesian, first-person (`saya`). Tech terms stay in English. Never `kami`; `kamu` only inside CTAs.
-> - **8px grid.** Every gap, padding, margin is a multiple of 8. Use the canonical values in §4 — don't invent new ones.
-> - **Brand mark is the JPEG at `assets/vourdev-logo.jpeg`** (or the §3a base64 for standalone bundles). Never re-render the mark as text, SVG, or a "VD" wordmark substitute.
-> - **No AI slop.** No teal→magenta gradients, no bouncy springs, no `#000` / `#fff` surfaces, no hand-rolled SVG icons, no centered body slides, no emoji inline with body copy.
+> Before generating, ask: topic, slide count, hook angle. Run the §19 AI checklist before returning output.
 >
-> Before generating, ask about: topic, slide count, hook angle. Run the §10 checklist before sending output.
+> **Skill gate:** if the `design-taste-frontend` skill is available in your environment, load it BEFORE building any carousel or slide. Apply its anti-slop rules (copy self-audit, no fake-precise numbers, no decorative dots, no em-dash in slide copy, real-content-over-decoration) on top of this system. Where the two conflict, THIS file wins — Vour's locked signatures (per-slide mono eyebrow, page counter, Iconify `lucide:*` icons, Inter body, EB Garamond stamps) are brand law, not AI tells.
 
 ---
 
-## 0 · Who this is for
+# 1 · Brand Personality
 
-**Brand:** `@vourdev` — educational dev content (Next.js, React, TypeScript, Tailwind, MongoDB, Node).
+**Vour is what a senior engineer's notebook would look like if it were designed by a magazine.**
 
-**One canvas, one surface (Update 4):**
+### Personality (six words)
+**Minimal. Confident. Technical. Editorial. Warm. Precise.**
 
-| Where it posts | Canvas | Slide count |
-|---|---|---|
-| Instagram carousel | `1080 × 1350` (4:5) | 6–10 slides |
-| TikTok photo carousel | `1080 × 1350` (4:5) — same canvas | 6–10 slides |
-| Editorial info post | `1080 × 1350` (4:5) | 8–10 slides |
-
-> **Why not 1080×1920 for TikTok?** TikTok photo carousels display at 4:5 in the feed — the same ratio as Instagram. Uploading 9:16 gets the top and bottom cropped in the feed preview.
-
-**One palette prefix:** `--ed-*`. Everything else was pulled in Update 4.
-
----
-
-## 1 · The hierarchy rule that governs everything
-
-> **One idea per slide. One CTA per viewport. One accent word per headline.**
-
-If a slide has two competing focal points, split it into two slides. Aim for **40% text / 30% whitespace / 30% visual** by area on every slide.
-
----
-
-## 2 · Color tokens
-
-### Editorial palette
-
-| Token | Hex | What · Why · When |
-|---|---|---|
-| `--ed-paper` | `#FBF6EF` | Page background. Warm cream, never pure white. |
-| `--ed-paper-tint` | `#F4ECDE` | Corner halo gradient — single corner per slide. |
-| `--ed-ink` | `#1F0904` | Display + headline. Warm near-black. Never `#000`. |
-| `--ed-ink-soft` | `#3D1F15` | Sub-headline + body. |
-| `--ed-ink-muted` | `#6E4B3E` | Caption, page counter, secondary body. |
-| `--ed-ink-faint` | `#A48C7E` | Inactive labels ("SCRAPED"). |
-| `--ed-orange` | `#E94B19` | Accent — eyebrow, numbered badge, headline keyword. **Never on body.** |
-| `--ed-orange-soft` | `#F2825D` | Hover / soft variant. |
-| `--ed-card-peach` | `#FBE9D9` | Active info card fill (default). |
-| `--ed-card-stone` | `#EDE7DA` | Inactive / "scraped" card fill. |
-| `--ed-card-mint` | `#E3F1E1` | Topic tint — success / "yes" cards. |
-| `--ed-card-sky` | `#DEEAF7` | Topic tint — info / tooling cards. |
-| `--ed-card-pink` | `#F7DDE6` | Topic tint — design / content cards. |
-| `--ed-card-amber` | `#FBE7B0` | Topic tint — perf / highlight cards. |
-| `--ed-callout-ink` | `#1F0904` | Dark callout banner. Foreground white, icon `--ed-orange`. |
-
-Editorial icon sub-tile fill (deeper tint inside an info card; opaque enough that no paper halo bleeds through):
-
-| Token | Value |
+| Trait | What it means visually |
 |---|---|
-| `--ed-icon-tile-bg` | `rgba(31,9,4,0.06)` |
+| **Minimal** | Nothing on the slide that isn't carrying meaning. Whitespace is a feature, not leftover space. |
+| **Confident** | Big type, decisive hierarchy, no hedging. One idea stated plainly and large. |
+| **Technical** | Monospace for machine truth, real diagrams over decorative icons, correct terminology. |
+| **Editorial** | Reads like a print magazine spread — eyebrow, headline, lede, one focal image. Asymmetric, left-aligned, generous. |
+| **Warm** | Cream paper and warm ink, never clinical blue-gray. Vour is human, not corporate. |
+| **Precise** | Everything on an 8px grid. Pinned type sizes. No approximations. |
 
-### Constraint rules
+### Visual language
+A **warm editorial surface** (cream paper) carrying **cold technical objects** (terminals, diagrams, code) rendered in **warm ink**. The tension between the human paper and the machine content *is* the brand. A single **ember** accent points the eye to exactly one thing per slide.
 
-- `--ed-orange` **never** appears on body paragraphs.
-- Card tones (`--ed-card-mint | sky | pink | amber | stone`) **never** appear as text colors. Card backgrounds only.
+### Design philosophy
+> **Content is the decoration.** A terminal, a diagram, a real number — those are the visuals. We never add ornament to make a slide "look designed." The design job is hierarchy and restraint, not embellishment.
+
+North stars: **Linear** (restraint + precision), **Vercel** (contrast + type scale), **Stripe** (clarity of technical explanation), **Framer** (motion sensibility), **Apple** (whitespace confidence), **Figma** (friendly technical). Vour = these, but on warm paper instead of cold black.
+
+**What Vour is NOT:** a Canva template, an AI-generated carousel, a generic IG slide, a startup pitch deck, a neon "tech" aesthetic.
 
 ---
 
-## 3 · Type system
+# 2 · Color System
 
-### Families + loader
+Vour runs on **two surfaces and one accent**. Everything else is a supporting neutral or a semantic tint used sparingly.
 
-| Token | Family | Role |
+### 2.1 · The rule that governs color
+> **Max three colors visible on any slide: one surface + ink + one accent (Ember, or a single topic tint).** If you want a second bright color, you've made a mistake — split the idea across two slides.
+
+### 2.2 · Primary — Ember (the accent)
+
+| Token | Hex | Use |
 |---|---|---|
-| `--font-display` | `Sora` | Headlines, section titles |
-| `--font-body` | `Nunito` | Body, captions, footer |
-| `--font-mono` | `JetBrains Mono` | Code blocks, eyebrows, page counter, "SCRAPED" labels |
+| `--ember` | `#EE4B1A` | THE accent. Eyebrow text, headline keyword (`<span class="a">`), numbered badge, active diagram node, key metric. Points to one thing per slide. |
+| `--ember-bright` | `#FF6A3D` | Ember on the Ink surface (brighter for contrast on dark). Use only on dark. |
+| `--ember-soft` | `#F5895F` | Hover / secondary emphasis / soft fills. Rare. |
+| `--ember-wash` | `rgba(238,75,26,0.06)` | Corner halo on Paper, faint tint wells. |
 
-```html
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Sora:wght@600;700;800&family=Nunito:wght@500;700&family=JetBrains+Mono:wght@400;500;600&display=swap">
-```
+**Ember law:** never on body paragraphs, never as a border thicker than a callout edge, never in a gradient with another hue.
 
-### Scale — single-value table
+### 2.3 · Surfaces
 
-> Use these literal numbers; do not interpolate between them.
+| Token | Hex | Surface | Use |
+|---|---|---|---|
+| `--paper` | `#FBF6EF` | **Paper (light)** | Default slide background. Warm cream, never `#FFF`. |
+| `--paper-raised` | `#FFFDF9` | Paper | Cards/panels that lift off the page. |
+| `--paper-sunken` | `#F2EADD` | Paper | Corner-halo gradient stop, sunken wells, inactive fields. |
+| `--ink-900` | `#14110E` | **Ink (dark)** | Dark-surface slides, terminals, dark callouts. Warm near-black, never `#000`. |
+| `--ink-800` | `#1F1A15` | Ink | Raised card on a dark surface. |
+| `--ink-700` | `#2B241D` | Ink | Borders/dividers on a dark surface. |
 
-| Token | px | Weight | LH | Role |
-|---|---:|---:|---:|---|
-| `--fs-title-lg` | **128** | 800 | 0.98 | Cover / big-number headline |
-| `--fs-title` | **104** | 800 | 1.02 | Inner slide headline |
-| `--fs-title-sm` | **88** | 800 | 1.04 | Compact headline (long titles, diagram slides) |
-| `--fs-h2` | **56** | 700 | 1.10 | Card / row heading |
-| `--fs-h3` | **40** | 700 | 1.15 | Small heading, checklist row |
-| `--fs-lead` | **40** | 500 | 1.30 | Lead paragraph under hero |
-| `--fs-body-lg` | **32** | 500 | 1.40 | Slide body copy |
-| `--fs-body` | **28** | 500 | 1.45 | Card body, bullet body |
-| `--fs-eyebrow` | **24** | 500 | 1.0 | Mono eyebrow, ALL CAPS, tracking 0.18em |
-| `--fs-counter` | **24** | 400 | 1.0 | `01 / 10` mono page counter |
-| `--fs-caption` | **22** | 500 | 1.35 | Sources, micro-meta |
+**Two surfaces, one system.** Most decks live on Paper. Ink appears for terminals, code, dark callouts, and the occasional full-dark "engineering" slide for rhythm (§13). Never invent a third surface (no gray, no gradient page).
 
-**Hierarchy rule:** at most ONE element on a slide ≥ `--fs-title`. Everything else drops by **≥24px** (one step in the scale).
+### 2.4 · Text / Ink neutrals (on Paper)
 
-### Headline emphasis
+| Token | Hex | Use |
+|---|---|---|
+| `--ink` | `#1C0A05` | Display + headline. Warm near-black. |
+| `--ink-soft` | `#3D2419` | Sub-headline + body. |
+| `--ink-muted` | `#6E4B3E` | Caption, page counter, secondary body. |
+| `--ink-faint` | `#A48C7E` | Inactive labels, disabled, "SCRAPED". |
 
-One word per headline in `var(--ed-orange)`. Never underline, never italic for emphasis. Always wrap the accent word in `<span class="a">…</span>`.
+### 2.5 · Text neutrals (on Ink surface)
 
----
+| Token | Value | Use |
+|---|---|---|
+| `--cream` | `#F7F1E8` | Primary text on dark. |
+| `--cream-soft` | `rgba(247,241,232,0.72)` | Body on dark. |
+| `--cream-muted` | `rgba(247,241,232,0.45)` | Captions / comments on dark. |
 
-## 3a · Brand mark
+### 2.6 · Card tints (topic surfaces — backgrounds only, never text)
 
-> **Always render the mark from `assets/vourdev-logo.jpeg`** (in this project). For standalone bundles, use the base64 data URL in `bundle/DESIGN.md` §3a. Never re-create as letters, SVG, or a "VD" wordmark substitute. Never recolor, stroke, drop-shadow, or rotate it.
+| Token | Hex | Topic |
+|---|---|---|
+| `--card-peach` | `#FBE9D9` | Neutral / default / "the way" |
+| `--card-mint` | `#E3F1E1` | Success / growth / "yes" |
+| `--card-sky` | `#DEEAF7` | Tooling / info / infra |
+| `--card-pink` | `#F7DDE6` | Design / UI / content |
+| `--card-amber` | `#FBE7B0` | Performance / speed / highlight |
+| `--card-stone` | `#EDE7DA` | Warning / inactive / "no" / loser |
 
-> **⚠ STRICT — when embedding the bundle's base64 mark, copy the string VERBATIM.** `bundle/DESIGN.md §3a` holds a ~26,000-character data URL that ends in `==`. Paste **the entire string**, first character through closing `==`, into every `src="…"`. Do not truncate, do not shorten with `…`, do not stop mid-string. A half-pasted base64 decodes to a corrupt / partial disc that renders as a black semicircle or nothing — which is what "the disc only appears halfway" means when it happens. Pre-flight: every `src="data:image/png;base64,…"` must end in `==` and be ≥ 25,900 chars long.
+### 2.7 · Semantic line colors (diagram strokes + labels only)
 
-### Sizes (pinned)
+| Token | Hex | Meaning |
+|---|---|---|
+| `--line-ink` | `#1C0A05` | Default node border + connector |
+| `--line-mint` | `#4E9E5C` | Success / winner |
+| `--line-sky` | `#2F6EBC` | Tooling / info |
+| `--line-amber` | `#B98A0D` | Highlight / perf |
+| `--line-pink` | `#C1547B` | Design / content |
+| `--line-red` | `#C13B1A` | Warning / loser |
+| `--line-muted` | `#A48C7E` | Dashed connectors, faint labels |
 
-| Placement | Disc size | Notes |
-|---|---:|---|
-| Cover slide | **72px** | |
-| Inner brand pill (top-right) | **44px** | |
-| Inside a card | **40px** | (smallest allowed — cyan reads as a smudge below 40) |
-| Outro footer | **72px** + `@vourdev` wordmark (Nunito 700 · 32px) at 16px to the right | |
+### 2.8 · Borders
 
-### The disc markup
+| Token | Value | Use |
+|---|---|---|
+| `--hairline` | `rgba(28,10,5,0.10)` | Row dividers, subtle separation on Paper |
+| `--border` | `rgba(28,10,5,0.14)` | Card/mockup outline on Paper |
+| `--hairline-dark` | `rgba(247,241,232,0.10)` | Dividers on Ink |
+| `--border-dark` | `rgba(247,241,232,0.16)` | Card outline on Ink |
 
-The mark is square; we mask it into a disc and let its black field merge with the disc edge.
-
-```html
-<div class="fb-logo">
-  <img src="assets/vourdev-logo.jpeg" alt="@vourdev">
-</div>
-```
-
-```css
-.fb-logo {
-  width: 72px; height: 72px;
-  border-radius: 50%;
-  overflow: hidden;
-  background: #07070e;
-  flex: none;
-}
-.fb-logo img { width: 100%; height: 100%; object-fit: cover; display: block; }
-```
-
-### Don'ts
-
-- ❌ Render the mark as letters (`<span>VD</span>`) — even as a fallback.
-- ❌ Recolor · invert · stroke · drop-shadow the mark.
-- ❌ Place it on a colored background (the disc must read as the mark's own field).
-- ❌ Stretch · crop · rotate.
-- ❌ Use it smaller than 40px.
+### 2.9 · Constraint rules
+- `--ember` **never** on body text or on any card tint text.
+- Card tints **never** used as text color — background fills only.
+- Semantic line colors apply to **node borders + labels**, never as full fills (that role belongs to Ember alone).
+- Never place two card tints of different hue on the same slide (breaks the 3-color law).
 
 ---
 
-## 4 · Spacing — the 8px grid
+# 3 · Typography System
 
-**Every gap, padding, margin is a multiple of 8. Use the values below — don't invent intermediates.**
+Four families, four jobs. **Max two weights on a single slide.**
 
-### Canonical gap tokens
+| Role | Family | Weights | Job |
+|---|---|---|---|
+| **Display** | `Sora` | 600 / 700 / 800 | Hero titles, section titles, big numbers |
+| **Body / UI** | `Inter` | 400 / 500 / 600 | Body, captions, labels, card text |
+| **Code / Machine** | `JetBrains Mono` | 400 / 500 / 600 | Code, eyebrows, page counter, data, terminal |
+| **Signature serif** | `EB Garamond` | 400 / 500 (italic) | Issue numbers, series labels, pull-quote body/glyph — **signature elements only (§16)** |
 
+```html
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Sora:wght@600;700;800&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500;600&family=EB+Garamond:ital,wght@1,500&display=swap">
+```
+
+### 3.1 · The scale (pinned — do not interpolate)
+
+Battle-tested for the 1080×1350 canvas. Use these literal numbers.
+
+| Token | px | Weight | LH | Family | Role |
+|---|---:|---:|---:|---|---|
+| `--fs-hero` | **128** | 800 | 0.98 | Sora | Cover / big-number headline |
+| `--fs-title` | **104** | 800 | 1.02 | Sora | Inner slide headline |
+| `--fs-title-sm` | **88** | 800 | 1.04 | Sora | Compact headline (mockup/diagram slides) |
+| `--fs-numeral` | **640** | 800 | 0.85 | Sora | NumeralHero display count |
+| `--fs-h2` | **56** | 700 | 1.10 | Sora | Card / row heading |
+| `--fs-h3` | **40** | 700 | 1.15 | Sora | Small heading, checklist row |
+| `--fs-lead` | **40** | 500 | 1.30 | Inter | Lede under a hero |
+| `--fs-body-lg` | **32** | 500 | 1.40 | Inter | Slide body copy |
+| `--fs-body` | **28** | 500 | 1.45 | Inter | Card body, bullet body |
+| `--fs-eyebrow` | **24** | 500 | 1.0 | JetBrains Mono | Eyebrow, ALL CAPS, tracking 0.18em |
+| `--fs-counter` | **24** | 400 | 1.0 | JetBrains Mono | `01 / 10` page counter |
+| `--fs-caption` | **22** | 500 | 1.35 | Inter | Sources, micro-meta |
+| `--fs-quote` | **64** | 500 | 1.25 | EB Garamond italic | Pull-quote body |
+
+### 3.2 · Hierarchy rules
+- **At most ONE element per slide ≥ `--fs-title` (104).** Everything else drops ≥ 24px (one full step).
+- Headline tracking: `-0.025em`. Body tracking: `0`. Eyebrow tracking: `0.18em`. Mono counter: `0`.
+- **Headline emphasis:** exactly one accent word in `--ember`, wrapped `<span class="a">…</span>`. Never underline, never italic for emphasis (italic belongs to EB Garamond signature use only).
+- Numbers in stats/metrics use Sora 800 (`--fs-numeral` / `--fs-h2`), never mono.
+
+### 3.3 · Per-role summary
+- **Hero Title** — Sora 800, 128px, one ember word, ≤ 4 words total.
+- **Section Title** — Sora 800, 104px inner / 88px on mockup slides.
+- **Body** — Inter 500, 32px, `--ink-soft`, left-aligned, ≤ 2 lines in intros.
+- **Caption** — Inter 500, 22px, `--ink-muted`.
+- **Code** — JetBrains Mono 500, 28px, on Ink surface only.
+- **Highlight** — one word Sora 800 in `--ember` inside a headline; OR a EB Garamond italic word for editorial contrast (rare).
+- **Number** — Sora 800, `--ember` for the hero figure, `--ink` for unit + caption.
+
+---
+
+# 4 · Grid System
+
+- **Canvas:** `1080 × 1350` (4:5). Instagram + TikTok photo carousels both render 4:5. Never build 9:16 — it crops.
+- **Outer padding (safe area):** `80 / 96 / 80` (left+right / top / bottom). Nothing except a deliberate full-bleed image crosses this box.
+- **Content column:** `1080 − 160 = 920px` wide working area.
+- **Baseline:** everything on the **8px grid**. Optical exceptions must be commented with WHY.
+- **Alignment:** **left-aligned by default.** Centered layout is reserved for Cover, Quote, and Outro slides only.
+- **Whitespace target:** roughly **40% text / 30% whitespace / 30% visual** by area per slide. Whitespace is the premium signal — protect it.
+- **One focal column.** Content flows top→bottom in a single column; two columns only for explicit comparison/split layouts.
+
+Canonical spacing tokens live in §7 and §17. Never invent intermediate gaps.
+
+---
+
+# 5 · Visual Components
+
+Every component shares one language: **warm surface, hairline or no border, generous inner padding, radius from the token scale, mono for machine text, one accent max.** No component uses `backdrop-filter` (it does not survive screenshot export).
+
+### 5.1 · Window chrome (shared base for Terminal / Browser / Mac Window)
+```
+radius:        20 (mac/terminal) · 24 (browser)
+border:        1.5–2px --border (on Paper) / --border-dark (on Ink)
+shadow:        0 24px 60px rgba(28,10,5,0.08)
+title bar:     20–24 padding
+traffic dots:  14px · #FF5F56 / #FFBD2E / #27C93F · 8 gap
+```
+
+| Component | Spec |
+|---|---|
+| **Terminal** | Ink-900 body. Mac dots. `<pre>` JetBrains Mono 28/1.6. Syntax classes: `.cmt` `rgba(247,241,232,.45)` · `.key` `#E8B4A0` · `.val` `#B79CF2` · `.kw` `--ember-bright` · `.num` `#7FD0A0`. Footer divider 1px `--hairline-dark`. Cap 8 lines, ≤ 44 chars/line. |
+| **Browser Window** | Paper chrome `#FAF4EA` + `--paper-raised` content. URL pill mono 20 in `--ink-muted`. Optional 260px sidebar. Never paste a real screenshot into the content area — rebuild it in-brand. |
+| **Mac Window** | Same base; title-bar label Inter 500 · 22 · `--ink-muted`. For IDE / native-app mockups. |
+| **Dashboard Card** | `--paper-raised`, radius 24, `--border`, padding 32. Optional `BigStat` inside. |
+| **Code Block** (inline, on Paper) | `--ink-900` panel, radius 16, padding 24, no chrome. For short snippets that don't need a full terminal. |
+| **API Flow** | `.diag-flow` — row of `.node` + `→` arrow, exactly one `.node.filled` (ember) as the focus step. |
+| **Database** | `.node` with a stacked-cylinder lucide/line-art glyph; label mono 22. Connect via dashed 1.5 `--line-muted`. |
+| **Folder Structure** | Monospace tree (`├─ └─ │`) in JetBrains Mono 26, `--ink-soft`; active path row in `--ember`. On `--paper-raised`, radius 16, padding 32. |
+| **Git Branch** | Horizontal commit dots (10px) on a 2px `--line-ink` line; branch line curves off at 1.5px; merge node filled `--ember`. Labels mono 20. |
+| **Terminal Prompt** | Single line: `--ember` `❯` glyph + JetBrains Mono 28 command. Cursor block optional. |
+| **AI Workflow** | `.diag-flow` or `.diag-hub` where one node is an "AI" node (`.node.filled` ember) with line-art spark glyph; inputs left, outputs right. |
+| **Architecture Diagram** | `.diag-hub` / layered `.node` stack; layers separated by `--gap-section`; one highlighted layer only. |
+| **Node Graph** | `.diag-icon-hub` — `.node.filled.big` centre + 4 line-art icons, dashed `6 6` connectors. |
+| **Status Badge** | Pill, radius 999, padding `6 16`, mono 20 CAPS. States: neutral (`--card-stone` bg / `--ink-muted`), active (`--card-mint` / `--line-mint`), alert (`--card-stone` / `--line-red`). |
+| **Notification Toast** | `--paper-raised`, radius 16, `--border`, padding `20 24`, left icon-tile 40px, one line title + one line body. Shadow as window base. |
+| **Command Palette** | `--ink-800` panel, radius 16, top mono input row with `--ember` caret, list rows mono 26, active row `--ink-700` fill. Cap 5 rows. |
+
+### 5.2 · The diagram primitive — `.node`
+Every diagram is built from `.node` (a line-art rounded rectangle):
+```
+padding:       14 24
+min-height:    64
+background:    --paper-raised (light) / --ink-800 (dark)
+border:        1.5 solid --line-ink
+radius:        16
+font:          JetBrains Mono 500 · 26
+```
+Variants: `.filled` (ember bg, cream text, Sora 700) · `.big` (Sora 700 · 44, radius 20, min-height 96 — hub centres) · `.mint`/`.sky`/`.amber`/`.pink`/`.red` (topic-accent **border + text**, never full fill).
+
+**Diagram hard rules:** one highlighted node per diagram · strokes 1.5px (2px emphatic) · dashed connectors `stroke-dasharray: 6 6` · never bleed past the 920px safe column · one diagram per slide.
+
+---
+
+# 6 · Icon Style
+
+**One set, one weight, one rule.**
+
+- **Style:** **outline (line), 2px stroke, rounded joins/caps.** Never filled, never duotone, never hand-rolled.
+- **Concept icons:** `lucide:*` — 24×24, color `--ember`, always inside an opaque icon tile.
+- **Brand logos:** `simple-icons:*` (`nextdotjs`, `react`, `angular`, `typescript`, `tailwindcss`, `nodedotjs`, `mongodb`, `vercel`) — always inside an editorial icon card, never bare on paper.
+- **Loader:** `<script src="https://code.iconify.design/iconify-icon/2.1.0/iconify-icon.min.js"></script>`
+
+### Pinned icon sizing
+| Container | Container | Glyph |
+|---|---:|---:|
+| Editorial card icon | 48 × 48 (radius 12) | 24 × 24 |
+| Callout icon | 40 × 40 (radius 10) | 24 × 24 |
+| Numbered step badge | 40 × 40 | 22 digit |
+| Toast icon tile | 40 × 40 | 22 |
+
+**Icon-tile law:** every icon sits on an opaque tile (`--icon-tile-bg: rgba(28,10,5,0.06)` on Paper; `rgba(247,241,232,0.08)` on Ink). No icon ever floats directly on the paper halo. **Consistency:** all icons on a slide are the same set + same size — never mix lucide filled and outline, never mix icon sizes in one row.
+
+---
+
+# 7 · Card Style + Spacing Tokens
+
+### 7.1 · Card spec
+| Property | Value |
+|---|---|
+| **Radius** | `--r-sm 12` (tiles) · `--r 16` (inline blocks) · `--r-lg 20` (callouts/mockups) · `--r-xl 24` (info cards) |
+| **Border** | none on tinted cards; `1.5px --border` on `--paper-raised` cards + all mockups |
+| **Shadow** | none on flat tinted cards; `--shadow-card: 0 24px 60px rgba(28,10,5,0.08)` on raised/mockup cards only |
+| **Elevation** | Paper (0) → tinted card (0, color-lifted) → raised card (shadow) → window/mockup (shadow + border) |
+| **Glass** | ❌ not used — `backdrop-filter` fails on export. "Lift" comes from `--paper-raised` + shadow, not blur. |
+| **Gradient** | only the corner halo (single-hue ember wash) + optional 1-stop vertical darken inside Ink terminals. Never multi-hue. |
+| **Hover** | web/UI contexts only: `translateY(-2px)` + shadow deepen, 160ms. Carousels are static — no hover. |
+
+### 7.2 · Canonical gaps (8px grid — never invent intermediates)
 | Token | px | When |
 |---|---:|---|
-| `--gap-tight` | **8** | Sibling labels, tile inner |
-| `--gap-small` | **16** | Logo → wordmark, bullets inside a list |
-| `--gap-badge-headline` | **24** | ★ Eyebrow → headline |
-| `--gap-headline-body` | **32** | ★ Headline → body / lede |
-| `--gap-body-asset` | **40** | Body → asset / row of cards |
-| `--gap-section` | **48** | Section → section |
-| `--gap-block` | **64** | Header → main body |
-| `--gap-icon-text` | **16** | Tile / icon → its label |
+| `--gap-tight` | 8 | Sibling labels, tile inner |
+| `--gap-sm` | 16 | Bullets, logo→wordmark, card-to-card in a pair |
+| `--gap-badge-headline` | 24 | ★ Eyebrow → headline |
+| `--gap-headline-body` | 32 | ★ Headline → body/lede |
+| `--gap-body-asset` | 40 | Body → asset/cards row |
+| `--gap-section` | 48 | Section → section |
+| `--gap-block` | 64 | Header → main body |
 
-### Canonical padding tokens
-
+### 7.3 · Canonical padding
 | Token | px | Where |
 |---|---:|---|
-| `--pad-ig-x` | **80** | Left + right edge |
-| `--pad-ig-top` | **96** | Top edge |
-| `--pad-ig-bottom` | **80** | Bottom edge |
-| `--pad-card` | **32** | Inside info cards, numbered steps |
-| `--pad-callout` | **32** | Inside dark callouts |
+| `--pad-x` | 80 | Left + right edge |
+| `--pad-top` | 96 | Top edge |
+| `--pad-bottom` | 80 | Bottom edge |
+| `--pad-card` | 32 | Inside info cards / steps |
+| `--pad-callout` | 32 | Inside dark callouts |
+| `--pad-window` | 40 | Inside terminals / code |
 
-### Vertical rhythm (the canonical stack)
-
+### 7.4 · The canonical vertical stack
 ```
 Page counter
-   ↓ 64  (--gap-block)
+   ↓ 64  (--gap-block)   [48 on mockup/diagram slides]
 Eyebrow
    ↓ 24  (--gap-badge-headline)
 Headline
    ↓ 32  (--gap-headline-body)
 Body / lede
    ↓ 40  (--gap-body-asset)
-Row of cards / asset
+Cards / asset / diagram
    ↓ 48  (--gap-section)
 Next section / footer
 ```
-
-Any slide that deviates must say WHY in a comment.
-
----
-
-## 5 · The icon-card opacity rule
-
-> **Every icon container has an opaque background fill. No icon ever sits directly on the paper halo.**
-
-### Editorial icon-card spec (pinned)
-
-```
-size:               full-width grid cell (no fixed dimension; --pad-card inside)
-border-radius:      24
-background:         var(--ed-card-peach) | --ed-card-mint | --ed-card-sky | --ed-card-pink | --ed-card-amber | --ed-card-stone
-                    (PICK BY TOPIC — never use a transparent fill)
-border:             none
-shadow:             none
-
-icon container:     48 × 48 rounded-12
-icon container bg:  var(--ed-icon-tile-bg)  /* rgba(31,9,4,0.06) — opaque enough to read */
-icon:               24 × 24 line icon (lucide:*), color = --ed-orange
-
-title:              Sora 700 · --fs-h3 (40px) · --ed-ink
-gap:                8
-body:               Nunito 500 · --fs-body (28px) · --ed-ink-soft · max 3 lines
-```
-
-**Never use `backdrop-filter: blur`.** It doesn't survive screenshot export.
-
-### Topic → card-color mapping
-
-| Topic | Editorial card color |
-|---|---|
-| perf, speed, energy | `--ed-card-amber` |
-| success, growth, "yes" | `--ed-card-mint` |
-| tooling, info, infra | `--ed-card-sky` |
-| design, UI, content | `--ed-card-pink` |
-| warning, "no", loser | `--ed-card-stone` |
-| neutral / "the way" | `--ed-card-peach` |
+Any deviation must state WHY in a comment.
 
 ---
 
-## 6 · Backgrounds
+# 8 · Background System
+
+**Two surfaces, five treatments.** Treatments never combine (one per slide) and never add multi-hue color.
+
+| Treatment | Surface | Recipe | Use |
+|---|---|---|---|
+| **Paper (default)** | Paper | `--paper` + single-corner ember halo | 70% of slides |
+| **Paper + halo** | Paper | two radial ember stops ≤ 6% opacity (see below) | covers/outros |
+| **Ink** | Ink | flat `--ink-900` | terminals, dark callouts, one "engineering" rhythm slide per deck |
+| **Blueprint** | Ink | `--ink-900` + 40px grid of `rgba(247,241,232,0.05)` 1px lines | architecture/diagram feature slide (max 1 per deck) |
+| **Terminal** | Ink | `--ink-900` + faint top-edge lighten `rgba(247,241,232,0.03)` | full-slide terminal |
 
 ```css
+/* Paper + halo (the signature background) */
 background:
-  radial-gradient(55% 40% at 100% 0%, rgba(233,75,25,0.06), transparent 65%),
-  radial-gradient(60% 50% at 10% 100%, rgba(233,75,25,0.04), transparent 70%),
+  radial-gradient(55% 40% at 100% 0%, rgba(238,75,26,0.06), transparent 65%),
+  radial-gradient(60% 50% at 10% 100%, rgba(238,75,26,0.04), transparent 70%),
   #FBF6EF;
 ```
 
-**No grid lines. No dark variant.** The halo is soft — the two radial stops max out around 6% opacity so text is always legible on top.
+**Forbidden backgrounds:** ❌ mesh gradients ❌ noise textures over text ❌ multi-hue gradients ❌ neon/synthwave ❌ pure `#000`/`#fff` ❌ full-page grid on Paper (grid is an Ink-only "blueprint" treatment). The halo maxes at 6% so text is always legible.
 
 ---
 
-## 7 · Components & layout patterns
+# 9 · Illustration Style
 
-### A. Page counter — top-left, every non-cover slide
+**One illustration language: line-art on surface, ink stroke, one accent fill.** Never stock illustrations, never 3D renders, never gradient blobs, never photorealism.
 
-```
-Font:       JetBrains Mono · 24px · color --ed-ink-faint  (#A48C7E)
-Format:     "01 / 10"  (two-digit, spaces around slash)
-Position:   pad-ig-x from left, pad-ig-top from top
-```
-
-### B. Eyebrow — above every headline
-
-```
-Font:       JetBrains Mono · 24px · weight 500 · letter-spacing 0.18em
-Case:       ALL CAPS · color --ed-orange
-
-Gap below eyebrow → headline:  24 (--gap-badge-headline)
-```
-
-### C. Headline + lede block
-
-```
-Eyebrow
-   ↓ 24
-Headline   ← --fs-title (104), weight 800, tracking -0.025em
-   ↓ 32
-Lede       ← --fs-lead (40), weight 500, color --ed-ink-soft
-   ↓ 64
-[next section]
-```
-
-### D. Info card — spec
-
-```
-border-radius:   24
-padding:         32 (--pad-card)  on all sides
-background:      one of --ed-card-* (peach default)
-border:          none
-shadow:          none
-```
-
-Anatomy: icon container (48px rounded-12, opaque `--ed-icon-tile-bg` fill, icon 24×24 `--ed-orange`) → 16 gap → Title (Sora 700 · 40px · `--ed-ink`) → 8 gap → Body (Nunito 500 · 28px · `--ed-ink-soft`, max 3 lines).
-
-### E. Comparison pair — "SCRAPED vs DESIGNED"
-
-Two stacked info cards.
-- Top card: `--ed-card-stone`, `--ed-ink-faint` mono label "SCRAPED", one line of bare value.
-- Bottom card: `--ed-card-peach`, `--ed-orange` mono label "DESIGNED", same value PLUS 3–4 lines of rationale.
-
-Gap between the two cards: **16** (`--gap-small`).
-
-### F. Dark callout
-
-```
-border-radius:   20
-padding:         32 (--pad-callout)
-background:      --ed-callout-ink (#1F0904)
-color:           #FFFFFF
-icon container:  40 × 40 rounded-10, bg rgba(255,255,255,0.08), icon 24×24 --ed-orange
-gap icon→text:   16
-```
-
-Max one per slide.
-
-### G. Terminal code block
-
-```
-border-radius:   20
-padding:         40
-background:      #1F0904 (--ed-callout-ink), never pure black
-mac dots:        #FF5F56 / #FFBD2E / #27C93F · 14px · 8 gap
-
-code:            JetBrains Mono · 28px · line-height 1.6
-  comments      → rgba(255,255,255,0.45)
-  keys          → #E8B4A0
-  values        → #B79CF2
-  punctuation   → #FFFFFF
-
-footer divider:  1px rgba(255,255,255,.08), margin-top 24
-footer note:     Nunito 500 italic · 22px · rgba(255,255,255,0.55)
-```
-
-### H. Numbered step card
-
-```
-border-radius:  20
-padding:        32 (--pad-card)
-background:     --ed-card-peach
-flex row, gap 20:
-  circle 40px filled --ed-orange — Sora 700 · 22px · white
-  text column:
-    Title (Sora 700 · 32px · --ed-ink)
-    ↓ 4
-    Body  (Nunito 500 · 28px · --ed-ink-soft, max 3 lines)
-```
-
-Stack three vertically with `--gap-small` (16) between.
-
-### I. Concept diagram — center node + outer pills
-
-```
-Central node:
-  140 × 140 rounded 28
-  background --ed-callout-ink
-  icon container 40 × 40 rounded-10, bg rgba(255,255,255,0.10), icon 24×24 white
-  label below: JetBrains Mono · 22px · white
-
-Outer pills (4 of them, 10/2/8/4 o'clock):
-  background --ed-card-peach
-  padding 16 28, rounded 14
-  text Sora 600 · 28px · --ed-ink
-
-Connectors: dashed 1.5 rgba(31,9,4,0.18), gentle curve
-```
-
-### J. Editorial outro
-
-```
-Big claim headline (--fs-title 104, weight 800)
-   ↓ 32
-Body — 2-3 short sentences, each on its own line, --fs-body-lg (32)
-   ↓ 40
-Highlight panel (--ed-card-peach, rounded 20, padding 24 28):
-  Strong line (Sora 700 · 32px · --ed-orange)
-  ↓ 8
-  Sub-line (Nunito 500 · 26px · --ed-ink-soft)
-```
-
----
-
-## 8 · Iconography
-
-| Set | Use for | Tinting rule |
-|---|---|---|
-| `simple-icons:*` | Real brand logos (`nextdotjs`, `react`, `typescript`, `tailwindcss`, `mongodb`, `nodedotjs`, `vercel`, `angular`) | Always inside an editorial icon card. Never bare. |
-| `lucide:*` | Generic concept icons (`zap`, `search`, `rocket`, `server`, `file-code-2`, `check`, `quote`, `arrow-right`, `lock`) | As 24×24 line icons on editorial cards, color `--ed-orange`. |
-
-Iconify loader (one line, drop in once per page):
-
-```html
-<script src="https://code.iconify.design/iconify-icon/2.1.0/iconify-icon.min.js"></script>
-```
-
-### Icon size — pinned values
-
-| Container | Container size | Icon glyph size |
-|---|---:|---:|
-| Editorial card icon | 48 × 48 | 24 × 24 |
-| Editorial callout icon | 40 × 40 | 24 × 24 |
-| Numbered step badge | 40 × 40 | 22px digit |
-| Mock-screen lock badge | 44 × 44 pill | 26 × 26 |
-| Brand mark (cover) | 72 × 72 | n/a (image) |
-| Brand mark (inner) | 44 × 44 | n/a (image) |
-| Brand mark (in-card) | 40 × 40 | n/a (image) |
-
----
-
-## 9 · Canvas & padding
-
-- Canvas is **1080 × 1350** (4:5 portrait). Instagram + TikTok photo carousels both display at 4:5.
-- Padding is **80 / 96 / 80** (X / top / bottom).
-- Deck length: 6–10 slides. Sweet spot is 8.
-- Hero size (`--fs-title-lg` 128) on the cover; inner headlines use `--fs-title` (104) or `--fs-title-sm` (88) on diagram-heavy slides.
-- One accent word per headline, `--ed-orange`, wrapped in `<span class="a">`.
-- Page counter `01 / 10` top-left on every non-cover slide.
-- Cover uses brand mark 72px + `@vourdev` wordmark. Outro repeats it at the bottom.
-- Closing slide is a highlight panel — never a stack of CTA discs.
-
----
-
-## 10 · The 16-item author checklist
-
-1. Canvas is **1080 × 1350**. Padding `80 / 96 / 80`.
-2. Background uses `--bg-editorial`. Never a flat fill, never a dark surface.
-3. Every gap comes from the §4 canonical token list.
-4. One headline per slide; one `<span class="a">` accent word per headline.
-5. Eyebrow is JetBrains Mono 24px in `--ed-orange`, ALL CAPS, tracking 0.18em.
-6. Body has no emoji. Arrows are `→` not `->`.
-7. **Every icon sits on an opaque container.** No paper halo showing through. (§5)
-8. **Card fill is one of the `--ed-card-*` family** — never `transparent`, never `rgba()` over paper.
-9. Type sizes come from the §3 single-value scale. No ad-hoc px values.
-10. Left-aligned unless this is Cover / Quote / Outro.
-11. Page counter on every non-cover slide.
-12. Brand mark from `assets/vourdev-logo.jpeg` on every cover and outro.
-13. **Mockup slides pass the §14 proportion contract.** Title, eyebrow, description, and mock-screen never overlap. Headline is `h1.compact` (88px). Description ≤ 2 lines / 100 chars.
-14. **The `<script id="vourdev-meta">` block is present in `<head>`** with valid JSON (`title`, `caption`, `hashtags`). Never omit; the export pipeline depends on it. (§15)
-15. **Slide introduction passes the §16 contract.** Eyebrow ≤ 3 words. Headline within the size's `HARD` cap. Description within the intro-length cap for its slide type. No section exceeds its cap by "just one word".
-16. **When a slide carries ONE mockup, it spans the full `.diag-wrap` (100% width)** — §17. Never leave half a column empty.
-
----
-
-## 11 · Things to never do
-
-- ❌ Put `--ed-orange` on body text or borders larger than the callout.
-- ❌ Use `#000` / `#fff` as a surface.
-- ❌ Add a dark/synthwave/gradient variant of the slide background — the editorial halo is the whole system.
-- ❌ Hand-roll SVG icons (Iconify only).
-- ❌ Emoji / unicode glyphs inline with body copy.
-- ❌ More than two font weights per slide (800 + 500 only).
-- ❌ Bouncy / spring animations; rotate / scale on hover.
-- ❌ Cards with colored left-border accents.
-- ❌ Teal→magenta "AI slop" gradients.
-- ❌ **Let the paper halo show through an icon background.**
-- ❌ Center-align body slides.
-- ❌ Build at 1080×1920 for TikTok — it gets cropped to 4:5 in the feed.
-- ❌ Re-create the brand mark from anything but `assets/vourdev-logo.jpeg`.
-
----
-
-## 12 · How to prompt with this file
-
-- *"Make me a carousel about <topic>. 7 slides."*
-- *"Make me an editorial info post about <topic>. 9 slides, comparison pair on slide 5."*
-- *"Audit this slide against §10."*
-
-For the slide-by-slide build procedure (Markdown brief → on-brand carousel), see the companion file **`MAKING_CAROUSELS.md`**.
-
----
-
-*Update 4 · 2026-07 · retires the synthwave surface, drops `IconTile`/`CtaCircle`/`--fs-hero`/every `--vd-*` token; editorial cream + `--ed-orange` is the only surface. Update 3 diagram vocabulary continues unchanged — see §13.*
-
----
-
-## 13 · Line-diagram vocabulary (editorial only)
-
-> Update 3 introduced a **line-art diagram vocabulary** so slides can carry mockups and diagrams — not just headline + body. Everything below is unchanged in Update 4.
-
-### 13.1 · The diagram token file — `tokens/diagrams.css`
-
-Nine accent colours warm enough to sit next to `--ed-orange` on `--ed-paper`:
-
-| Token | Hex | Use |
-|---|---|---|
-| `--ed-line-ink` | `#1F0904` | Default node border + connector |
-| `--ed-line-orange` | `#E94B19` | Highlighted node / arrow (same as `--ed-orange`) |
-| `--ed-line-mint` | `#4E9E5C` | Success / winner accent |
-| `--ed-line-sky` | `#2F6EBC` | Tooling / info accent |
-| `--ed-line-amber` | `#B98A0D` | Highlight / perf accent |
-| `--ed-line-pink` | `#C1547B` | Design / content accent |
-| `--ed-line-red` | `#C13B1A` | Warning / loser accent |
-| `--ed-line-muted` | `#A48C7E` | Dashed connectors, faint diagram labels |
-| `--ed-node-fill` | `#FDFBF6` | Near-invisible off-white node fill |
-
-Stroke widths + radii are also pinned: `--ed-stroke-node: 1.5px`, `--ed-stroke-emphatic: 2px`, `--ed-node-radius: 16px`, `--ed-node-radius-lg: 20px`. **Do not invent intermediate strokes.**
-
-### 13.2 · The primitive — `.node`
-
-Every diagram is built from `.node`, a line-art rounded rectangle:
-
-```
-padding:  14 24
-min-height: 64
-background: --ed-node-fill
-border: 1.5 solid --ed-line-ink
-border-radius: 16
-font: JetBrains Mono 500 · 26px
-```
-
-Variants:
-- `.node.filled` — orange background, white text, Sora 700
-- `.node.big` — 44px Sora 700, 20px radius, min-height 96 (used for hub centres)
-- `.node.mint` / `.sky` / `.amber` / `.pink` / `.red` — topic-accent border + text
-
-### 13.3 · The nine slide-role diagrams
-
-Each one is a single-focus component the deck uses to visualise the term:
-
-| Role | Component | Anatomy |
-|---|---|---|
-| Concept hub | `.diag-hub` | `.node.filled.big` centre + 3–5 `.node` children below, connected by orange SVG paths ending in a triangle arrowhead. |
-| Flow chain | `.diag-flow` | Row of `.node` + `.arrow` (`→`), exactly ONE `.node.filled` as the focus step. |
-| Token strip | `.diag-tokens` | Row of `.chip` (small orange-border rectangles) with `↓` under each. Never more than 6 chips. |
-| Comparison bars | `.diag-bars` | Two `.panel` side-by-side. `.panel.loser` uses `--ed-line-red` border + dim/faded bars; winner uses `--ed-orange` border + full bars. Labels are 22px mono ALL CAPS. |
-| Icon hub | `.diag-icon-hub` | `.node.filled.big` centre + 4 line-art tool icons. Connectors are `stroke-dasharray: 6 6`. |
-| Illustrated scene | `.scene` | Grid `1fr auto 1fr` — two `.mock` mockups with a `.scene-arrow` between. `.mock.locked` blurs its body and stacks a `.mock-lock` pill (dark ink + lucide lock + label) on top. |
-| Permission table | `.perm-table` | Rows of `.perm-user` (avatar SVG + optional `.crown`) + `.perm-grid` of 4 CRUD `.perm-cell`s with `.yes`/`.no` marks. |
-| Terminal | `.terminal` | `--ed-callout-ink` panel with mac dots (14px), `.terminal-title`, and `<pre>` body using JetBrains Mono 26px. Highlight classes: `.cmt` `.key` `.val` `.kw` `.num`. |
-| Recap checklist | `.checklist` | `<ul>` of `<li>`s. Each `.tick` is a 40px mint check (`--ed-line-mint`). Item text is Sora 500 · 40px. |
-
-### 13.4 · The CATATAN recap panel
-
-Optional bottom-of-slide takeaway box that sits under any diagram:
-
-```
-border: 1.5 solid --ed-orange
-border-radius: 16
-padding: 24 32
-
-label: JetBrains Mono 500 · 22px · UPPERCASE · tracking .18em · --ed-orange   ("Catatan")
-body:  Sora 700 · 32px · --ed-ink   (single line, ≤ 60 chars)
-```
-
-Use once per diagram slide. Skip it on cover, comparison, and recap slides.
-
-### 13.5 · Diagram-slide vertical rhythm
-
-Overrides §4 for diagram-heavy slides:
-
-```
-Counter
-   ↓ 48
-Eyebrow
-   ↓ 24
-Headline (compact 88 or default 104)
-   ↓ 24
-Body (2 short paragraphs max)
-   ↓ 40
-Diagram (flex-grow, centered)
-   ↓ 32-40
-CATATAN (optional)
-```
-
-Body copy caps at **~130 chars** (2 short paragraphs) so the diagram gets the visual budget.
-
-### 13.6 · Where to find each pattern
-
-| Where | What |
+| Rule | Value |
 |---|---|
-| `TEMPLATE-editorial-v3.html` | Every pattern as a copy-paste `<section>`. |
-| `slides/09-diagram-concept-hub.html` … `slides/17-recap-checklist.html` | Nine single-slide samples (one per pattern). |
-| `guidelines/update3-*.html` | Nine small specimen cards on the design-system tab. |
-| `EXAMPLE-editorial.html` | Full working carousel wiring the whole vocabulary together. |
+| Stroke | 2px subject · 1.75px detail · 1.5px connectors |
+| Fill | none, or a single flat `--ember` / topic-tint on small badges |
+| Corners | rounded joins + caps (matches icon style) |
+| Connectors | dashed `6 6`, `--line-muted` or `--line-ink` |
+| Labels | JetBrains Mono 22 CAPS in pill callouts (radius 999, 1.5px border) |
 
-### 13.7 · Hard rules
-
-1. Every diagram node uses `.node` — do not invent alternate box styles.
-2. **One highlighted (`.filled` or accent-colour) node per diagram.** Everything else is default ink.
-3. Topic accents (`.mint` / `.sky` / `.amber` / `.pink` / `.red`) apply to node **borders + text**, never as a full fill (that role is reserved for `.filled` = orange).
-4. Arrow strokes are 1.5px. Dashed connectors use `stroke-dasharray: 6 6`.
-5. Diagrams never bleed off the 1080-wide safe area.
-6. At most ONE CATATAN panel per slide.
+Vocabulary (all rebuildable as SVG/CSS, never imported art): **Flow · Architecture · Pipeline · Cloud · API · Server · Component Tree · Request/Response · Folder · Node Graph**. Each maps to a §5 component or `.node` diagram — illustration = the same primitives, arranged to depict a system. If it can't be drawn from `.node` + line-art, it doesn't belong in a Vour slide.
 
 ---
 
-*Update 4 · 2026-07 · editorial-only, `IconTile`/`CtaCircle`/`--vd-*`/`--fs-hero` retired. Diagram vocabulary from Update 3 is unchanged. See §14 (Update 5) for the mockup slide proportion contract and the automation metadata block.*
+# 10 · Carousel Layout Library (18 templates)
+
+Each template is a distinct hierarchy. Alternate them (see §13). One idea per slide always holds.
+
+| # | Layout | Hierarchy | Best for |
+|---:|---|---|---|
+| **A** | **Hero Cover** | Huge title (128) · small subtitle · brand mark · bottom eyebrow | Slide 1 |
+| **B** | **Question → Keyword** | Small question eyebrow · huge one-word ember keyword · one-line answer | Hook slides |
+| **C** | **Split** | 1fr / 1fr — text column + mockup/image column | Concept + evidence |
+| **D** | **Numeral Hero** | Massive numeral (640) · headline underneath · one-line context | "N reasons/tools" |
+| **E** | **Timeline** | Two date cards side-by-side (stone → peach) | then/now, history |
+| **F** | **Comparison** | Two panels (loser dim / winner ember) OR stacked SCRAPED→DESIGNED | before/after, X vs Y |
+| **G** | **Checklist** | Eyebrow · headline · vertical mint-tick list (≤ 5) | recap, "you now know" |
+| **H** | **Architecture** | Compact headline · full-width `.diag-hub`/layered diagram · optional catatan | system explainers |
+| **I** | **Code Highlight** | Compact headline · one-line desc · full-width terminal | code/config/query |
+| **J** | **Quote** | EB Garamond ember quote-mark · centered pull-quote · attribution eyebrow | testimonial, expert claim |
+| **K** | **Big Stat** | One giant number (ember) · unit · caption | benchmark, metric |
+| **L** | **Numbered Steps** | Eyebrow · headline · 3 numbered step cards | how-to, sequence |
+| **M** | **Card Grid** | Eyebrow · headline · 2×2 tinted info cards | feature set, options |
+| **N** | **Annotated Illustration** | Hero line-art subject · dashed pins to labeled callouts | anatomy, architecture |
+| **O** | **Command / Catalog List** | Eyebrow · headline · mono rows (`/cmd → desc`) ≤ 6 | slash-commands, tool list |
+| **P** | **Prompt Card** | "COPY THIS" ember-border mono card ≤ 180 chars | steal-this-prompt |
+| **Q** | **Data Table** | ✗/✓ 2-column table ≤ 4 rows (red/mint headers) | don't/do, myth/reality |
+| **R** | **Editorial Outro** | Big claim · 2–3 short lines · highlight panel · brand mark | final slide / CTA |
+
+**Cover vs Outro:** Cover = Layout A or D. Outro = Layout R (never a stack of CTA discs; one highlight panel).
 
 ---
 
-## 14 · Mockup slide proportion contract  ★ Update 5
+# 11 · Cover Rules (scroll-stoppers)
 
-> **Update 6 adds ImagePlate** — the editorial way to put a real screenshot / product shot / logo on a mockup slide. ImagePlate is a valid `.diag-wrap` occupant alongside the §13 diagram roles.
->
-> Variants: `framed` (default · any image) · `window-mac` (terminal / IDE / native app) · `window-web` (web app, with URL pill) · `phone` (iOS / Android) · `plain` (logo / isolate — no border, just rounded corners + soft shadow). Every variant obeys the same proportion contract below.
->
-> ```jsx
-> <ImagePlate src="assets/mimocode.png" variant="window-mac"
->             chromeLabel="MiMoCode"
->             captionEyebrow="[mockup]" caption="One prompt, one build." />
-> ```
->
-> Rule of thumb — **wrap by default.** On cream paper a raw screenshot reads as pasted-in; the ink outline echoes the diagram cards so the slide reads as one composition. Only use `variant="plain"` for logos or cutouts that have no natural frame.
+The cover does one job: **stop the thumb.**
 
-> Slides carrying a **mock-screen** — Terminal, Illustrated Scene, Permission Table, Comparison Bars, or any of the nine §13 diagram roles — must follow this exact vertical stack. If any element overlaps another, **cut copy. Never edit the CSS.**
-
-### 14.1 The locked stack
-
-```
-[96 top padding]
-counter          → JetBrains Mono 24px
-   ↓ 48
-eyebrow          → JetBrains Mono 24px ALL CAPS orange
-   ↓ 24
-headline         → h1.compact 88px  (never 104 or 128 on a mockup slide)
-   ↓ 24
-description      → 30–32px, MAX 2 lines, ≤ 120 chars total
-   ↓ 40
-.diag-wrap { flex:1; min-height:0; display:flex; align-items:center; }
-  └── terminal | scene | perm-table | diag-bars | diag-hub | diag-flow
-   ↓ 24 or 40
-catatan          → optional, ONE line ≤ 60 chars
-[80 bottom padding]
-```
-
-### 14.2 Non-negotiable rules
-
-1. `.diag-wrap` **must** carry `flex: 1` AND `min-height: 0`. Without `min-height: 0`, a tall terminal pushes CATATAN off the 1350 canvas.
-2. Mockup-slide headline uses `.compact` (88px). Reserving 104 / 128 for cover / text-only slides guarantees the diagram gets ≥ 500px of vertical room.
-3. Mockup-slide description caps at 2 lines / ~120 chars. Cut copy — never shrink font, never remove the 40px gap.
-4. Terminal body caps at 8 lines, each ≤ 44 mono chars.
-5. Scene `.mock` stays between `min-height: 360` and `max-height: 640`.
-6. Comparison bars: each `.panel` capped at 5 rows. Permission table capped at 3 `.perm-row`s.
-7. CATATAN is optional. If present, exactly one, one line, ≤ 60 chars.
-
-### 14.3 The pre-flight visual check
-
-Render at 1080×1350 and confirm all four before delivering:
-
-- ☐ Nothing overlaps.
-- ☐ Every element sits fully inside the 80/96/80 padding box.
-- ☐ Visible whitespace between headline → description → diagram → catatan.
-- ☐ CATATAN, if present, is fully visible above the 80px bottom padding.
-
-**If any check fails, cut copy.** Never touch the CSS.
-
-### 14.4 Which mockup role to pick
-
-| Topic contains… | Use role |
+| Rule | Value |
 |---|---|
-| code, config, DB queries, JSON, YAML, `.md` skill file | **Terminal** |
-| auth flow, permission UI, before/after state | **Illustrated Scene** |
-| role-based access, feature matrix | **Permission Table** |
-| bad-vs-good, short-vs-long, before-vs-after | **Comparison Bars** |
-| "X connects to A, B, C, D" | **Icon Hub** |
-| term glossary, foundational concept | **Concept Hub** |
-| sequential pipeline (input → step → output) | **Flow Chain** |
-| tokenizer viz, step-by-step breakdown | **Token Strip** |
-| final "you now know…" recap | **Recap Checklist** |
+| **Max words** | Headline ≤ 4 words / ≤ 30 chars. Subtitle ≤ 8 words. Eyebrow ≤ 3 words. |
+| **Contrast** | Max ink-on-paper contrast. The ember keyword is the single hottest point on the slide. |
+| **Hierarchy** | Exactly one dominant element: the 128px hero title (or the 640px numeral). Everything else is ≥ 24px smaller. |
+| **Keyword emphasis** | One ember word only. It should be the *specific* / surprising word, not a filler word. |
+| **Visual balance** | Left-aligned title, brand mark top or bottom, weight anchored bottom-left. Asymmetric, not centered blocks. |
+| **Negative space** | ≥ 35% of the cover is empty paper. Crowded covers read as Canva. |
+| **Image usage** | Optional single mockup/`ImagePlate`, never behind the title. If used, it supports — the title still dominates. |
+| **Typography scale** | Hero 128 (or numeral 640). Never two large type sizes competing on a cover. |
 
-Terminal is the default for **database queries** and any code snippet. Background `#1F0904`, syntax classes `.cmt` `.key` `.val` `.kw` `.num` (pinned hex in §7 G · Terminal code block; full class table in `MAKING_CAROUSELS.md` §8).
+**Cover anti-patterns:** ❌ full-bleed photo with text overlaid ❌ two accent colors ❌ centered paragraph ❌ more than one focal object ❌ decorative shapes.
 
 ---
 
-## 15 · Automation metadata block  ★ Update 5
+# 12 · Editorial Rules
 
-> Every carousel HTML file must include one invisible metadata block inside `<head>`, right after the Iconify `<script>` tag. The GitHub Actions → Buffer export pipeline reads it to name the file, queue the post body, and attach hashtags.
+**Avoid, always:**
+- Walls of text — body ≤ 2 lines in intros, ≤ 3 in cards.
+- More than 3 colors on a slide.
+- Centered paragraphs (center only Cover / Quote / Outro).
+- Random icons — every icon names a real concept, one set, one size.
+- Random gradients — only the single-hue corner halo.
+- Random decoration — no shapes/lines/dots that don't carry meaning.
+- Emoji inline with body copy.
+- More than two font weights per slide.
+- Two competing focal points — split into two slides.
+
+**Do, always:** left-align, one idea per slide, one ember word per headline, whitespace as structure, mono for machine truth, real diagrams over decoration.
+
+---
+
+# 13 · Visual Rhythm
+
+A deck reads as a magazine when consecutive slides *don't* repeat.
+
+- **Alternate layout families.** Never two of the same layout (§10) back-to-back. Pattern a strong deck: `A (cover) → B/D (hook) → text → mockup → comparison → text → checklist → R (outro)`.
+- **Alternate surface.** Insert **one Ink slide** (terminal or dark callout) around the middle for contrast rhythm — but max ~1 dark surface per 3 slides; the deck stays predominantly Paper.
+- **Alternate density.** Big-type slide → dense diagram slide → breathing quote slide. Never three dense slides in a row.
+- **Alternate visual object.** Terminal → diagram → stat → list → image. Don't reuse the same component twice running.
+- **Consistency anchors that never change:** page counter position, eyebrow style, ember accent, brand mark, padding box, type scale. Variety lives in *layout + component + density*, never in *color, type, or spacing*.
+
+---
+
+# 14 · Content Hierarchy
+
+Every deck is one narrative arc:
+```
+HOOK        →  cover + question. Create tension. (Layouts A/B/D)
+CONTEXT     →  why it matters, the stakes. (text)
+EXPLANATION →  the concept, shown with a diagram/terminal. (H/I/N)
+EXAMPLE     →  concrete proof — code, stat, before/after. (F/I/K)
+TAKEAWAY    →  the checklist / one-line lesson. (G)
+CTA         →  editorial outro + brand mark. (R)
+```
+Per slide, the micro-hierarchy is fixed: **counter → eyebrow → headline → body → asset → (catatan)**. One idea per slide; if a slide serves two arc-stages, split it.
+
+---
+
+# 15 · Motion System (future-proof)
+
+Carousels export as static images — motion applies to web/app/video adaptations. Principles keep future motion on-brand.
+
+| Principle | Value |
+|---|---|
+| **Character** | Precise and calm. Ease, never bounce. No spring overshoot, no elastic. |
+| **Entrance** | Fade + rise: `opacity 0→1`, `translateY 12px→0`. |
+| **Exit** | Fade + fall: reverse, faster than entrance. |
+| **Timing** | `--dur-fast 120ms` (micro) · `--dur 200ms` (standard) · `--dur-slow 320ms` (page/section). |
+| **Easing** | `--ease-out: cubic-bezier(0.16,1,0.3,1)` (entrances) · `--ease: cubic-bezier(0.4,0,0.2,1)` (standard). |
+| **Movement** | Small. ≤ 16px translate. Content settles, never travels far. |
+| **Direction** | Reading direction — content enters from below/right, in stagger (40ms) top→bottom. |
+| **Opacity** | Fade paired with every move; never a hard cut on entrance. |
+| **Scale** | `0.98→1` max on emphasis. Never `1→1.1` hover pop. |
+| **Micro-interactions** | Ember underline sweep on links; caret blink in terminals; one accent element may pulse ≤ 4% scale. |
+
+Forbidden: bouncy springs, rotate-on-hover, parallax on text, auto-playing loops that distract from copy.
+
+---
+
+# 16 · Signature Elements
+
+The subtle, recognizable marks that say "Vour" before anyone reads a word.
+
+| Element | Spec |
+|---|---|
+| **Brand disc** | Square logo masked into a 72px disc (cover/outro), 44px (inner pill), 40px (in-card min). `background: #07070e`, `object-fit: cover`. Never re-render as letters/SVG, never recolor/stroke/shadow/rotate, never < 40px. |
+| **VOUR wordmark** | Sora 700, tracking `0.02em`, `--ink`. Paired with the disc at 16px gap in outro. |
+| **The ember accent word** | Exactly one `<span class="a">` per headline. The system's signature gesture. |
+| **Mono eyebrow** | JetBrains Mono 24, ALL CAPS, tracking 0.18em, `--ember`. Above every headline. |
+| **Page counter** | `01 / 10`, JetBrains Mono 24, `--ink-faint`, top-left, every non-cover slide. |
+| **Corner halo** | Single-corner ember wash. Present on every Paper slide — the ambient brand tint. |
+| **Series stamps** (EB Garamond) | `Issue #001` · `Deep Dive` · `Blueprint Mode` · `Labs` · `Engineering Notes` · `Dev Breakdown` · `Architecture Series`. Set in **EB Garamond italic 500**, `--ink-muted` (or `--ember` for the active series), small (24–28px), top-right or as the eyebrow's kicker. This serif tag is the editorial "magazine masthead" signal — used sparingly, one per deck. |
+| **Catatan panel** | Bottom-of-diagram takeaway: 1.5px `--ember` border, radius 16, label mono "CATATAN" in ember + one-line Sora 700 lesson ≤ 60 chars. Max one per slide. |
+
+**Branding is subtle by design** — the disc + ember word + mono eyebrow + halo do the recognizing. Never a watermark, never a repeated logo pattern.
+
+---
+
+# 17 · Design Tokens
+
+Full token set. Regenerate `tokens/*.css` from this. JSON mirror follows for tooling.
+
+```css
+:root{
+  /* ── Color · accent ── */
+  --ember:#EE4B1A; --ember-bright:#FF6A3D; --ember-soft:#F5895F; --ember-wash:rgba(238,75,26,.06);
+  /* ── Color · surfaces ── */
+  --paper:#FBF6EF; --paper-raised:#FFFDF9; --paper-sunken:#F2EADD;
+  --ink-900:#14110E; --ink-800:#1F1A15; --ink-700:#2B241D;
+  /* ── Color · text on paper ── */
+  --ink:#1C0A05; --ink-soft:#3D2419; --ink-muted:#6E4B3E; --ink-faint:#A48C7E;
+  /* ── Color · text on ink ── */
+  --cream:#F7F1E8; --cream-soft:rgba(247,241,232,.72); --cream-muted:rgba(247,241,232,.45);
+  /* ── Color · card tints ── */
+  --card-peach:#FBE9D9; --card-mint:#E3F1E1; --card-sky:#DEEAF7;
+  --card-pink:#F7DDE6; --card-amber:#FBE7B0; --card-stone:#EDE7DA;
+  /* ── Color · semantic lines ── */
+  --line-ink:#1C0A05; --line-mint:#4E9E5C; --line-sky:#2F6EBC; --line-amber:#B98A0D;
+  --line-pink:#C1547B; --line-red:#C13B1A; --line-muted:#A48C7E;
+  /* ── Color · borders + tiles ── */
+  --hairline:rgba(28,10,5,.10); --border:rgba(28,10,5,.14);
+  --hairline-dark:rgba(247,241,232,.10); --border-dark:rgba(247,241,232,.16);
+  --icon-tile-bg:rgba(28,10,5,.06); --icon-tile-bg-dark:rgba(247,241,232,.08);
+  /* ── Type · families ── */
+  --font-display:'Sora',system-ui,sans-serif;
+  --font-body:'Inter',system-ui,sans-serif;
+  --font-mono:'JetBrains Mono',ui-monospace,monospace;
+  --font-serif:'EB Garamond',Georgia,serif;
+  /* ── Type · sizes ── */
+  --fs-hero:128px; --fs-title:104px; --fs-title-sm:88px; --fs-numeral:640px;
+  --fs-h2:56px; --fs-h3:40px; --fs-lead:40px; --fs-body-lg:32px; --fs-body:28px;
+  --fs-eyebrow:24px; --fs-counter:24px; --fs-caption:22px; --fs-quote:64px;
+  /* ── Spacing (8px grid) ── */
+  --gap-tight:8px; --gap-sm:16px; --gap-badge-headline:24px; --gap-headline-body:32px;
+  --gap-body-asset:40px; --gap-section:48px; --gap-block:64px;
+  --pad-x:80px; --pad-top:96px; --pad-bottom:80px;
+  --pad-card:32px; --pad-callout:32px; --pad-window:40px;
+  /* ── Radius ── */
+  --r-sm:12px; --r:16px; --r-lg:20px; --r-xl:24px; --r-pill:999px;
+  /* ── Shadow ── */
+  --shadow-card:0 24px 60px rgba(28,10,5,.08);
+  --shadow-toast:0 12px 32px rgba(28,10,5,.10);
+  /* ── Stroke ── */
+  --stroke-node:1.5px; --stroke-emphatic:2px; --stroke-subject:2px;
+  /* ── Motion ── */
+  --dur-fast:120ms; --dur:200ms; --dur-slow:320ms;
+  --ease:cubic-bezier(.4,0,.2,1); --ease-out:cubic-bezier(.16,1,.3,1);
+  /* ── Blur (web only — never on carousels) ── */
+  --blur-none:0;
+  /* ── Opacity ── */
+  --op-muted:.72; --op-faint:.45; --op-halo:.06;
+}
+```
+
+```json
+{
+  "color": {
+    "ember": "#EE4B1A", "ember.bright": "#FF6A3D", "ember.soft": "#F5895F",
+    "paper": "#FBF6EF", "paper.raised": "#FFFDF9", "paper.sunken": "#F2EADD",
+    "ink.900": "#14110E", "ink.800": "#1F1A15", "ink.700": "#2B241D",
+    "ink": "#1C0A05", "ink.soft": "#3D2419", "ink.muted": "#6E4B3E", "ink.faint": "#A48C7E",
+    "cream": "#F7F1E8",
+    "card": {"peach":"#FBE9D9","mint":"#E3F1E1","sky":"#DEEAF7","pink":"#F7DDE6","amber":"#FBE7B0","stone":"#EDE7DA"},
+    "line": {"ink":"#1C0A05","mint":"#4E9E5C","sky":"#2F6EBC","amber":"#B98A0D","pink":"#C1547B","red":"#C13B1A","muted":"#A48C7E"}
+  },
+  "font": {"display":"Sora","body":"Inter","mono":"JetBrains Mono","serif":"EB Garamond"},
+  "fontSize": {"hero":128,"title":104,"titleSm":88,"numeral":640,"h2":56,"h3":40,"lead":40,"bodyLg":32,"body":28,"eyebrow":24,"counter":24,"caption":22,"quote":64},
+  "space": {"tight":8,"sm":16,"badgeHeadline":24,"headlineBody":32,"bodyAsset":40,"section":48,"block":64},
+  "pad": {"x":80,"top":96,"bottom":80,"card":32,"callout":32,"window":40},
+  "radius": {"sm":12,"base":16,"lg":20,"xl":24,"pill":999},
+  "shadow": {"card":"0 24px 60px rgba(28,10,5,.08)","toast":"0 12px 32px rgba(28,10,5,.10)"},
+  "stroke": {"node":1.5,"emphatic":2,"subject":2},
+  "motion": {"durFast":120,"dur":200,"durSlow":320,"ease":"cubic-bezier(.4,0,.2,1)","easeOut":"cubic-bezier(.16,1,.3,1)"},
+  "canvas": {"w":1080,"h":1350}
+}
+```
+
+---
+
+# 18 · Accessibility
+
+| Rule | Value |
+|---|---|
+| **Contrast** | `--ink` on `--paper` ≈ 15:1. `--cream` on `--ink-900` ≈ 14:1. `--ember` on `--paper` ≈ 4.0:1 — **large text only (≥ 24px)**, never ember body. `--ember-bright` on `--ink-900` for dark. Body text always ≥ 7:1. |
+| **Readability** | Body ≥ 28px (well above min), line-length ≤ 60 chars, line-height ≥ 1.4 for body, left-aligned. |
+| **Font size** | Nothing below `--fs-caption` (22px). Captions are the floor. |
+| **Color blindness** | Never encode meaning by hue alone. Comparison uses position + label ("SCRAPED"/"DESIGNED") + ✗/✓, not red-vs-green alone. Ember is reinforced by size/weight/position. |
+| **Spacing** | Touch/tap targets in web adaptations ≥ 44px. Slide elements never crowd below `--gap-sm` (16px). |
+| **Text-as-image** | Because carousels export as images, always fill the `vourdev-meta` caption (§ export) so screen-reader/alt users get the content. |
+
+---
+
+# 19 · AI Generation Rules (strict)
+
+The system is executed by AI. These are hard constraints — violating one is a failed slide.
+
+**Color**
+1. Never more than **3 colors** on a slide (surface + ink + one accent/tint).
+2. `--ember` never on body text, never in a gradient, never doubled with another loud hue.
+3. Only two surfaces exist: Paper and Ink. Never invent a third.
+
+**Layout**
+4. **Never repeat the same layout (§10) on consecutive slides.**
+5. Always one visual focus per slide. If two, split into two slides.
+6. Always leave ≥ 30% whitespace. Crowding = fail.
+7. Left-align everything except Cover / Quote / Outro.
+8. Every gap/padding from §7 tokens — no ad-hoc px.
+
+**Type & copy**
+9. Eyebrow ≤ 3 words / ≤ 20 chars. Cover headline ≤ 4 words / ≤ 30 chars. Inner headline ≤ 6 words / ≤ 42 chars. Mockup headline ≤ 8 words / ≤ 60 chars.
+10. Body: text-only slide ≤ 22 words / ≤ 140 chars / ≤ 2 lines; mockup slide ≤ 16 words / ≤ 100 chars / ≤ 2 lines.
+11. **Conjunction check:** > 1 of `dan/atau/tapi/kalau/karena/soalnya/makanya` in a description = too long. Rewrite as two sentences, keep one.
+12. Exactly one `<span class="a">` ember accent word per headline.
+13. Max two font weights per slide. Sizes from the §3.1 scale only — never interpolate.
+14. If copy doesn't fit, **cut copy — never shrink font, never collapse the 24/32/40 gaps.**
+
+**Components**
+15. Every icon on an opaque tile (§6). Every card fill from the tint family or `--paper-raised` — never transparent over paper.
+16. One mockup per slide, full width (§5/§10). No `backdrop-filter`. No hand-rolled SVG icons. Iconify only.
+17. Terminal ≤ 8 lines. CommandList/CatalogList ≤ 6 rows. DataTable ≤ 4 rows. PromptCard ≤ 180 chars. QuoteInset ≤ 180 chars.
+18. Every visual element must carry meaning — **never decorate without purpose.**
+
+**Voice**
+19. Casual Indonesian, first-person (`saya`); tech terms stay English; never `kami`; `kamu` only in CTAs. No emoji in body. Arrows are `→` not `->`.
+
+**Output integrity**
+20. Every HTML file includes exactly one `<script id="vourdev-meta">` JSON block in `<head>` (title, caption, hashtags) — the export pipeline depends on it. Never omit.
+
+**Per-slide pre-flight (all must pass):** ☐ ≤ 3 colors ☐ one focus ☐ ≥ 30% whitespace ☐ layout differs from previous slide ☐ headline within cap + one ember word ☐ body within cap + conjunction check ☐ icons on tiles ☐ gaps are tokens ☐ meta block present.
+
+---
+
+# 20 · Creative Direction — the Vour Manifesto
+
+> **Vour is the engineer's magazine.**
+>
+> We believe a carousel about software can be as considered as a Kinfolk spread and as precise as a compiler. So we design on warm paper, not cold black — because developers are people, not terminals. But we fill that paper with real machine truth: actual terminals, real diagrams, honest numbers. The warmth is the voice; the precision is the proof.
+>
+> We say one thing per slide, and we say it big. We point to exactly one idea with exactly one ember mark, and we let the rest breathe. We never decorate — the terminal *is* the decoration, the diagram *is* the art, the whitespace *is* the design. If a shape isn't carrying meaning, it isn't on the slide.
+>
+> We are minimal but never cold, technical but never intimidating, editorial but never precious. We look expensive because we are restrained, not because we are loud.
+>
+> **The test:** after reading a single slide — before the handle, before the logo — a developer should think *"this looks like Vour."* Not because of a watermark. Because of the warm paper, the one ember word, the mono eyebrow, the honest diagram, and the confidence of all that empty space.
+>
+> That recognition, on every slide, forever — **that is the whole job.**
+
+---
+
+# 21 · Export Contract (pipeline — do not break)
+
+### 21.1 · The `vourdev-meta` block
+Every carousel HTML file includes **exactly one** metadata block inside `<head>`, right after the Iconify `<script>`. The GitHub Actions → Buffer pipeline reads it to name the file, queue the post body, and attach hashtags.
 
 ```html
 <script type="application/json" id="vourdev-meta">
 {
   "title": "<the brief's title, from '# Carousel Content — <Title>'>",
-  "caption": "<the full # Caption block, verbatim, newlines preserved>",
+  "caption": "<the full # Caption block, verbatim, newlines as \n>",
   "hashtags": ["tag1", "tag2", "tag3", "tag4"]
 }
 </script>
 ```
 
-**Rules.** Exactly one per file. Inside `<head>` only, not `<body>`. Must be valid JSON — escape `"` as `\"` and newlines as `\n`. Never omit a key: use `""` for missing caption, `[]` for missing hashtags. Never skip the block — the pipeline sniffs every HTML file it exports.
+Rules: one per file · `<head>` only · valid JSON (`"` → `\"`, newline → `\n`) · never omit a key (`""` for missing caption, `[]` for missing hashtags) · never skip the block.
 
-See `MAKING_CAROUSELS.md §10` for field-by-field detail and a worked example (database-query topic).
+### 21.2 · Brand mark asset
+Render the mark from `assets/vourdev-logo.jpeg` (or the verbatim base64 in `bundle/DESIGN.md §3a` for standalone bundles). When embedding the base64: paste the **entire** string — it ends in `==` and is ≥ 25,900 chars. A truncated paste decodes to a corrupt half-disc. Pre-flight: every `src="data:image/png;base64,…"` ends in `==`.
 
----
-
-*Update 5 · 2026-07 · adds the mockup slide proportion contract (§14) and requires the `vourdev-meta` automation block (§15). Everything else from Update 4 stands unchanged.*
-
----
-
-## 16 · Slide-introduction contract  ★ Update 6
-
-> **Every slide's intro** = `[counter] → eyebrow → headline → description`. This block MUST fit within the top of the canvas — 380 px on mockup slides, 720 px on text-only slides — with the design's canonical whitespace preserved. If any element exceeds its cap, **cut copy**. Never shrink font. Never remove the 24 / 32 / 40 gap.
->
-> **Why this contract exists.** Left to itself, an LLM writes descriptions that run 3–5 lines. On a mockup slide that pushes the mock-screen past the 80 px bottom padding. The caps below are TIGHT on purpose. Meet them by trimming, not by shrinking.
-
-### 16.1 The hard caps (mockup slide vs text-only slide)
-
-| Element | Font-size | Weight | Cap (words) | Cap (chars) | Lines |
-|---|---:|---:|---:|---:|---:|
-| Eyebrow (every slide) | 24 (mono) | 500 | **≤ 3 words** | **≤ 20 chars** | 1 |
-| Cover headline (`h1.hero`, 128) | 128 | 800 | **≤ 4 words** | **≤ 30 chars** | ≤ 2 |
-| Inner headline (`h1`, 104) | 104 | 800 | **≤ 6 words** | **≤ 42 chars** | ≤ 2 |
-| Mockup headline (`h1.compact`, 88) | 88 | 800 | **≤ 8 words** | **≤ 60 chars** | ≤ 3 |
-| Description — TEXT-only slide (`.body`, 32) | 32 | 500 | **≤ 22 words** | **≤ 140 chars** | ≤ 2 |
-| Description — MOCKUP slide (`.body`, 32) | 32 | 500 | **≤ 16 words** | **≤ 100 chars** | ≤ 2 |
-
-`HARD` — the cap is not a suggestion. If your rendered slide exceeds it by even one word, cut a word.
-
-### 16.2 The conjunction check (fastest way to spot bloat)
-
-If the description contains **more than one** of these conjunctions — `dan / atau / tapi / kalau / karena / soalnya / makanya` — it is almost certainly too long. Rewrite as two shorter sentences and drop the weaker one. Two conjunctions is the LLM's tell that the sentence is doing two jobs; one job per description.
-
-### 16.3 The intro-block vertical stack (locked)
-
-```
-[counter: 24px mono ink-faint · optional (skip on Cover)]
-   ↓ 48–64 (mockup: 48, text-only: 64)
-[eyebrow: 24px mono ALL CAPS orange · ≤ 3 words]
-   ↓ 24 (--gap-badge-headline)
-[headline: 88 / 104 / 128 · exactly one <span class="a">]
-   ↓ 32 (--gap-headline-body)
-[description: 32px body-lg · within the §16.1 cap]
-   ↓ 40 (--gap-body-asset)
-[next section: cards / diagram / mock-screen]
-```
-
-**Non-negotiable:** the 24 / 32 / 40 gaps stay. Never collapse them to make copy fit. The whole point of the contract is that if the copy needs a smaller gap, the copy is too long.
-
-### 16.4 Pre-flight — the four checks
-
-Before delivering any slide, confirm all four:
-
-- ☐ Eyebrow ≤ 3 words / ≤ 20 chars.
-- ☐ Headline is within the `HARD` cap for its font size AND has exactly one `<span class="a">` accent word.
-- ☐ Description is within the cap for its slide type (mockup vs text-only) AND passes the §16.2 conjunction check.
-- ☐ The three canonical gaps (24 / 32 / 40) are intact. No inline `margin-top` override.
-
-If any check fails, **cut copy**. Do not touch the CSS.
+### 21.3 · Render constraints
+- Slides render at exactly **1080 × 1350** and export as screenshots.
+- No `backdrop-filter`, no external assets beyond Google Fonts + Iconify + the brand mark.
+- Fonts load from the §3 Google Fonts URL; production print surfaces host local `.woff2`.
 
 ---
 
-## 17 · Single-mockup fills the full width  ★ Update 6
-
-> **When a slide carries ONE mockup, it fills the entire `.diag-wrap` — 100% width, remaining vertical room.** Never put one mockup in a 50 % column with empty space on the other side. That reads as a broken layout, not as intentional whitespace.
-
-### 17.1 The rule by mockup count
-
-| Mockup count | Layout | Example |
-|---:|---|---|
-| **1** | `.diag-wrap` fills the mock 100% wide (no column, no `max-width`) | Single terminal, single scene, single `ImagePlate`, single `BigStat`, single `PullQuote` |
-| **2** | 1fr / 1fr grid — `ImagePlatePair`, `.diag-bars`, two-column `SplitPanel` | Before/after screenshots, comparison bars, image + text panel |
-| **3–4** | `MediaGrid` (2×2 grid) | 3–4 screenshots of the same app, feature grid |
-| **5+** | Split into two slides | Never cram; the slide can only breathe with ≤ 4 visual elements |
-
-### 17.2 What "full width" means for each mockup
-
-- **Terminal** — `.terminal { width: 100%; }`. Never `max-width: 800px`.
-- **`ImagePlate` (any variant)** — placed alone inside `.diag-wrap`, the plate stretches to `width: 100%; height: 100%`. Its `ratio` prop is **omitted** so the plate fills the wrap. Use `fit="contain"` if the whole image edges matter (logos, charts), `fit="cover"` (default) for hero shots.
-- **`BigStat`, `PullQuote`, `SplitPanel`** — same: parent is `.diag-wrap`, child is `width: 100%`.
-- **Diagrams** (`.diag-hub`, `.diag-flow`, `.diag-icon-hub`, `.diag-tokens`, `.diag-bars`, `.scene`, `.perm-table`, `.checklist`) — already full-width by their own spec (§13). Do not add a wrapper column.
-
-### 17.3 Anti-patterns
-
-- ❌ A single `ImagePlate` centred in a 640 px column with 220 px of cream paper on either side.
-- ❌ A single `.terminal` inside a `<div style="max-width: 800px; margin: 0 auto">`.
-- ❌ A single mockup + a redundant icon card next to it. If the mockup already carries the message, don't decorate.
-- ❌ Two mockups stacked vertically (waste of vertical room). Use `ImagePlatePair` or `SplitPanel` — 1fr / 1fr horizontal grid.
-
----
-
-## 18 · Extended mockup catalog  ★ Update 6
-
-> The nine §13 diagram roles + Terminal are the base vocabulary. Update 6 adds **five image / editorial mockup roles** to cover topics that don't fit the diagram vocabulary: single screenshots, product shots, multi-image galleries, standout metrics, testimonial quotes, and text-plus-image compositions. Every new role obeys §14 (proportion contract), §16 (intro contract), and §17 (single-mockup full-width).
-
-### 18.1 The five new roles
-
-| Role | Component | When to reach for it |
-|---|---|---|
-| **Full-bleed image** | `<ImagePlate>` alone in `.diag-wrap` | ONE screenshot / product shot / hero image / logo. Fills the entire diag-wrap. |
-| **Before / after images** | `<ImagePlatePair>` | TWO images side-by-side. Use for visual comparisons: before / after, kiri / kanan, IDE / terminal. |
-| **Image gallery (2×2)** | `<MediaGrid columns={2}>` | THREE or FOUR images. Screenshots of the same app across screens; a feature grid; a moodboard. |
-| **Big stat** | `<BigStat>` | Standout single metric — "3× faster", "80% less code", "12 detik". One number, one unit, one caption. |
-| **Pull quote** | `<PullQuote>` | Standout quote / testimonial / expert claim. Sora 700 quote body + author + role. |
-| **Split panel** | `<SplitPanel>` | Text on one side, image / diagram on the other. Use when text and mock share equal weight. |
-
-### 18.2 Which role for which topic
-
-| Topic contains… | Prefer |
-|---|---|
-| a single screenshot / product shot / app screen | Full-bleed `ImagePlate` |
-| before/after screenshots (kiri/kanan, IDE/terminal, old/new UI) | `ImagePlatePair` |
-| 3–4 screenshots of the same app (feature grid, moodboard) | `MediaGrid` |
-| a standout number, benchmark, percentage | `BigStat` |
-| a quoted line — from a docs page, a spec author, a senior dev | `PullQuote` |
-| an image + a paragraph of context (equal weight) | `SplitPanel` |
-| pure code / config / query / JSON / `.md` skill file | Terminal (§13.5) |
-| any of the nine diagram roles from §13 | §13 vocabulary |
-
-### 18.3 Sizing (locked)
-
-| Component | Height cap | Width | Notes |
-|---|---:|---|---|
-| `ImagePlate` (full-bleed, alone in `.diag-wrap`) | fills wrap | 100% | Omit `ratio`. Fills remaining slide height. |
-| `ImagePlatePair` | fills wrap | 1fr 1fr | Each plate ≥ 360 px tall. |
-| `MediaGrid columns={2}` | fills wrap | 2×2 grid | Each cell ≥ 260 px tall. Gap `--gap-body-asset` (40). |
-| `BigStat` | fills wrap | 100% | Number is Sora 800 · 240–280 px, unit is Sora 700 · 88 px, caption is Nunito 500 · 32 px. |
-| `PullQuote` | fills wrap | 100% | Quote is Sora 700 · 64 px, author is JetBrains Mono 500 · 24 px orange. |
-| `SplitPanel` | fills wrap | 1fr 1fr | Text column ≥ 360 px wide, image column ≥ 360 px wide. |
-
-### 18.4 Hard rules for the new roles
-
-1. Every new role sits inside `.diag-wrap { flex:1; min-height:0 }` — no exceptions (§14).
-2. Single mockup = full width (§17). Two = 1fr / 1fr. Three or four = `MediaGrid`. 5+ = split slides.
-3. `BigStat` uses `--ed-orange` for the number, `--ed-ink` for unit + caption. Never colorise the unit.
-4. `PullQuote` opens with one 88 px orange quote-mark glyph; the quote body is `--ed-ink`, never orange. One accent span in the quote body is allowed (`<span class="a">`), same rule as headline.
-5. `SplitPanel` text column uses the same headline + body styles as a text-only slide (§3). No new type sizes.
-6. `MediaGrid` cells all use the same `ImagePlate` variant — never mix `window-mac` + `phone` + `plain` in the same grid.
-7. When the source image is user-supplied (a MiMoCode screenshot, a founder photo), always wrap it in `ImagePlate` — cream paper + a raw image reads as pasted-in.
-
----
-
-*Update 6 · 2026-07 · adds §16 slide-introduction contract, §17 single-mockup full-width rule, §18 extended mockup catalog (BigStat, PullQuote, SplitPanel, MediaGrid, plus `ImagePlate` full-bleed / pair patterns). `SKILL.md` is now a thin pointer to this file. Update 5 (§14, §15), Update 4 (editorial surface), Update 3 (diagram vocabulary §13), Update 2 (opaque icon containers) all continue unchanged.*
-
----
-
-## 19 · Mockup catalog expansion (Update 7) — eleven new editorial mockup roles
-
-> **No new palette. No new surface.** Editorial cream + `--ed-orange` remains the only surface (§1–§18 unchanged). Update 7 adds ELEVEN new mockup roles so future carousels have real visual variety without inventing off-brand elements slide by slide. Every new role obeys §14 (proportion contract), §16 (intro contract), and §17 (single-mockup full-width). The 9 diagram roles (§13) and the 5 image / editorial mockups from Update 6 (§18) all remain.
->
-> **Why eleven at once.** After auditing @vourdev's last two dozen carousels, we found the same five diagram roles carrying too much of the load — every explainer looked like the last one. The new roles below each solve a real recurring layout problem: a giant count as the cover, a scraped-vs-designed contrast, a two-date history, an annotated illustration, a real browser mockup, a tilted stamp, a slash-command menu, a copy-this prompt block, a ✗ / ✓ table, a numbered catalog, a pull-quote. Ship them together; the compounding variety is the point.
-
-### 19.1 The eleven new roles
-
-| # | Role | When to reach for it | Reference |
-|---:|---|---|---|
-| 1 | `NumeralHero` | Cover / intro where the message IS a count ("6 istilah AI", "3 tools", "80 % less code" as an ordinal number). Massive numeral 640 px, headline underneath. | `slides/18-mockup-numeral-hero.html` |
-| 2 | `StackedContrast` | Vertical `SCRAPED / DESIGNED` or `BEFORE / AFTER` label pair on stone + peach cards. Two cards stacked, labels above, one is the improved answer. | `slides/19-mockup-stacked-contrast.html` |
-| 3 | `HistoryTimeline` | Two labeled date cards side-by-side — quick "then / now" or "who did what when". Left card stone, right card peach. | `slides/20-mockup-history-timeline.html` |
-| 4 | `AnnotatedIllustration` | Hero SVG (door, phone, receipt, product) with dashed connectors to labeled pill callouts — architecture / anatomy diagrams. Ink stroke, orange or mint / red pins. | `slides/21-mockup-annotated-illustration.html` |
-| 5 | `BrowserMockup` | Realistic browser chrome + sidebar + product grid — a real app screenshot, not a wireframe. Use for "here's what I built". | `slides/22-mockup-browser-mockup.html` |
-| 6 | `StampBadge` | Small tilted "stamp" callout in a corner — the punchline / claim on a workflow / claim slide. Orange border, cream fill, `rotate(-4deg)`. | `slides/23-mockup-stamp-badge.html` |
-| 7 | `CommandList` | Mono `/command → description` menu. Use for slash-command catalogs, keyboard-shortcut lists, CLI menus. | `slides/24-mockup-command-list.html` |
-| 8 | `PromptCard` | Bordered "COPY THIS" mono prompt card. Orange border, corner label, monospaced body. Ready-to-paste snippet. | `slides/25-mockup-prompt-card.html` |
-| 9 | `DataTable` | General ✗ / ✓ 2-column comparison table — "jangan bilang / bilang gini", "don't / do", "myth / reality". Red column label + mint column label. | `slides/26-mockup-data-table.html` |
-| 10 | `CatalogList` | Vertical list of numbered-box rows with orange title + one-line description — plugin lists, feature catalogs, tool inventories. | `slides/27-mockup-catalog-list.html` |
-| 11 | `QuoteInset` | Italic left-border quote block on a stone card — commentary, aside, expert claim. Use inside a `/command`-style slide as the voice-over. | `slides/28-mockup-quote-inset.html` |
-
-### 19.2 Which role for which topic
-
-| Topic contains… | Prefer |
-|---|---|
-| "N reasons / N tools / N istilah" — the number IS the hook | `NumeralHero` |
-| a value AS-IS vs the same value WITH RATIONALE (Stripe DESIGN.md style) | `StackedContrast` |
-| two events with dates (release / update / launch) | `HistoryTimeline` |
-| a door / phone / product / diagram anatomy with parts labeled | `AnnotatedIllustration` |
-| a real product screenshot (browser app, dashboard, e-commerce) | `BrowserMockup` |
-| a "highest-paying skill" / "most-viewed" / punchline sticker | `StampBadge` |
-| a menu of slash-commands, keyboard shortcuts, CLI verbs | `CommandList` |
-| a single copy-paste prompt for the reader to steal | `PromptCard` |
-| "don't say X / say Y", "myth / reality", "wrong / right" | `DataTable` |
-| a plugin / tool / feature inventory (5+ rows, ~1 line each) | `CatalogList` |
-| a quoted testimonial / expert claim / opinion aside | `QuoteInset` |
-| any of the 9 §13 diagram roles or the 5 §18 image mockups | §13 / §18 vocabulary |
-
-### 19.3 Sizing + typography (locked)
-
-Every new role sits inside `.diag-wrap { flex:1; min-height:0 }` (§14). Sizes below assume the slide's `.diag-wrap` is a 920 × ~640 rectangle after the §16 intro block.
-
-| Role | Key dimensions |
-|---|---|
-| `NumeralHero` | Numeral: Sora 800 · **640 px** · line-height .85 · `--ed-orange`. Sub-headline Sora 800 · 96 px underneath. |
-| `StackedContrast` | Cards: 24 px radius, 32 px padding. Gap 24. Label mono 22 caps. Key line mono 36. Body 28. Order: stone (before) → peach (after). |
-| `HistoryTimeline` | 1fr 1fr grid, 24 px gap. Cards 20 px radius, 32 px padding. Date mono 22 caps. Title Sora 700 · 36. Body 28. |
-| `AnnotatedIllustration` | Hero SVG fills the wrap. Stroke 2.5 px ink for the subject, 1.75 px for details. Pins: mono 22 caps, 1.5 px border, 999 px radius. Leader lines 1.75 px, dashed `6 6`, ink. |
-| `BrowserMockup` | Window: 24 px radius, 2 px ink border, shadow `0 24px 60px rgba(31,9,4,.08)`. Chrome 20-24 padding, three dots 14 px, URL pill mono 20. Sidebar 260 px. |
-| `StampBadge` | 2 px orange border, 12 px radius, cream fill, `rotate(-4deg)`. Mono 32, `<b>` in `--ed-orange`. Shadow `6px 6px 0 rgba(233,75,25,0.08)`. One per slide. |
-| `CommandList` | Rows separated by 1.5 px hairline. `.cmd` mono 40 in `--ed-orange`, min-width 240. `.arr` mono 32 muted. `.desc` body 32 soft-ink. |
-| `PromptCard` | 2 px orange border, 20 px radius. Corner label mono 20 caps in `--ed-orange`, positioned `top:-14px; left:32px`. Body mono 30, line-height 1.55. |
-| `DataTable` | Two-column grid. Top border 1.5 ink. Header row mono 24 caps: `.no` in `--ed-line-red`, `.ok` in `--ed-line-mint`. Rows: left col 26 soft ink, right col (answer) 26 ink bold. |
-| `CatalogList` | Rows separated by 1.5 px hairline. Num box 56 × 56, 1.5 ink border, 8 px radius, mono 22. Title Sora 700 · 36 in `--ed-orange`. Body 26 soft ink. |
-| `QuoteInset` | Left border 6 px `--ed-orange`, background `--ed-card-stone`, 4 px radius. Body body-italic 500 · 36, line-height 1.45. |
-
-### 19.4 Hard rules for the new roles
-
-1. Every new role sits inside `.diag-wrap { flex:1; min-height:0 }` — no exceptions (§14).
-2. Single mockup = full width (§17). New roles are **all single-mockup**; do not put two side-by-side.
-3. **One accent surface per slide.** `NumeralHero`'s numeral, `StampBadge`'s stamp, `PromptCard`'s border — pick one; don't stack them.
-4. `AnnotatedIllustration` uses **line-art only** (ink stroke, orange fills allowed on small badges). Never gradient / photorealistic renderings.
-5. `BrowserMockup` uses `--ed-paper` chrome (`#FAF4EA`) + `#fff` content. Never a real screenshot pasted into the content area — that reads as "downloaded image", not "designed slide".
-6. `StampBadge` is optional decoration on a text-heavy slide, not a mockup role by itself — it always sits alongside another content block.
-7. `CommandList` and `CatalogList` cap at **6 rows** on a 1350-tall slide. Longer lists split into two slides.
-8. `PromptCard` body caps at **~180 mono characters** across 4–5 lines. Anything longer belongs in a Terminal (§13.5) with syntax highlight.
-9. `DataTable` caps at **4 rows**. Longer comparisons become two side-by-side `.diag-bars` panels (§13) instead.
-10. `QuoteInset` body caps at **~180 chars** (2 lines at 36 px). Never attribute inside the quote — put the attribution in an eyebrow or catatan below.
-11. Never mix a new-role mockup with a legacy §13 diagram in the same `.diag-wrap`. One mockup per slide.
-
-### 19.5 Where to find each new role
-
-| Where | What |
-|---|---|
-| `slides/18-mockup-numeral-hero.html` … `slides/28-mockup-quote-inset.html` | Eleven single-slide samples, one per role, at 1080 × 1350. |
-| `guidelines/update7-mockup-*.html` | Eleven specimen cards on the design-system "Mockups · Update 7" tab. |
-| `TEMPLATE-editorial-v3.html` | (Continues to be the single starting-template. Copy the section from the relevant slide sample into the template; do not fork the template per role.) |
-
----
-
-*Update 7 · 2026-07 · adds §19 mockup catalog expansion — ELEVEN new editorial mockup roles (`NumeralHero`, `StackedContrast`, `HistoryTimeline`, `AnnotatedIllustration`, `BrowserMockup`, `StampBadge`, `CommandList`, `PromptCard`, `DataTable`, `CatalogList`, `QuoteInset`). No new palette, no new surface — editorial cream + `--ed-orange` remains the only surface. The 9 §13 diagram roles and 5 §18 image mockups are unchanged.*
+*Vour Design System v1.0 · "Engineering Editorial" · full rewrite of the legacy editorial-cream system (`DESIGN.legacy-update7.md`). Physics preserved (1080×1350, 8px grid, screenshot-safe, Iconify, §21 export contract); taste elevated (dual surface, four-role type, expanded components/layouts/motion, strict AI rules). `tokens/*.css` regenerated with legacy `--ed-*` aliases; `TEMPLATE-editorial-v3.html` regeneration pending.*

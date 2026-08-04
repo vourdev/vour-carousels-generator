@@ -1,4 +1,9 @@
 :root {
+  /* ════════════════════════════════════════════════════════
+     Vour v1.0 · Spacing — DESIGN.md §7. 8px grid, canonical
+     values only; never invent intermediates.
+     ════════════════════════════════════════════════════════ */
+
   /* ── Core 8px grid ── */
   --space-1:   8px;
   --space-2:   16px;
@@ -14,7 +19,7 @@
 
   /* ── Canonical gap tokens (single fixed values) ── */
   --gap-tight:           8px;
-  --gap-small:           16px;
+  --gap-sm:              16px;
   --gap-badge-headline:  24px;   /* ★ eyebrow → headline */
   --gap-headline-body:   32px;   /* ★ headline → body */
   --gap-body-asset:      40px;   /* body → asset/cards */
@@ -22,11 +27,17 @@
   --gap-block:           64px;   /* header → main */
   --gap-icon-text:       16px;   /* icon → label */
 
-  /* ── Canonical padding tokens (editorial 1080×1350 only) ── */
-  --pad-ig-x:        80px;       /* L + R */
-  --pad-ig-top:      96px;       /* top */
-  --pad-ig-bottom:   80px;       /* bottom */
+  /* ── Canonical padding (1080×1350 canvas) ── */
+  --pad-x:       80px;   /* L + R (safe area) */
+  --pad-top:     96px;   /* top */
+  --pad-bottom:  80px;   /* bottom */
+  --pad-card:    32px;   /* info card, numbered step */
+  --pad-callout: 32px;   /* dark callout */
+  --pad-window:  40px;   /* terminal / code window */
 
-  --pad-card:        32px;       /* info card, numbered step */
-  --pad-callout:     32px;       /* editorial dark callout */
+  /* ── LEGACY ALIASES ── */
+  --gap-small:     var(--gap-sm);
+  --pad-ig-x:      var(--pad-x);
+  --pad-ig-top:    var(--pad-top);
+  --pad-ig-bottom: var(--pad-bottom);
 }

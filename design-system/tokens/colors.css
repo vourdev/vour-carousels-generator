@@ -1,34 +1,81 @@
 :root {
-  /* ── Editorial palette (Update 3+ — editorial is the only surface) ── */
-  --ed-paper:        #FBF6EF;
-  --ed-paper-tint:   #F4ECDE;
-  --ed-ink:          #1F0904;
-  --ed-ink-soft:     #3D1F15;
-  --ed-ink-muted:    #6E4B3E;
-  --ed-ink-faint:    #A48C7E;
-  --ed-orange:       #E94B19;
-  --ed-orange-soft:  #F2825D;
-  --ed-callout-ink:  #1F0904;
+  /* ════════════════════════════════════════════════════════
+     Vour Design System v1.0 · "Engineering Editorial"
+     Color tokens — DESIGN.md §2 / §17.
+     Legacy --ed-* names kept as ALIASES at the bottom so
+     pre-v1.0 templates keep rendering (they inherit the
+     refreshed v1.0 hues automatically).
+     ════════════════════════════════════════════════════════ */
 
-  --ed-card-peach:   #FBE9D9;
-  --ed-card-stone:   #EDE7DA;
-  --ed-card-mint:    #E3F1E1;
-  --ed-card-sky:     #DEEAF7;
-  --ed-card-pink:    #F7DDE6;
-  --ed-card-amber:   #FBE7B0;
+  /* ── Accent · Ember ── */
+  --ember:        #EE4B1A;              /* THE accent — eyebrow, headline keyword, active node */
+  --ember-bright: #FF6A3D;              /* Ember on Ink surface (dark) only */
+  --ember-soft:   #F5895F;              /* hover / soft emphasis — rare */
+  --ember-wash:   rgba(238,75,26,0.06); /* corner halo, faint tint wells */
 
-  /* Editorial icon sub-tile fill (deeper tint inside an info card).
-     Opaque enough that no paper halo bleeds through. */
-  --ed-icon-tile-bg: rgba(31,9,4,0.06);
+  /* ── Surfaces ── */
+  --paper:        #FBF6EF;              /* default slide background */
+  --paper-raised: #FFFDF9;              /* cards/panels lifting off the page */
+  --paper-sunken: #F2EADD;              /* halo stop, sunken wells, inactive fields */
+  --ink-900:      #14110E;              /* dark surface — terminals, dark slides */
+  --ink-800:      #1F1A15;              /* raised card on dark */
+  --ink-700:      #2B241D;              /* borders/dividers on dark */
 
-  /* ── Semantic aliases (editorial defaults) ─────────────── */
-  --bg-canvas:        var(--ed-paper);
-  --text-display:     var(--ed-ink);
-  --text-body:        var(--ed-ink-soft);
-  --text-muted:       var(--ed-ink-muted);
-  --text-faint:       var(--ed-ink-faint);
-  --border-subtle:    rgba(31,9,4,0.12);
+  /* ── Text on Paper ── */
+  --ink:          #1C0A05;              /* display + headline */
+  --ink-soft:     #3D2419;              /* sub-headline + body */
+  --ink-muted:    #6E4B3E;              /* caption, counter, secondary */
+  --ink-faint:    #A48C7E;              /* inactive labels */
 
-  --brand-primary:    var(--ed-orange);
-  --brand-accent:     var(--ed-orange-soft);
+  /* ── Text on Ink ── */
+  --cream:        #F7F1E8;
+  --cream-soft:   rgba(247,241,232,0.72);
+  --cream-muted:  rgba(247,241,232,0.45);
+
+  /* ── Card tints (backgrounds only — never text) ── */
+  --card-peach:   #FBE9D9;              /* neutral / default */
+  --card-mint:    #E3F1E1;              /* success / "yes" */
+  --card-sky:     #DEEAF7;              /* tooling / info */
+  --card-pink:    #F7DDE6;              /* design / content */
+  --card-amber:   #FBE7B0;              /* perf / highlight */
+  --card-stone:   #EDE7DA;              /* warning / inactive / "no" */
+
+  /* ── Borders + icon tiles ── */
+  --hairline:          rgba(28,10,5,0.10);
+  --border:            rgba(28,10,5,0.14);
+  --hairline-dark:     rgba(247,241,232,0.10);
+  --border-dark:       rgba(247,241,232,0.16);
+  --icon-tile-bg:      rgba(28,10,5,0.06);
+  --icon-tile-bg-dark: rgba(247,241,232,0.08);
+
+  /* ── Semantic aliases ── */
+  --bg-canvas:     var(--paper);
+  --text-display:  var(--ink);
+  --text-body:     var(--ink-soft);
+  --text-muted:    var(--ink-muted);
+  --text-faint:    var(--ink-faint);
+  --border-subtle: var(--border);
+  --brand-primary: var(--ember);
+  --brand-accent:  var(--ember-soft);
+
+  /* ════════════════════════════════════════════════════════
+     LEGACY ALIASES (pre-v1.0 --ed-* names).
+     Do not use in new work.
+     ════════════════════════════════════════════════════════ */
+  --ed-paper:        var(--paper);
+  --ed-paper-tint:   var(--paper-sunken);
+  --ed-ink:          var(--ink);
+  --ed-ink-soft:     var(--ink-soft);
+  --ed-ink-muted:    var(--ink-muted);
+  --ed-ink-faint:    var(--ink-faint);
+  --ed-orange:       var(--ember);
+  --ed-orange-soft:  var(--ember-soft);
+  --ed-callout-ink:  var(--ink-900);
+  --ed-card-peach:   var(--card-peach);
+  --ed-card-stone:   var(--card-stone);
+  --ed-card-mint:    var(--card-mint);
+  --ed-card-sky:     var(--card-sky);
+  --ed-card-pink:    var(--card-pink);
+  --ed-card-amber:   var(--card-amber);
+  --ed-icon-tile-bg: var(--icon-tile-bg);
 }

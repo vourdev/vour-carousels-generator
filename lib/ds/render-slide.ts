@@ -16,6 +16,11 @@ import { flowTemplate } from "@/lib/ds/templates/flow";
 import { conceptTemplate } from "@/lib/ds/templates/concept";
 import { hubTemplate } from "@/lib/ds/templates/hub";
 import { checklistTemplate } from "@/lib/ds/templates/checklist";
+import { browserTemplate } from "@/lib/ds/templates/browser";
+import { quoteTemplate } from "@/lib/ds/templates/quote";
+import { dataTableTemplate } from "@/lib/ds/templates/datatable";
+import { commandListTemplate } from "@/lib/ds/templates/commandlist";
+import { timelineTemplate } from "@/lib/ds/templates/timeline";
 import { diagLines } from "@/lib/ds/hub-lines";
 import { deviceTemplate } from "@/lib/ds/templates/device";
 
@@ -96,7 +101,7 @@ function renderCalloutMockup(m: Extract<Mockup, { type: "callout" }>): string {
     calloutText: m.text,
   });
   // Function replacer: keep raw SVG out of String.replace $-interpretation.
-  return base.replace("ICON_INJECT", () => renderIcon(m.icon, { size: 24, color: "#E94B19" }));
+  return base.replace("ICON_INJECT", () => renderIcon(m.icon, { size: 24, color: "#EE4B1A" }));
 }
 
 function renderBigstatMockup(m: Extract<Mockup, { type: "bigstat" }>): string {
@@ -154,6 +159,62 @@ function renderChecklistMockup(m: Extract<Mockup, { type: "checklist" }>): strin
   });
 }
 
+function renderBrowserMockup(m: Extract<Mockup, { type: "browser" }>): string {
+  const cards = m.cards
+    .map(
+      (c) =>
+        `<div class="b-card"><div class="t">${escapeHtml(c.value)}</div><div class="s">${escapeHtml(c.label)}</div></div>`
+    )
+    .join("");
+  return injectSentinels(browserTemplate, {
+    BROWSER_URL_INJECT: escapeHtml(m.url),
+    BROWSER_CARDS_INJECT: cards,
+    NOTE_INJECT: renderNote(m.note),
+  });
+}
+
+function renderQuoteMockup(m: Extract<Mockup, { type: "quote" }>): string {
+  return fillTemplate(quoteTemplate, { quote: m.quote, author: m.author ?? "" });
+}
+
+function renderDataTableMockup(m: Extract<Mockup, { type: "datatable" }>): string {
+  const rows = m.rows
+    .map(
+      (r) =>
+        `<div class="dt-row"><div class="c">${escapeHtml(r.no)}</div><div class="c b">${escapeHtml(r.ok)}</div></div>`
+    )
+    .join("");
+  return injectSentinels(dataTableTemplate, {
+    DT_NO_INJECT: escapeHtml(m.noLabel),
+    DT_OK_INJECT: escapeHtml(m.okLabel),
+    DT_ROWS_INJECT: rows,
+  });
+}
+
+function renderCommandListMockup(m: Extract<Mockup, { type: "commandlist" }>): string {
+  const rows = m.rows
+    .map(
+      (r) =>
+        `<div class="row"><span class="cmd">${escapeHtml(r.cmd)}</span><span class="desc">${escapeHtml(r.desc)}</span></div>`
+    )
+    .join("");
+  return injectSentinels(commandListTemplate, {
+    CLIST_ROWS_INJECT: rows,
+    NOTE_INJECT: renderNote(m.note),
+  });
+}
+
+function renderTimelineMockup(m: Extract<Mockup, { type: "timeline" }>): string {
+  return fillTemplate(timelineTemplate, {
+    oldLabel: m.oldLabel,
+    oldTitle: m.oldTitle,
+    oldBody: m.oldBody,
+    newLabel: m.newLabel,
+    newTitle: m.newTitle,
+    newBody: m.newBody,
+  });
+}
+
 export function renderDeviceHook(h: Extract<CoverHook, { kind: "device" }>): string {
   const bodyLines = h.lines
     .map((l) => {
@@ -198,6 +259,16 @@ function renderMockup(m: Mockup): string {
       return renderHubMockup(m);
     case "checklist":
       return renderChecklistMockup(m);
+    case "browser":
+      return renderBrowserMockup(m);
+    case "quote":
+      return renderQuoteMockup(m);
+    case "datatable":
+      return renderDataTableMockup(m);
+    case "commandlist":
+      return renderCommandListMockup(m);
+    case "timeline":
+      return renderTimelineMockup(m);
     case "card":
       // Card is rendered inline via the point template's {{#card}} block, not here.
       return "";
@@ -269,7 +340,7 @@ export function renderSlide(slide: Slide): string {
         });
         // Function replacer keeps raw SVG safe from $-sequence interpretation.
         return filled.replace("ICON_INJECT", () =>
-          renderIcon(mockup.icon, { size: 24, color: "#E94B19" })
+          renderIcon(mockup.icon, { size: 24, color: "#EE4B1A" })
         );
       }
 

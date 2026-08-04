@@ -1,11 +1,21 @@
 :root {
-  /* Container radii. */
-  --radius-pill:     999px;
-  --radius-disc:     50%;
-  --radius-xl:       32px;   /* IconTile */
-  --radius-lg:       24px;   /* Info card */
-  --radius-md:       20px;   /* Callout, terminal */
-  --radius-sm:       14px;   /* Pill labels */
-  --radius-xs:       12px;   /* Editorial icon sub-tile */
-  --radius-xxs:      10px;   /* Tiny chip */
+  /* ════════════════════════════════════════════════════════
+     Vour v1.0 · Radius — DESIGN.md §7.1.
+     ════════════════════════════════════════════════════════ */
+  --r-sm:   12px;   /* icon sub-tile, stamp */
+  --r:      16px;   /* inline blocks, nodes, toast */
+  --r-lg:   20px;   /* callout, terminal, mac window */
+  --r-xl:   24px;   /* info card, browser window */
+  --r-pill: 999px;  /* pills, status badges */
+  --r-disc: 50%;    /* brand disc */
+
+  /* ── LEGACY ALIASES ── */
+  --radius-pill: var(--r-pill);
+  --radius-disc: var(--r-disc);
+  --radius-xl:   32px;          /* legacy IconTile only — retired in v1.0 */
+  --radius-lg:   var(--r-xl);   /* legacy "lg" = 24 → info card */
+  --radius-md:   var(--r-lg);   /* legacy "md" = 20 → callout/terminal */
+  --radius-sm:   14px;          /* legacy pill-label value, pinned */
+  --radius-xs:   var(--r-sm);   /* 12 */
+  --radius-xxs:  10px;          /* legacy tiny chip, pinned */
 }

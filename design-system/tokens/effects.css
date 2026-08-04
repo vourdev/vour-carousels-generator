@@ -1,14 +1,32 @@
 :root {
-  /* ── Shadow / glow primitives ── */
+  /* ════════════════════════════════════════════════════════
+     Vour v1.0 · Effect tokens — DESIGN.md §7 / §15 / §17.
+     No backdrop-filter anywhere — fails screenshot export.
+     ════════════════════════════════════════════════════════ */
 
-  /* Editorial info cards are flat — no shadow. */
-  --shadow-flat: none;
+  /* ── Shadows ── */
+  --shadow-flat:  none;                              /* tinted info cards are flat */
+  --shadow-card:  0 24px 60px rgba(28,10,5,0.08);    /* raised cards, windows, mockups */
+  --shadow-toast: 0 12px 32px rgba(28,10,5,0.10);    /* notification toast */
+  --shadow-lift:  0 12px 32px rgba(31,9,4,0.28);     /* lock-badge chips, pop overlays in mock-screens */
 
-  /* Soft lift for lock-badge chips and pop overlays inside a mock-screen. */
-  --shadow-lift:
-    0 12px 32px rgba(31,9,4,0.28);
+  /* ── Halo stops (compose into background tokens) ── */
+  --halo-1: radial-gradient(55% 40% at 100% 0%, rgba(238,75,26,0.06), transparent 65%); /* @kind other */
+  --halo-2: radial-gradient(60% 50% at 10% 100%, rgba(238,75,26,0.04), transparent 70%); /* @kind other */
 
-  /* Editorial halo for the corner gradient (used in background tokens). */
-  --halo-editorial-1: radial-gradient(55% 40% at 100% 0%, rgba(233,75,25,0.06), transparent 65%); /* @kind other */
-  --halo-editorial-2: radial-gradient(60% 50% at 10% 100%, rgba(233,75,25,0.04), transparent 70%); /* @kind other */
+  /* ── Motion — DESIGN.md §15 (web/video adaptations only) ── */
+  --dur-fast: 120ms;
+  --dur:      200ms;
+  --dur-slow: 320ms;
+  --ease:     cubic-bezier(0.4, 0, 0.2, 1);
+  --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+
+  /* ── Opacity steps ── */
+  --op-muted: 0.72;
+  --op-faint: 0.45;
+  --op-halo:  0.06;
+
+  /* ── LEGACY ALIASES ── */
+  --halo-editorial-1: var(--halo-1); /* @kind other */
+  --halo-editorial-2: var(--halo-2); /* @kind other */
 }

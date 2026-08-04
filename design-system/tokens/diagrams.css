@@ -1,42 +1,58 @@
 :root {
-  /* ────────────────────────────────────────────────────────
-     Update 3 · Line-diagram tokens
-     Warm, editorial-friendly accents for wireframe diagrams
-     (concept hubs, flow chains, comparison bars, icon hubs,
-     illustrated scenes, permission tables, terminals, recap
-     checklists). Editorial is the only surface.
-     ──────────────────────────────────────────────────────── */
+  /* ════════════════════════════════════════════════════════
+     Vour v1.0 · Diagram tokens — DESIGN.md §5.2 / §2.7.
+     Line-art `.node` primitive: strokes, semantic accents,
+     fills, radii. Legacy --ed-* aliases at bottom.
+     ════════════════════════════════════════════════════════ */
 
-  /* Stroke colors (borders + arrow strokes + text on line nodes).
-     All chosen so a 1.5–2px stroke is legible on --ed-paper
-     without competing with --ed-orange headlines. */
-  --ed-line-ink:      #1F0904;   /* default node border / connector */
-  --ed-line-orange:   #E94B19;   /* highlighted node — same as --ed-orange */
-  --ed-line-mint:     #4E9E5C;   /* topic accent — success / RAG */
-  --ed-line-sky:      #2F6EBC;   /* topic accent — tooling / MCP */
-  --ed-line-amber:    #B98A0D;   /* topic accent — highlight */
-  --ed-line-pink:     #C1547B;   /* topic accent — design / content */
-  --ed-line-red:      #C13B1A;   /* topic accent — warning / loser */
+  /* ── Stroke colors (node borders + connectors + node text) ── */
+  --line-ink:      #1C0A05;   /* default node border / connector */
+  --line-ember:    #EE4B1A;   /* highlighted node — same as --ember */
+  --line-mint:     #4E9E5C;   /* success / winner */
+  --line-sky:      #2F6EBC;   /* tooling / info */
+  --line-amber:    #B98A0D;   /* highlight / perf */
+  --line-pink:     #C1547B;   /* design / content */
+  --line-red:      #C13B1A;   /* warning / loser */
+  --line-muted:    #A48C7E;   /* dashed connectors, faint labels */
 
-  /* Dashed / muted connectors + faint labels inside diagrams. */
-  --ed-line-muted:    #A48C7E;
+  /* ── Node fills ── */
+  --node-fill:       #FDFBF6; /* near-invisible off-white (on Paper) */
+  --node-fill-dim:   #F0EADF; /* dimmed node — comparison "loser" */
+  --node-fill-ember: #EE4B1A; /* highlighted node fill (.filled) */
+  --node-fill-ink:   #14110E; /* dark node fill */
+  --node-fill-dark:  #1F1A15; /* node on Ink surface (--ink-800) */
 
-  /* Very-subtle node fills so a line-art node reads on cream. */
-  --ed-node-fill:     #FDFBF6;   /* off-white — near-invisible */
-  --ed-node-fill-dim: #F0EADF;   /* dimmed node (comparison "loser") */
+  /* ── Stroke widths — pinned ── */
+  --stroke-node:     1.5px;
+  --stroke-arrow:    1.5px;
+  --stroke-emphatic: 2px;
+  --stroke-subject:  2px;     /* illustration subject outline — §9 */
+  --stroke-detail:   1.75px;  /* illustration detail lines — §9 */
 
-  /* Fill for a HIGHLIGHTED node — deep enough to stand out.
-     Text on top uses --ed-ink; border matches fill. */
-  --ed-node-fill-orange: #E94B19;
-  --ed-node-fill-ink:    #1F0904;
+  /* ── Node radii ── */
+  --node-radius:      16px;   /* default node */
+  --node-radius-lg:   20px;   /* central hub node */
+  --node-radius-pill: 999px;  /* pill callout */
 
-  /* Stroke widths — pinned so nodes across the deck look uniform. */
-  --ed-stroke-node:    1.5px;
-  --ed-stroke-arrow:   1.5px;
-  --ed-stroke-emphatic: 2px;
-
-  /* Radii for line-art nodes. */
-  --ed-node-radius:      16px;    /* default node */
-  --ed-node-radius-lg:   20px;    /* larger central hub node */
-  --ed-node-radius-pill: 999px;   /* pill (rarely used) */
+  /* ════════════════════════════════════════════════════════
+     LEGACY ALIASES (pre-v1.0). Do not use in new work.
+     ════════════════════════════════════════════════════════ */
+  --ed-line-ink:         var(--line-ink);
+  --ed-line-orange:      var(--line-ember);
+  --ed-line-mint:        var(--line-mint);
+  --ed-line-sky:         var(--line-sky);
+  --ed-line-amber:       var(--line-amber);
+  --ed-line-pink:        var(--line-pink);
+  --ed-line-red:         var(--line-red);
+  --ed-line-muted:       var(--line-muted);
+  --ed-node-fill:        var(--node-fill);
+  --ed-node-fill-dim:    var(--node-fill-dim);
+  --ed-node-fill-orange: var(--node-fill-ember);
+  --ed-node-fill-ink:    var(--node-fill-ink);
+  --ed-stroke-node:      var(--stroke-node);
+  --ed-stroke-arrow:     var(--stroke-arrow);
+  --ed-stroke-emphatic:  var(--stroke-emphatic);
+  --ed-node-radius:      var(--node-radius);
+  --ed-node-radius-lg:   var(--node-radius-lg);
+  --ed-node-radius-pill: var(--node-radius-pill);
 }

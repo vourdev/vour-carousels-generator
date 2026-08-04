@@ -3,7 +3,7 @@ import { createGoogleGenerativeAI } from "@ai-sdk/google";
 import { createDeepSeek } from "@ai-sdk/deepseek";
 import { createOpenAICompatible } from "@ai-sdk/openai-compatible";
 
-export type ModelId = "gemini" | "deepseek" | "mimo" | "openrouter" | "omniroute";
+export type ModelId = "gemini" | "deepseek" | "mimo" | "openrouter" | "omniroute" | "vour-high" | "vour-lite";
 
 function has(env: NodeJS.ProcessEnv, ...keys: string[]): boolean {
   return keys.every((k) => Boolean(env[k]));
@@ -16,6 +16,14 @@ export function availableModels(env: NodeJS.ProcessEnv = process.env): ModelId[]
   if (has(env, "DEEPSEEK_API_KEY")) out.push("deepseek");
   if (has(env, "MIMO_API_KEY", "MIMO_BASE_URL", "MIMO_MODEL")) out.push("mimo");
   if (has(env, "OPENROUTER_API_KEY")) out.push("openrouter");
+  
+  // OmniRoute combos - vour-high (vour-combos) and vour-lite (vour-learning)
+  if (has(env, "OMNIROUTE_API_KEY", "OMNIROUTE_BASE_URL")) {
+    out.push("vour-high");   // Maps to vour-combos
+    out.push("vour-lite");   // Maps to vour-learning
+  }
+  
+  // Legacy omniroute support
   if (
     has(env, "OMNIROUTE_API_KEY", "OMNIROUTE_BASE_URL") &&
     (Boolean(env.OMNIROUTE_COMBO) || Boolean(env.OMNIROUTE_MODEL))
@@ -134,6 +142,26 @@ export function resolveModel(id: ModelId): LanguageModel {
         },
       });
       return openrouter(env.OPENROUTER_MODEL || "tencent/hy3:free");
+    }
+    case "vour-high": {
+      // vour-high = vour-combos (high quality combo)
+      const vourHigh = createOpenAICompatible({
+        name: "vour-high",
+        apiKey: env.OMNIROUTE_API_KEY,
+        baseURL: cleanBaseUrl(env.OMNIROUTE_BASE_URL),
+        fetch: omnirouteFetch,
+      });
+      return vourHigh("vour-combos");
+    }
+    case "vour-lite": {
+      // vour-lite = vour-learning (lightweight learning model)
+      const vourLite = createOpenAICompatible({
+        name: "vour-lite",
+        apiKey: env.OMNIROUTE_API_KEY,
+        baseURL: cleanBaseUrl(env.OMNIROUTE_BASE_URL),
+        fetch: omnirouteFetch,
+      });
+      return vourLite("vour-learning");
     }
     case "omniroute": {
       const omniroute = createOpenAICompatible({

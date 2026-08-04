@@ -30,22 +30,25 @@ const fragment = read("assets/brand-base64-section.md");
 const blob = fragment.match(/data:image\/png;base64,[A-Za-z0-9+/=]{20000,}/);
 if (!blob) throw new Error("brand-base64-section.md: base64 blob missing or truncated");
 
-const sectionRe = /## 3a · Brand mark[^\n]*\n[\s\S]*?(?=\n## )/;
-if (!sectionRe.test(design)) throw new Error("DESIGN.md: §3a section not found");
+// v1.0 doc: brand-mark asset spec lives in §21.2. Swap that subsection for the
+// embedded-base64 fragment (retitled to keep v1.0 numbering).
+const sectionRe = /### 21\.2 · Brand mark asset\n[\s\S]*?(?=\n### |\n---\n)/;
+if (!sectionRe.test(design)) throw new Error("DESIGN.md: §21.2 Brand mark section not found");
 if (!/## 3a · Brand mark — embedded base64/.test(fragment))
   throw new Error("brand-base64-section.md: expected §3a heading not found");
 
-let bundleDesign = design.replace(sectionRe, fragment.trimEnd() + "\n");
+const retitled = fragment.replace(
+  "## 3a · Brand mark — embedded base64",
+  "### 21.2 · Brand mark — embedded base64"
+);
+let bundleDesign = design.replace(sectionRe, retitled.trimEnd() + "\n");
 
 // Standalone-context prose: the bundle has no assets/ folder.
+bundleDesign = bundleDesign.replaceAll("`assets/vourdev-logo.jpeg`", "the §21.2 base64 data URL");
+bundleDesign = bundleDesign.replaceAll("bundle/DESIGN.md §3a", "§21.2");
 bundleDesign = bundleDesign.replace(
-  "**Brand mark is the JPEG at `assets/vourdev-logo.jpeg`** (or the §3a base64 for standalone bundles).",
-  "**Brand mark is the base64 PNG in §3a.**"
-);
-bundleDesign = bundleDesign.replaceAll("`assets/vourdev-logo.jpeg`", "the §3a base64 data URL");
-bundleDesign = bundleDesign.replace(
-  "# Vour Dev — DESIGN.md  ·  Update 7",
-  "# Vour Dev — DESIGN.md  ·  Update 7 (self-contained)"
+  "# VOUR — Design System",
+  "# VOUR — Design System (self-contained bundle)"
 );
 if (bundleDesign.includes("assets/vourdev-logo"))
   throw new Error("bundle DESIGN.md still references assets/ — substitution incomplete");
@@ -56,6 +59,7 @@ writeFileSync(join(OUT, "DESIGN.md"), banner("DESIGN.md") + bundleDesign);
 /* ── Verbatim copies ──────────────────────────────────────────────────── */
 
 const COPY = [
+  "MAKING_BRIEFS.md",
   "MAKING_CAROUSELS.md",
   "CUSTOM-INSTRUCTIONS.md",
   "README-FOR-AI.md",

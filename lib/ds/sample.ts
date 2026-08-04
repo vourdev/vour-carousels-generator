@@ -1,7 +1,7 @@
 import type { SlidePlan } from "@/lib/ds/schema";
 
 export const samplePlan: SlidePlan = {
-  title: "Idempotency di API — Retry yang Aman",
+  title: "Idempotency di API: Retry yang Aman",
   caption: "Kenapa retry aman kalau API-mu idempotent.\n\nSimpan biar nggak lupa!",
   hashtags: ["backend", "api", "idempotency", "vourdev"],
   slides: [
@@ -10,7 +10,7 @@ export const samplePlan: SlidePlan = {
       eyebrow: "BACKEND 101",
       headline: "Idempotency itu wajib",
       accentWord: "Idempotency",
-      lede: "Biar retry nggak bikin data dobel — konsep yang wajib lo ngerti, bukan cuma hafal.",
+      lede: "Biar retry nggak bikin data dobel, konsep yang wajib lo ngerti, bukan cuma hafal.",
     },
     {
       role: "point",
