@@ -411,11 +411,16 @@ SLIDE ROLES
     code/UI scene genuinely strengthens the opener:
     hook: { kind: "device", chrome: "browser"|"terminal", label?: "app.tsx"|"app.vourdev.com", lines: [{ text, style: "plain"|"key"|"val"|"kw"|"cmt"|"num" }] }
     → 1-6 short lines (≤ 52 chars each) of on-topic code/UI that stops the scroll. Use "browser" chrome for app/URL scenes, "terminal" for code/CLI.
-- "point": { counter (e.g. "02 / 05"), eyebrow, headline, accentWord?, body, mockup: <one of the types below> }
+- "point": { counter (e.g. "02 / 05"), eyebrow, headline, accentWord?, body, surface?: "paper"|"ink", mockup: <one of the types below> }
 - "outro": { eyebrow?, headline, accentWord?, body?, cta } — cta is REQUIRED:
     cta: { strong: "<the action, e.g. Simpan & bagikan>", sub?: "<why/how, 1 short line>" }
     → strong MUST be a concrete call-to-action (save / share / follow / try). Never omit the cta.
 Deck spine: cover → points → outro. Use "point" for all middle slides.
+SURFACE RHYTHM (DESIGN.md §13): a point slide defaults to "paper" (warm cream). Set surface:"ink"
+(full dark) on AT MOST ~1 slide per 3, and NEVER two ink slides in a row — it is a rhythm accent,
+not a theme. Do NOT put an already-dark mockup (terminal, callout, commandpalette) on an ink slide;
+those need a paper surface for contrast. Good ink picks (render as light tiles / read on dark):
+card, flow, concept, hub, checklist, foldertree, database. Prefer those for an ink slide.
 
 MOCKUP TYPES — every "point" slide MUST include a "mockup" object with one of these types:
 

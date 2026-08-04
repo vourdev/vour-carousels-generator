@@ -391,11 +391,13 @@ export function renderSlide(slide: Slide): string {
     }
     case "point": {
       const mockup = resolveMockup(slide);
+      const surfaceClass = slide.surface === "ink" ? "ink" : "";
 
       // For card-type mockups, render via the point template's built-in {{#card}} block
       if (mockup.type === "card") {
         const filled = fillTemplate(pointTemplate, {
           brand,
+          surfaceClass,
           counter: slide.counter,
           eyebrow: slide.eyebrow,
           ...splitHeadline(slide.headline, slide.accentWord),
@@ -416,6 +418,7 @@ export function renderSlide(slide: Slide): string {
       const mockupHtml = renderMockup(mockup);
       const base = fillTemplate(pointTemplate, {
         brand,
+        surfaceClass,
         counter: slide.counter,
         eyebrow: slide.eyebrow,
         ...splitHeadline(slide.headline, slide.accentWord),

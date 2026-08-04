@@ -285,6 +285,8 @@ const pointSlide = z.object({
   headline: z.string().max(90),
   accentWord: z.string().optional(),
   body: z.string().max(160),
+  /** Slide surface: "ink" (full dark) for deck rhythm; absent/"paper" = default cream */
+  surface: z.enum(["paper", "ink"]).optional(),
   /** New: rich mockup component (preferred) */
   mockup: mockupSchema.optional(),
   /** Legacy: simple info card (backward compat — used when mockup is absent) */

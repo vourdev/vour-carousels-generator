@@ -20,6 +20,28 @@ export const carouselExtraCss = String.raw`
   }
   .series-stamp.active { color: #EE4B1A; }
 
+  /* ═══ v1.0 Full-Ink point surface (deck rhythm — DESIGN.md §13) ═══
+     Mirrors .slide.ink from SHOWCASE-docker.html, scoped to the generator's
+     ink section (section.ink). carousel-css.ts is DO-NOT-EDIT, so every on-dark
+     override lives here. */
+  section.ink {
+    background: linear-gradient(rgba(247,241,232,0.03), transparent 200px), #14110E;
+    color: #F7F1E8;
+  }
+  section.ink .counter { color: rgba(247,241,232,0.45); }
+  section.ink .eyebrow { color: #FF6A3D; }
+  section.ink h1 { color: #F7F1E8; }
+  section.ink h1 .a { color: #FF6A3D; }
+  section.ink .lede,
+  section.ink .body-text { color: rgba(247,241,232,0.72); }
+  /* Info cards keep their LIGHT tone background + dark text on ink (they read as
+     raised light tiles) — only soften the edge against the dark canvas. */
+  section.ink .card { box-shadow: 0 24px 60px rgba(0,0,0,0.35); }
+  /* Shared mockup elements that paint dark text straight on the slide bg must
+     flip to cream on ink (nodes/tiles keep their own light backgrounds). */
+  section.ink .catatan-body { color: #F7F1E8; }
+  section.ink .checklist li { color: #F7F1E8; }
+
   /* ═══ v1.0 Stage-B mockups — browser · quote · datatable · commandlist · timeline ═══ */
 
   /* Browser window */
