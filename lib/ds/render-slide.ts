@@ -369,6 +369,7 @@ export function renderSlide(slide: Slide): string {
       if (!slide.hook) {
         return fillTemplate(coverTemplate, {
           brand,
+          coverSurface: "ink cover-ink",
           eyebrow: slide.eyebrow,
           ...splitHeadline(slide.headline, slide.accentWord),
           lede: slide.lede ?? "",
@@ -381,6 +382,7 @@ export function renderSlide(slide: Slide): string {
       else if (h.kind === "image") fragment = renderImageHook(h);
       const base = fillTemplate(coverCompactTemplate, {
         brand,
+        coverSurface: "ink cover-ink",
         eyebrow: slide.eyebrow,
         ...splitHeadline(slide.headline, slide.accentWord),
         lede: slide.lede ?? "",

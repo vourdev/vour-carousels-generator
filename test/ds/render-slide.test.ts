@@ -347,3 +347,20 @@ describe("renderDeviceHook", () => {
     expect(html).not.toContain("DEVICE_LINES_INJECT");
   });
 });
+
+describe("cover Ink surface", () => {
+  it("renders a hookless cover on the Ink surface", () => {
+    const html = renderSlide({
+      role: "cover", eyebrow: "HOT TAKE", headline: "DevOps Bukan Jabatan", accentWord: "Bukan",
+    });
+    expect(html).toContain("cover-ink");
+  });
+
+  it("renders a cover WITH a hook on the Ink surface", () => {
+    const html = renderSlide({
+      role: "cover", eyebrow: "CODE REVIEW", headline: "Kebiasaan yang Bikin Kodemu Dibenci", accentWord: "Dibenci",
+      hook: { kind: "device", chrome: "terminal", lines: [{ text: "npm run lint", style: "plain" }] },
+    });
+    expect(html).toContain("cover-ink");
+  });
+});

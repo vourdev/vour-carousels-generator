@@ -42,6 +42,18 @@ export const carouselExtraCss = String.raw`
   section.ink .catatan-body { color: #F7F1E8; }
   section.ink .checklist li { color: #F7F1E8; }
 
+  /* ═══ Cover Ink surface — heavier than body Ink: adds the Ember corner halo ═══ */
+  section.cover-ink { position: relative; }
+  section.cover-ink::before {
+    content: ""; position: absolute; inset: 0; pointer-events: none;
+    background:
+      radial-gradient(60% 42% at 100% 0%, rgba(238,75,26,0.16), transparent 60%),
+      radial-gradient(50% 40% at 0% 100%, rgba(238,75,26,0.08), transparent 65%);
+  }
+  section.cover-ink > * { position: relative; z-index: 1; }
+  /* Cover anchor wrapper — centers the single visual anchor in the free space */
+  .anchor-wrap { flex: 1; min-height: 0; display: flex; align-items: center; justify-content: center; }
+
   /* ═══ v1.0 Stage-B mockups — browser · quote · datatable · commandlist · timeline ═══ */
 
   /* Browser window */
