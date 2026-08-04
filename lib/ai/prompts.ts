@@ -28,6 +28,11 @@ const MOCKUP_BUDGETS = `- Terminal: filename + 4-6 code lines max (≤ 45 chars 
 - DataTable: noLabel + okLabel (≤ 20 each), 2-4 rows (no ≤ 50, ok ≤ 50) — "jangan / lakukan", "don't / do", "myth / reality".
 - CommandList: 2-6 rows (cmd ≤ 24, desc ≤ 48), optional note — CLI menus, keyboard shortcuts, slash-command lists.
 - Timeline: oldLabel/oldTitle/oldBody + newLabel/newTitle/newBody — "dulu / sekarang", "then / now", before/after two-card.
+- Promptcard: label (≤ 20, e.g. "COPY THIS") + body (≤ 180) — a copy-paste AI prompt / snippet the reader can steal.
+- Foldertree: 3-8 lines (≤ 48 each, optional active), mono directory listing — project structure, "file X does Y".
+- CommandPalette: query (≤ 30) + 2-5 rows (icon + label ≤ 40, optional active) — Cmd+K menus, action lists, "everything via one shortcut".
+- Database: EXACTLY 2 tables (name ≤ 20, each 2-4 rows of col ≤ 16 + type ≤ 8) + relation (≤ 12, e.g. "1 ─< ∞") — schema / ERD / foreign-key relations.
+- GitBranch: main 2-6 commit labels (≤ 16) + branch { name ≤ 16, at } + mergeLabel (≤ 12) — branch/merge workflow, feature-branch story.
 Array-count rule (HARD): concept/hub/checklist/flow/steps must meet their minimum item count. If you cannot fill the minimum, choose a different mockup type (e.g. card or callout) — do NOT emit a diagram with too few items.`;
 
 const COPY_CAPS = `- Eyebrow ≤ 3 words (max 30 chars), ALL CAPS.
@@ -406,11 +411,16 @@ SLIDE ROLES
     code/UI scene genuinely strengthens the opener:
     hook: { kind: "device", chrome: "browser"|"terminal", label?: "app.tsx"|"app.vourdev.com", lines: [{ text, style: "plain"|"key"|"val"|"kw"|"cmt"|"num" }] }
     → 1-6 short lines (≤ 52 chars each) of on-topic code/UI that stops the scroll. Use "browser" chrome for app/URL scenes, "terminal" for code/CLI.
-- "point": { counter (e.g. "02 / 05"), eyebrow, headline, accentWord?, body, mockup: <one of the types below> }
+- "point": { counter (e.g. "02 / 05"), eyebrow, headline, accentWord?, body, surface?: "paper"|"ink", mockup: <one of the types below> }
 - "outro": { eyebrow?, headline, accentWord?, body?, cta } — cta is REQUIRED:
     cta: { strong: "<the action, e.g. Simpan & bagikan>", sub?: "<why/how, 1 short line>" }
     → strong MUST be a concrete call-to-action (save / share / follow / try). Never omit the cta.
 Deck spine: cover → points → outro. Use "point" for all middle slides.
+SURFACE RHYTHM (DESIGN.md §13): a point slide defaults to "paper" (warm cream). Set surface:"ink"
+(full dark) on AT MOST ~1 slide per 3, and NEVER two ink slides in a row — it is a rhythm accent,
+not a theme. Do NOT put an already-dark mockup (terminal, callout, commandpalette) on an ink slide;
+those need a paper surface for contrast. Good ink picks (render as light tiles / read on dark):
+card, flow, concept, hub, checklist, foldertree, database. Prefer those for an ink slide.
 
 MOCKUP TYPES — every "point" slide MUST include a "mockup" object with one of these types:
 
@@ -443,6 +453,21 @@ MOCKUP TYPES — every "point" slide MUST include a "mockup" object with one of 
 
 10. { type: "checklist", items: ["...", "..."], note?: "..." }
    → 3-6 ticked recap items. Use for "what you learned" / summary slides.
+
+11. { type: "promptcard", label?: "COPY THIS", body: "<the prompt text, newlines allowed>" }
+   → Bordered mono block with a corner label. Use for a copy-paste AI prompt / snippet the reader can steal.
+
+12. { type: "foldertree", lines: [{ text: "app/", active?: true }] }
+   → Mono directory listing (3-8 lines, one optional "active" row in accent). Use for project structure / file-layout.
+
+13. { type: "commandpalette", query: "deploy pro", rows: [{ icon: "<allowlisted-slug>", label: "Deploy to production", active?: true }] }
+   → Dark Cmd+K menu (2-5 rows, one optional "active"). Use for command menus / action lists / keyboard-driven UX.
+
+14. { type: "database", tables: [{ name: "users", rows: [{ col: "id", type: "uuid" }] }, { name: "posts", rows: [{ col: "user_id", type: "fk" }] }], relation?: "1 ─< ∞" }
+   → EXACTLY 2 related tables + a relation glyph. Use for schema / ERD / foreign-key relations.
+
+15. { type: "gitbranch", main: ["init", "feat"], branch: { name: "feat/auth", at: 1 }, mergeLabel?: "merge" }
+   → Fixed branch/merge SVG. Use for git workflow / feature-branch stories.
 
 ICON RULES
 - Every "icon" MUST be one of these exact slugs (the "lucide:" prefix is optional):

@@ -151,6 +151,59 @@ const mockupTimeline = z.object({
   newBody: z.string().max(90),
 });
 
+/** Prompt card — a copy-paste AI prompt in a bordered mono block */
+const mockupPromptcard = z.object({
+  type: z.literal("promptcard"),
+  label: z.string().max(20).default("COPY THIS"),
+  body: z.string().max(180),
+});
+
+/** Folder tree — mono directory listing (3–8 rows), one active row in Ember */
+const mockupFolderTree = z.object({
+  type: z.literal("foldertree"),
+  lines: z
+    .array(z.object({ text: z.string().max(48), active: z.boolean().optional() }))
+    .min(3)
+    .max(8),
+});
+
+/** Command palette — Cmd+K menu on an Ink surface: query + 2–5 icon rows */
+const mockupCommandPalette = z.object({
+  type: z.literal("commandpalette"),
+  query: z.string().max(30),
+  rows: z
+    .array(
+      z.object({ icon: iconField, label: z.string().max(40), active: z.boolean().optional() })
+    )
+    .min(2)
+    .max(5),
+});
+
+/** Database — two related tables (schema/ERD), each 2–4 typed columns + relation glyph */
+const mockupDatabase = z.object({
+  type: z.literal("database"),
+  tables: z
+    .array(
+      z.object({
+        name: z.string().max(20),
+        rows: z
+          .array(z.object({ col: z.string().max(16), type: z.string().max(8) }))
+          .min(2)
+          .max(4),
+      })
+    )
+    .length(2),
+  relation: z.string().max(12).default("1 ─< ∞"),
+});
+
+/** Git branch — fixed 2-branch SVG diagram (feature branch + merge back to main) */
+const mockupGitBranch = z.object({
+  type: z.literal("gitbranch"),
+  main: z.array(z.string().max(16)).min(2).max(6),
+  branch: z.object({ name: z.string().max(16), at: z.number().int().min(0) }),
+  mergeLabel: z.string().max(12).default("merge"),
+});
+
 export const mockupSchema = z.discriminatedUnion("type", [
   mockupCard,
   mockupTerminal,
@@ -167,6 +220,11 @@ export const mockupSchema = z.discriminatedUnion("type", [
   mockupDataTable,
   mockupCommandList,
   mockupTimeline,
+  mockupPromptcard,
+  mockupFolderTree,
+  mockupCommandPalette,
+  mockupDatabase,
+  mockupGitBranch,
 ]);
 
 export type Mockup = z.infer<typeof mockupSchema>;
@@ -227,6 +285,8 @@ const pointSlide = z.object({
   headline: z.string().max(90),
   accentWord: z.string().optional(),
   body: z.string().max(160),
+  /** Slide surface: "ink" (full dark) for deck rhythm; absent/"paper" = default cream */
+  surface: z.enum(["paper", "ink"]).optional(),
   /** New: rich mockup component (preferred) */
   mockup: mockupSchema.optional(),
   /** Legacy: simple info card (backward compat — used when mockup is absent) */
