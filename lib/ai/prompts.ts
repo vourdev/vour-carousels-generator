@@ -157,40 +157,40 @@ Match his rhythm, word choices, and tone EXACTLY.
 
 const MOCKUP_VARIETY_RULE = `
 ═══════════════════════════════════════════════════════════════
-CRITICAL: MOCKUP VARIETY IS MANDATORY
+VISUAL DIRECTOR — anti-repetition is MANDATORY
 ═══════════════════════════════════════════════════════════════
 
-NEVER repeat the same mockup type across slides. If you have 8 slides:
-- Slide 2-7 = 6 different mockup types
-- Mix: 2 diagrams + 2 editorial + 2 Update 7 mockups
+Classify each middle slide by its CONTENT category, then pick a mockup that
+fits that category. These are the ONLY mockup types the renderer can draw — do
+NOT invent others (invented types get dropped and the slide falls back to a
+plain card, which reads as generic).
 
-BAD EXAMPLE (repetitive):
-❌ Slide 2: Terminal
-❌ Slide 3: Terminal  
-❌ Slide 4: Card
-❌ Slide 5: Card
-❌ Slide 6: Callout
-❌ Slide 7: Callout
+CATEGORY → allowed mockup types (choose by the slide's actual content):
+- STAT_HOOK  (big number / count as a hook)      → bigstat
+- COMPARISON (X vs Y, before/after, two options) → comparison · datatable · timeline
+- PROCESS    (flow / step-by-step / how it works)→ flow · steps · concept · hub · foldertree · gitbranch
+- ERROR_FIX  (wrong→right, bug, anti-pattern)    → datatable · comparison · terminal (diff-style)
+- CODE_DEMO  (real code / command / config)      → terminal · commandlist · commandpalette · promptcard · database
+- EVIDENCE   (a real product / UI you built)     → browser
+- ABSTRACT   (concept / principle / analogy)     → concept · hub · quote · card
 
-GOOD EXAMPLE (varied):
-✅ Slide 2: Terminal (code example)
-✅ Slide 3: BigStat (performance metric)
-✅ Slide 4: Comparison (before/after)
-✅ Slide 5: BrowserMockup (UI screenshot)
-✅ Slide 6: CommandList (CLI examples)
-✅ Slide 7: PullQuote (testimonial)
+ANTI-REPETITION (hard rules):
+1. NEVER the same mockup type on two consecutive slides.
+2. If two consecutive slides share a category, change the visual approach
+   (PROCESS twice → e.g. flow then foldertree, not flow then flow).
+3. Dark code mockups (terminal + commandpalette) — MAX 1 per 5 slides combined.
+   browser — MAX 1 per deck. Reach for them only when code/UI is the point.
+4. Rotate tone colors; never the same card/diagram tone twice running.
+5. Surface rhythm: at most ~1 "ink" (dark) slide per 3, never two in a row.
+6. A good 8-slide deck uses ≥ 5 different mockup types.
 
-VARIETY STRATEGY:
-1. Start with most relevant mockup for Point #1
-2. Pick DIFFERENT type for each subsequent slide
-3. Use Update 7 mockups (NumeralHero, BrowserMockup, CommandList, etc.) liberally
-4. Save Terminal for actual code (use ONCE max)
-5. Visual interest = mix technical + editorial + Update 7
-
-Available mockups by category:
-• DIAGRAMS (9): Terminal, Comparison, Steps, Flow, Hub, Concept, Callout, Card, Checklist
-• EDITORIAL (5): BigStat, PullQuote, ImagePlate, SplitPanel, MediaGrid
-• UPDATE 7 (11): NumeralHero, StackedContrast, HistoryTimeline, AnnotatedIllustration, BrowserMockup, StampBadge, CommandList, PromptCard, DataTable, CatalogList, QuoteInset
+NOT AVAILABLE in auto-generation — do NOT fake these; pick the closest above:
+- custom illustration / analogy artwork → use concept · hub · quote instead.
+- real screenshots / photographic evidence → use browser (a rebuilt UI, not a
+  pasted image).
+- human elements (hands / person / character) → not supported; stay editorial.
+If a brief explicitly needs a real screenshot or photo, describe it as a MANUAL
+capture step in the brief text — never emit a placeholder mockup for it.
 
 ═══════════════════════════════════════════════════════════════
 `;
@@ -265,76 +265,71 @@ filename), and 1-6 short on-topic lines that stop the scroll.>
 ## Mockup Type
 <Choose ONE per slide — pick by content, ADD VARIETY, avoid repetition:>
 
-**DIAGRAM MOCKUPS** (Technical / Visual):
-- Terminal — code snippets, CLI commands, config (MAX ONCE per deck)
-- Comparison — before/after, good vs bad, loser vs winner
-- Steps — 2-4 numbered tutorial steps
-- Flow — pipelines, sequences (request → handler → db)
-- Hub — center concept wiring to 3-4 related items
-- Concept — parent term broken into 3-4 sub-concepts
+These are the ONLY mockup types the renderer can draw. Reference them by these
+exact names — do NOT invent others (an unknown type gets dropped to a plain card).
+Grouped by VISUAL DIRECTOR category (pick by the slide's content):
 
-**EDITORIAL MOCKUPS** (Content / Visual Interest):
+**STAT_HOOK** (a number is the hook):
 - BigStat — impressive number + unit + caption (e.g., "3× faster")
-- PullQuote — testimonial or impactful quote with attribution
-- ImagePlate — screenshot, diagram, or image insert
-- SplitPanel — text on one side, image on the other
-- MediaGrid — 2×2 grid of images/screenshots (4 items)
 
-**UPDATE 7 MOCKUPS** (Rich Visual Variety):
-- NumeralHero — large number (e.g., "42%") + explanation
-- StackedContrast — two contrasting items stacked vertically
-- HistoryTimeline — chronological events or version history
-- AnnotatedIllustration — diagram with callout labels
-- BrowserMockup — website/app screenshot in browser chrome
-- StampBadge — badge/label graphic (e.g., "VERIFIED", "NEW")
-- CommandList — CLI command examples with descriptions
-- PromptCard — AI prompt example or template
-- DataTable — structured data in table format
-- CatalogList — feature list or product catalog
-- QuoteInset — pull quote with decorative styling
+**COMPARISON** (X vs Y / before-after):
+- Comparison — two-panel loser vs winner
+- DataTable — ✗/✓ two-column table (jangan/lakukan, myth/reality)
+- Timeline — two dated cards (dulu/sekarang, then/now)
 
-**INFO CARDS** (Simple Text):
+**PROCESS** (flow / step-by-step / structure):
+- Flow — pipelines, sequences (request → handler → db)
+- Steps — 2-4 numbered tutorial steps
+- Concept — parent term broken into 3-4 sub-concepts
+- Hub — center concept wiring to 3-4 related items
+- FolderTree — project/file structure (mono directory listing)
+- GitBranch — branch/merge feature-branch workflow
+
+**CODE_DEMO** (real code / command / schema):
+- Terminal — code snippets, CLI, config (dark; use sparingly)
+- CommandList — CLI commands + descriptions
+- CommandPalette — Cmd+K action menu (dark)
+- PromptCard — copy-paste AI prompt / snippet
+- Database — 2 related tables + relation glyph (ERD)
+
+**EVIDENCE** (a real product/UI):
+- Browser — browser chrome + stat cards ("here's what I built", max 1/deck)
+
+**ABSTRACT** (principle / concept / analogy):
+- Concept / Hub — as above
+- Quote — editorial pull-quote (principle, expert claim, testimonial)
 - Card — general info card with icon, title, body
-- Callout — dark banner for key takeaways/warnings
-- Checklist — bulleted list for recap/summary
+
+**INFO / RECAP**:
+- Callout — dark banner for a key takeaway/warning
+- Checklist — 3-6 ticked recap items
 
 ## Mockup Details
-<Provide specific content for the chosen mockup type:>
-
-**DIAGRAMS:**
+<Provide specific content for the chosen mockup type. Field caps:>
 - Terminal: filename + 4-6 code lines (≤45 chars/line)
 - Comparison: loser label/line vs winner label/line (≤50 chars each)
-- Steps: 2-4 steps (title ≤35 chars, body ≤55 chars)
-- Flow: 2-5 step labels (≤24 chars), note (≤90 chars)
-- Hub: center label + 3-4 tools (icon + label ≤16 chars)
-- Concept: parent + 3-4 children (≤18 chars)
+- DataTable: noLabel/okLabel (≤20) + 2-4 rows (no/ok ≤50 each)
+- Timeline: oldLabel/oldTitle/oldBody + newLabel/newTitle/newBody
+- Steps: 2-4 steps (title ≤35, body ≤55)
+- Flow: 2-5 step labels (≤24), note (≤90)
+- Hub: center + 3-4 tools (icon + label ≤16)
+- Concept: parent + 3-4 children (≤18)
+- FolderTree: 3-8 lines (≤48 each, one optional active)
+- GitBranch: main 2-6 commits + branch {name, at} + mergeLabel
+- BigStat: number (≤6), unit (≤20), caption (≤70)
+- Quote: quote (≤180) + optional author (≤40)
+- Browser: url (≤40) + 2-4 cards (label ≤24, value ≤16)
+- CommandList: 2-6 rows (cmd ≤24, desc ≤48)
+- CommandPalette: query (≤30) + 2-5 rows (icon + label ≤40)
+- Database: 2 tables (name ≤20, 2-4 rows of col ≤16 + type ≤8) + relation
+- PromptCard: label (≤20) + body (≤180)
+- Card: icon slug, title (≤40), body (≤100), tone
+- Callout: icon slug + takeaway (≤90)
+- Checklist: 3-6 items (≤48 each)
 
-**EDITORIAL:**
-- BigStat: number (≤6 chars), unit (≤20 chars), caption (≤70 chars)
-- PullQuote: quote text + attribution ("— Name, Role")
-- ImagePlate: src path + variant (window-mac|window-web|phone|framed|plain)
-- SplitPanel: text content + image src
-- MediaGrid: 4 image paths (bulleted list)
-
-**UPDATE 7:**
-- NumeralHero: large number + supporting text
-- StackedContrast: item 1 vs item 2 (contrasting pair)
-- HistoryTimeline: chronological events (year/version + description)
-- AnnotatedIllustration: image + 3-4 callout labels
-- BrowserMockup: URL + screenshot description
-- StampBadge: badge text + context
-- CommandList: 3-4 commands with descriptions
-- PromptCard: AI prompt text + expected output
-- DataTable: headers + 3-5 rows of data
-- CatalogList: 3-5 items (name + description)
-- QuoteInset: quote + author + role
-
-**INFO CARDS:**
-- Card: icon slug, title (≤40 chars), body (≤100 chars), tone
-- Callout: icon slug + takeaway (≤90 chars)
-- Checklist: 3-6 items (≤48 chars each)
-
-**IMPORTANT**: Use DIFFERENT mockup types across slides. Vary between diagrams, editorial, and Update 7 mockups for visual interest!
+**IMPORTANT**: Follow the VISUAL DIRECTOR anti-repetition rules — never the same
+mockup type (or category-visual) on consecutive slides; dark code mockups
+(Terminal + CommandPalette) max 1 per 5 slides; Browser max 1 per deck.
 
 ## Highlight
 <Key takeaway callout or card summary>
@@ -469,6 +464,23 @@ MOCKUP TYPES — every "point" slide MUST include a "mockup" object with one of 
 15. { type: "gitbranch", main: ["init", "feat"], branch: { name: "feat/auth", at: 1 }, mergeLabel?: "merge" }
    → Fixed branch/merge SVG. Use for git workflow / feature-branch stories.
 
+16. { type: "browser", url: "app.vour.dev/dashboard", cards: [{ label: "deploys", value: "1,284" }], note?: "..." }
+   → Browser chrome + 2-4 stat cards. Use for "here's what I built" / product/dashboard evidence. Max 1 per deck.
+
+17. { type: "quote", quote: "...", author?: "..." }
+   → Editorial pull-quote (serif). Use for a principle / expert claim / testimonial.
+
+18. { type: "datatable", noLabel?: "Jangan", okLabel?: "Lakukan", rows: [{ no: "...", ok: "..." }] }
+   → ✗/✓ two-column table (2-4 rows). Use for don't/do, myth/reality, wrong/right.
+
+19. { type: "commandlist", rows: [{ cmd: "git switch -c", desc: "..." }], note?: "..." }
+   → Mono cmd → desc rows (2-6). Use for CLI menus, shortcut lists, command catalogs.
+
+20. { type: "timeline", oldLabel: "2015", oldTitle: "...", oldBody: "...", newLabel: "Sekarang", newTitle: "...", newBody: "..." }
+   → Two dated cards (dulu/sekarang, then/now). Use for evolution over time.
+
+${MOCKUP_VARIETY_RULE}
+
 ICON RULES
 - Every "icon" MUST be one of these exact slugs (the "lucide:" prefix is optional):
   ${ICON_ALLOWLIST}.
@@ -495,9 +507,11 @@ ${MOCKUP_BUDGETS}
 4. CONTEXT-DRIVEN MOCKUP CHOICE: pick the mockup that best fits the slide's content —
    flow for pipelines/sequences, hub for one thing wiring to several tools, concept for a
    term's sub-concepts, comparison for bad-vs-good, steps for how-to, bigstat for a metric,
-   callout for a warning, card for a general point, checklist for a recap. Use "terminal"
-   ONLY when the slide shows real code/CLI/config, and AT MOST ONCE per deck. Every deck
-   MUST use ≥ 3 distinct mockup types and must not repeat a type on consecutive slides.
+   callout for a warning, card for a general point, checklist for a recap. Follow the
+   VISUAL DIRECTOR category map + anti-repetition rules above: dark code mockups
+   (terminal + commandpalette) MAX 1 per 5 slides combined, browser MAX 1 per deck.
+   Every deck MUST use ≥ 5 distinct mockup types and must NEVER repeat a type on
+   consecutive slides (nor the same category-visual twice running).
 5. Title MUST be highly informative, descriptive, and engaging.
 6. Caption MUST be comprehensive and detailed (hook, key takeaway bullets, and a CTA to save/share).
 7. ${HASHTAG_RULE}
