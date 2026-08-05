@@ -2,6 +2,7 @@ import type { Slide, Mockup, CoverHook } from "@/lib/ds/schema";
 import { fillTemplate, escapeHtml } from "@/lib/ds/fill";
 import { brandMarkDataUri } from "@/lib/ds/brand";
 import { coverTemplate } from "@/lib/ds/templates/cover";
+import { coverEditorialTemplate } from "@/lib/ds/templates/cover-editorial";
 import { coverCompactTemplate } from "@/lib/ds/templates/cover-compact";
 import { coverBadgeTemplate } from "@/lib/ds/templates/cover-badge";
 import { coverNocGridTemplate } from "@/lib/ds/templates/cover-nocgrid";
@@ -412,13 +413,18 @@ export function renderSlide(slide: Slide): string {
   switch (slide.role) {
     case "cover": {
       if (!slide.hook) {
-        return fillTemplate(coverTemplate, {
+        const base = fillTemplate(coverEditorialTemplate, {
           brand,
-          coverSurface: "ink cover-ink",
+          coverSurface: "cover-ink",
           eyebrow: slide.eyebrow,
+          stamp: slide.stamp ?? "",
           ...splitHeadline(slide.headline, slide.accentWord),
           lede: slide.lede ?? "",
         });
+        // Ghost index numeral anchors the eye at the hook (motivated, not decor).
+        // Function replacer keeps any $-sequence in the numeral verbatim.
+        const numeral = escapeHtml(slide.ghostNumeral ?? "01");
+        return base.replace("GHOST_NUMERAL_INJECT", () => numeral);
       }
       const h = slide.hook;
       let fragment = "";
@@ -445,7 +451,8 @@ export function renderSlide(slide: Slide): string {
     }
     case "point": {
       const mockup = resolveMockup(slide);
-      const surfaceClass = slide.surface === "ink" ? "ink" : "";
+      // Ink is the deck default now; "paper" is the explicit opt-out class.
+      const surfaceClass = slide.surface === "paper" ? "paper" : "";
 
       // For card-type mockups, render via the point template's built-in {{#card}} block
       if (mockup.type === "card") {
@@ -490,7 +497,8 @@ export function renderSlide(slide: Slide): string {
     }
     case "outro": {
       const cta = slide.cta ?? { strong: "" };
-      const surfaceClass = slide.surface === "ink" ? "ink" : "";
+      // Ink is the deck default now; "paper" is the explicit opt-out class.
+      const surfaceClass = slide.surface === "paper" ? "paper" : "";
       return fillTemplate(outroTemplate, {
         brand,
         surfaceClass,

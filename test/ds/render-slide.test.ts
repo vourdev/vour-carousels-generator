@@ -278,7 +278,7 @@ describe("renderSlide", () => {
     expect(html).not.toContain("HOOK_INJECT");
     expect(html).toContain("Geser");
     expect(html).toContain("cover-editorial");
-    expect(html).toContain("cover-lead");
+    expect(html).toContain("ce-lead");
   });
 
   it("renders a compact cover with a device hook", () => {

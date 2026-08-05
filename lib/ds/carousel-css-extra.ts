@@ -20,36 +20,95 @@ export const carouselExtraCss = String.raw`
   }
   .series-stamp.active { color: #EE4B1A; }
 
-  /* ═══ Global Dark Ink transition for all slides (matches cover-slides.html) ═══ */
-  section {
-    position: relative !important;
-    background: linear-gradient(rgba(247,241,232,0.03), transparent 200px), #14110E !important;
-    color: #F7F1E8 !important;
+  /* Improvised editorial-Ink intro container & ghost spacing */
+  .cover-editorial-ink {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    height: 100%;
   }
-  section::before {
-    content: "" !important; position: absolute !important; inset: 0 !important; pointer-events: none !important;
+  .ce-top {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    width: 100%;
+  }
+  .ce-lead {
+    margin-top: auto;
+    margin-bottom: auto;
+    display: flex;
+    flex-direction: column;
+    z-index: 10;
+  }
+  .ce-ghost {
+    position: absolute;
+    right: -80px;
+    bottom: 200px;
+    font-family: 'Sora', sans-serif;
+    font-weight: 800;
+    font-size: 640px;
+    line-height: 0.85;
+    color: #FF6A3D;
+    opacity: 0.06;
+    pointer-events: none;
+    user-select: none;
+    z-index: 1;
+  }
+
+  /* ═══ Deck-wide Dark Ink default (matches cover-slides.html) ═══
+     Ink is the DEFAULT surface for every slide. carousel-css.ts is DO-NOT-EDIT and
+     paints Paper via a bare "section {}" selector (specificity 0-0-1). This file is
+     appended AFTER it in assemble.ts, so scoping under "body section" (0-0-2) wins on
+     specificity + source order WITHOUT !important — leaving custom slides/covers free
+     to override with a plain class. A slide can opt back to Paper via section.paper. */
+  body section {
+    position: relative;
+    background: linear-gradient(rgba(247,241,232,0.03), transparent 200px), #14110E;
+    color: #F7F1E8;
+  }
+  body section::before {
+    content: ""; position: absolute; inset: 0; pointer-events: none; z-index: 0;
     background:
       radial-gradient(60% 42% at 100% 0%, rgba(238,75,26,0.16), transparent 60%),
-      radial-gradient(50% 40% at 0% 100%, rgba(238,75,26,0.08), transparent 65%) !important;
-    z-index: 0 !important;
+      radial-gradient(50% 40% at 0% 100%, rgba(238,75,26,0.08), transparent 65%);
   }
-  section > * { position: relative !important; z-index: 1 !important; }
-  
-  /* Text and default elements coloring on the new dark background */
-  section .counter { color: rgba(247,241,232,0.45) !important; }
-  section .eyebrow { color: #FF6A3D !important; }
-  section h1 { color: #F7F1E8 !important; }
-  section h1 .a { color: #FF6A3D !important; }
-  section .lede,
-  section .body-text { color: rgba(247,241,232,0.72) !important; }
-  section .geser { color: rgba(247,241,232,0.45) !important; }
-  
+  body section > * { position: relative; z-index: 1; }
+
+  /* Text + default elements coloring on the dark canvas. */
+  body section .counter { color: rgba(247,241,232,0.45); }
+  body section .eyebrow { color: #FF6A3D; }
+  body section h1 { color: #F7F1E8; }
+  body section h1 .a { color: #FF6A3D; }
+  body section .lede,
+  body section .body-text { color: rgba(247,241,232,0.72); }
+  body section .geser { color: rgba(247,241,232,0.45); }
+
   /* Info cards keep their LIGHT tone background + dark text on ink (they read as
      raised light tiles) — only soften the edge against the dark canvas. */
-  section .card { box-shadow: 0 24px 60px rgba(0,0,0,0.35) !important; }
-  section .catatan-body { color: #F7F1E8 !important; }
-  section .checklist li { color: #F7F1E8 !important; }
-  section .brand-handle { color: #F7F1E8 !important; }
+  body section .card { box-shadow: 0 24px 60px rgba(0,0,0,0.35); }
+  body section .catatan-body { color: #F7F1E8; }
+  body section .checklist li { color: #F7F1E8; }
+  body section .brand-handle { color: #F7F1E8; }
+
+  /* Opt-out: a slide can force the classic Paper surface via section.paper. */
+  body section.paper {
+    background:
+      radial-gradient(55% 40% at 100% 0%, rgba(238,75,26,0.06), transparent 65%),
+      radial-gradient(60% 50% at 10% 100%, rgba(238,75,26,0.04), transparent 70%),
+      #FBF6EF;
+    color: #1C0A05;
+  }
+  body section.paper::before { display: none; }
+  body section.paper .counter { color: #A48C7E; }
+  body section.paper .eyebrow { color: #EE4B1A; }
+  body section.paper h1 { color: #1C0A05; }
+  body section.paper h1 .a { color: #EE4B1A; }
+  body section.paper .lede,
+  body section.paper .body-text { color: #3D2419; }
+  body section.paper .geser { color: #A48C7E; }
+  body section.paper .catatan-body { color: #1C0A05; }
+  body section.paper .checklist li { color: #1C0A05; }
+  body section.paper .brand-handle { color: #1C0A05; }
 
   /* ═══ Cover Ink surface — heavier than body Ink: adds the Ember corner halo ═══ */
   section.cover-ink { position: relative; }

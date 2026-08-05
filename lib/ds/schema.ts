@@ -313,6 +313,8 @@ const coverSlide = z.object({
   headline: z.string().max(90),
   accentWord: z.string().optional(),
   lede: z.string().max(140).optional(),
+  stamp: z.string().optional(),
+  ghostNumeral: z.string().optional(),
   hook: coverHookSchema.optional(),
 });
 
