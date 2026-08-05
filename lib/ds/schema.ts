@@ -259,10 +259,40 @@ const coverHookCustom = z.object({
   html: z.string().max(4000),
 });
 
+/** Cover anchor — an ID badge (contrarian "X is not a job title" angle) */
+const coverHookBadge = z.object({
+  kind: z.literal("badge"),
+  eyebrowLine: z.string().max(24).optional(), // renderer falls back to "ID · 2026"
+  role: z.string().max(22),
+  sub: z.string().max(40).optional(),
+  struck: z.boolean().optional(),
+});
+
+/** Cover anchor — a NOC status grid, all nodes down (risk) or up (recovered).
+ *  .optional() not .default(): .default() makes fields REQUIRED on the inferred
+ *  output type (Slide), breaking literals. The renderer supplies fallbacks. */
+const coverHookNocGrid = z.object({
+  kind: z.literal("nocgrid"),
+  cols: z.number().int().min(3).max(6).optional(),
+  rows: z.number().int().min(2).max(4).optional(),
+  state: z.enum(["down", "up"]).optional(),
+  banner: z.string().max(24).optional(),
+});
+
+/** Cover anchor — a Norman door: pull handle labeled with a contradicting action */
+const coverHookDoor = z.object({
+  kind: z.literal("door"),
+  label: z.string().max(12).optional(), // renderer falls back to "DORONG"
+  pull: z.boolean().optional(),
+});
+
 export const coverHookSchema = z.discriminatedUnion("kind", [
   coverHookDevice,
   coverHookImage,
   coverHookCustom,
+  coverHookBadge,
+  coverHookNocGrid,
+  coverHookDoor,
 ]);
 
 export type CoverHook = z.infer<typeof coverHookSchema>;

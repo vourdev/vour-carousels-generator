@@ -347,3 +347,89 @@ describe("renderDeviceHook", () => {
     expect(html).not.toContain("DEVICE_LINES_INJECT");
   });
 });
+
+describe("cover Ink surface", () => {
+  it("renders a hookless cover on the Ink surface", () => {
+    const html = renderSlide({
+      role: "cover", eyebrow: "HOT TAKE", headline: "DevOps Bukan Jabatan", accentWord: "Bukan",
+    });
+    expect(html).toContain("cover-ink");
+  });
+
+  it("renders a cover WITH a hook on the Ink surface", () => {
+    const html = renderSlide({
+      role: "cover", eyebrow: "CODE REVIEW", headline: "Kebiasaan yang Bikin Kodemu Dibenci", accentWord: "Dibenci",
+      hook: { kind: "device", chrome: "terminal", lines: [{ text: "npm run lint", style: "plain" }] },
+    });
+    expect(html).toContain("cover-ink");
+  });
+});
+
+describe("cover badge hook", () => {
+  it("renders the badge role and strike when struck", () => {
+    const html = renderSlide({
+      role: "cover", eyebrow: "HOT TAKE", headline: "DevOps Bukan Jabatan", accentWord: "Bukan",
+      hook: { kind: "badge", role: "DevOps Engineer", sub: "// satu job title", struck: true },
+    });
+    expect(html).toContain("cover-badge");
+    expect(html).toContain("DevOps Engineer");
+    expect(html).toContain("cover-strike");
+    expect(html).toContain("cover-ink");
+    expect(html).not.toContain("BADGE_ROLE_INJECT");
+  });
+
+  it("omits the strike when not struck and applies the eyebrowLine default", () => {
+    const html = renderSlide({
+      role: "cover", eyebrow: "X", headline: "Y Bukan Z", accentWord: "Bukan",
+      hook: { kind: "badge", role: "Sysadmin" },
+    });
+    expect(html).not.toContain("cover-strike");
+    expect(html).toContain("ID · 2026");
+  });
+});
+
+describe("cover nocgrid hook", () => {
+  it("emits exactly cols*rows nodes and the banner", () => {
+    const html = renderSlide({
+      role: "cover", eyebrow: "RISK", headline: "Satu Typo, Semua Mati", accentWord: "Mati",
+      hook: { kind: "nocgrid", cols: 6, rows: 3, state: "down", banner: "100% PACKET LOSS" },
+    });
+    const nodeCount = (html.match(/class="node/g) ?? []).length;
+    expect(nodeCount).toBe(18);
+    expect(html).toContain("100% PACKET LOSS");
+    expect(html).toContain("cover-noc");
+    expect(html).not.toContain("NODES_INJECT");
+  });
+
+  it("applies defaults (6x3, down, banner) when fields are omitted", () => {
+    const html = renderSlide({
+      role: "cover", eyebrow: "R", headline: "Semua Down", accentWord: "Down",
+      hook: { kind: "nocgrid" },
+    });
+    const nodeCount = (html.match(/class="node/g) ?? []).length;
+    expect(nodeCount).toBe(18);
+    expect(html).toContain("100% PACKET LOSS");
+  });
+});
+
+describe("cover door hook", () => {
+  it("renders the label and hand, and shows the pull handle by default", () => {
+    const html = renderSlide({
+      role: "cover", eyebrow: "MISKONSEPSI", headline: "Cantik Tapi Nggak Kepakai", accentWord: "Nggak Kepakai",
+      hook: { kind: "door", label: "DORONG" },
+    });
+    expect(html).toContain("cover-door");
+    expect(html).toContain("DORONG");
+    expect(html).toContain("handle");
+    expect(html).not.toContain("LABEL_INJECT");
+  });
+
+  it("hides the handle when pull is false and defaults the label", () => {
+    const html = renderSlide({
+      role: "cover", eyebrow: "M", headline: "Salah Desain", accentWord: "Salah",
+      hook: { kind: "door", pull: false },
+    });
+    expect(html).not.toContain('class="handle"');
+    expect(html).toContain("DORONG");
+  });
+});

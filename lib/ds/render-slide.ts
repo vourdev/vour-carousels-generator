@@ -3,6 +3,9 @@ import { fillTemplate, escapeHtml } from "@/lib/ds/fill";
 import { brandMarkDataUri } from "@/lib/ds/brand";
 import { coverTemplate } from "@/lib/ds/templates/cover";
 import { coverCompactTemplate } from "@/lib/ds/templates/cover-compact";
+import { coverBadgeTemplate } from "@/lib/ds/templates/cover-badge";
+import { coverNocGridTemplate } from "@/lib/ds/templates/cover-nocgrid";
+import { coverDoorTemplate } from "@/lib/ds/templates/cover-door";
 import { sanitizeHookHtml } from "@/lib/ds/sanitize";
 import { renderIcon } from "@/lib/ds/icons";
 import { pointTemplate } from "@/lib/ds/templates/point";
@@ -296,6 +299,45 @@ function renderImageHook(h: Extract<CoverHook, { kind: "image" }>): string {
   return `<div class="diag-wrap mt-40"><img src="${src}" alt="" style="max-width:100%; border-radius:20px;"></div>`;
 }
 
+function renderBadgeHook(h: Extract<CoverHook, { kind: "badge" }>): string {
+  const gitIcon = renderIcon("git-branch", { size: 24, color: "#FF6A3D" });
+  const sub = h.sub ? `<div class="sub">${escapeHtml(h.sub)}</div>` : "";
+  const strike = h.struck ? `<div class="cover-strike"></div>` : "";
+  return coverBadgeTemplate
+    .replace("BADGE_BROW_INJECT", () => `${gitIcon}${escapeHtml(h.eyebrowLine ?? "ID · 2026")}`)
+    .replace("BADGE_ROLE_INJECT", () => escapeHtml(h.role))
+    .replace("BADGE_SUB_INJECT", () => sub)
+    .replace("BADGE_STRIKE_INJECT", () => strike);
+}
+
+function renderNocGridHook(h: Extract<CoverHook, { kind: "nocgrid" }>): string {
+  const cols = h.cols ?? 6;
+  const rows = h.rows ?? 3;
+  const down = (h.state ?? "down") === "down";
+  const banner = h.banner ?? "100% PACKET LOSS";
+  // Slugs MUST be in the icons allowlist or renderIcon falls back to "sparkles".
+  const nodeIcon = renderIcon(down ? "x-circle" : "check-circle", { size: 34, color: down ? "#FF5A4D" : "#4E9E5C" });
+  const nodes = Array.from({ length: cols * rows })
+    .map(() => `<span class="node ${down ? "down" : "up"}">${nodeIcon}</span>`)
+    .join("");
+  const bannerIcon = renderIcon(down ? "alert-triangle" : "check-circle", { size: 40, color: down ? "#FF5A4D" : "#4E9E5C" });
+  return coverNocGridTemplate
+    .replace("GRID_COLS_INJECT", () => String(cols))
+    .replace("NODES_INJECT", () => nodes)
+    .replace("BANNER_INJECT", () => `${bannerIcon}${escapeHtml(banner)}`);
+}
+
+function renderDoorHook(h: Extract<CoverHook, { kind: "door" }>): string {
+  // "hand"/"pointer" are NOT in the icon allowlist; arrow-right is verified present
+  // and reads as the (wrong) push direction the label demands.
+  const handIcon = renderIcon("arrow-right", { size: 96, color: "#FF6A3D" });
+  const handle = h.pull === false ? "" : `<div class="handle"></div>`;
+  return coverDoorTemplate
+    .replace("LABEL_INJECT", () => escapeHtml(h.label ?? "DORONG"))
+    .replace("HANDLE_INJECT", () => handle)
+    .replace("HAND_INJECT", () => handIcon);
+}
+
 /** Render any mockup type to an HTML fragment. */
 function renderMockup(m: Mockup): string {
   switch (m.type) {
@@ -369,6 +411,7 @@ export function renderSlide(slide: Slide): string {
       if (!slide.hook) {
         return fillTemplate(coverTemplate, {
           brand,
+          coverSurface: "ink cover-ink",
           eyebrow: slide.eyebrow,
           ...splitHeadline(slide.headline, slide.accentWord),
           lede: slide.lede ?? "",
@@ -379,8 +422,12 @@ export function renderSlide(slide: Slide): string {
       if (h.kind === "device") fragment = renderDeviceHook(h);
       else if (h.kind === "custom") fragment = sanitizeHookHtml(h.html);
       else if (h.kind === "image") fragment = renderImageHook(h);
+      else if (h.kind === "badge") fragment = renderBadgeHook(h);
+      else if (h.kind === "nocgrid") fragment = renderNocGridHook(h);
+      else if (h.kind === "door") fragment = renderDoorHook(h);
       const base = fillTemplate(coverCompactTemplate, {
         brand,
+        coverSurface: "ink cover-ink",
         eyebrow: slide.eyebrow,
         ...splitHeadline(slide.headline, slide.accentWord),
         lede: slide.lede ?? "",

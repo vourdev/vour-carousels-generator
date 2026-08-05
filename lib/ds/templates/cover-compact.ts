@@ -2,7 +2,7 @@
 // h1.compact (88px) so the hook fits the fixed 1080×1350 canvas. HOOK_INJECT is
 // replaced with the raw hook fragment (device/custom/image); each hook renderer
 // supplies its own container (.diag-wrap or a plate).
-export const coverCompactTemplate = String.raw`<section data-screen-label="01 · Cover">
+export const coverCompactTemplate = String.raw`<section data-screen-label="01 · Cover" class="{{coverSurface}}">
   <div class="brand-row">
     <div class="brand-disc">
       <img src="{{brand}}" alt="@vourdev">

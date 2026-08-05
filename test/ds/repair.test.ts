@@ -112,3 +112,29 @@ describe("repairSlidePlan — TASK-1 mockups never crash generation", () => {
     expect(plan.slides.every((s) => s.role === "point" && s.mockup !== undefined)).toBe(true);
   });
 });
+
+describe("repairSlidePlan — cover hooks never crash generation", () => {
+  it("drops a malformed badge hook (missing required role) to a hero cover", () => {
+    const raw = {
+      title: "t", caption: "", hashtags: [],
+      slides: [{ role: "cover", eyebrow: "X", headline: "Y Bukan Z", accentWord: "Bukan",
+        hook: { kind: "badge" /* role missing → invalid */ } }],
+    };
+    expect(() => repairSlidePlan(raw)).not.toThrow();
+    const cover = repairSlidePlan(raw).slides[0];
+    expect(cover.role).toBe("cover");
+    if (cover.role !== "cover") return;
+    expect(cover.hook).toBeUndefined();
+  });
+
+  it("keeps a valid nocgrid hook (all fields defaulted) untouched", () => {
+    const raw = {
+      title: "t", caption: "", hashtags: [],
+      slides: [{ role: "cover", eyebrow: "R", headline: "Semua Mati", accentWord: "Mati",
+        hook: { kind: "nocgrid" } }],
+    };
+    const cover = repairSlidePlan(raw).slides[0];
+    if (cover.role !== "cover") throw new Error("unexpected");
+    expect(cover.hook?.kind).toBe("nocgrid");
+  });
+});
