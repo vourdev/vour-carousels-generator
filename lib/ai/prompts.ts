@@ -402,15 +402,29 @@ Return ONLY structured data matching the schema.
 SLIDE ROLES
 - "cover": { eyebrow, headline, accentWord?, lede?, hook? } — hook is OPTIONAL.
     A text-only cover (eyebrow + headline + lede, NO hook) is a first-class, well-proportioned
-    editorial intro — omit "hook" for a clean opener. Include a "device" hook only when a
-    code/UI scene genuinely strengthens the opener:
-    hook: { kind: "device", chrome: "browser"|"terminal", label?: "app.tsx"|"app.vourdev.com", lines: [{ text, style: "plain"|"key"|"val"|"kw"|"cmt"|"num" }] }
-    → 1-6 short lines (≤ 52 chars each) of on-topic code/UI that stops the scroll. Use "browser" chrome for app/URL scenes, "terminal" for code/CLI.
+    editorial intro. Include a hook when a strong visual anchor strengthens the opener:
+    hook (pick ONE visual anchor; cover is ALWAYS the dark Ink surface):
+      device  — { kind: "device", chrome: "browser"|"terminal", label?, lines: [{ text, style }] } (code/UI scene)
+      badge   — { kind: "badge", role: "DevOps Engineer", sub?: "// one aside", struck?: true } (CONTRARIAN: "X is not a job title")
+      nocgrid — { kind: "nocgrid", cols?: 6, rows?: 3, state?: "down"|"up", banner?: "100% PACKET LOSS" } (URGENCY/RISK: everything is down)
+      door    — { kind: "door", label?: "DORONG", pull?: true } (MISCONCEPTION: pretty but unusable — pull handle labeled push)
 - "point": { counter (e.g. "02 / 05"), eyebrow, headline, accentWord?, body, surface?: "paper"|"ink", mockup: <one of the types below> }
 - "outro": { eyebrow?, headline, accentWord?, body?, cta } — cta is REQUIRED:
     cta: { strong: "<the action, e.g. Simpan & bagikan>", sub?: "<why/how, 1 short line>" }
     → strong MUST be a concrete call-to-action (save / share / follow / try). Never omit the cta.
 Deck spine: cover → points → outro. Use "point" for all middle slides.
+
+COVER — the first slide is an AD for the other slides, not slide 0. Make people swipe.
+Pick ONE trigger angle, then a headline + ONE visual anchor that fits it:
+  MISCONCEPTION  → "you've been wrong about X"      → anchor: door
+  URGENCY/RISK   → "not knowing this costs you"     → anchor: nocgrid
+  CURIOSITY GAP  → a question you don't answer yet  → anchor: device/image
+  NUMBERED       → "N things about X"               → mockup on slide 2: bigstat (giant number)
+  CONTRARIAN     → "X is overrated / not a job"     → anchor: badge (struck:true)
+  BEFORE/AFTER   → old way vs right way             → mockup on slide 2: comparison
+Headline rules: hook word FIRST (a number, or a negative like "Salah"/"Jangan"/"Bukan", or a question word);
+≤ 10 words; leave a curiosity gap (don't reveal the solution); stay credible (no misleading clickbait).
+Accent exactly ONE keyword with the Ember-bright span. Cover is ALWAYS the Ink surface.
 SURFACE RHYTHM (DESIGN.md §13): a point slide defaults to "paper" (warm cream). Set surface:"ink"
 (full dark) on AT MOST ~1 slide per 3, and NEVER two ink slides in a row — it is a rhythm accent,
 not a theme. Do NOT put an already-dark mockup (terminal, callout, commandpalette) on an ink slide;
