@@ -110,6 +110,175 @@ export const carouselExtraCss = String.raw`
   body section.paper .checklist li { color: #1C0A05; }
   body section.paper .brand-handle { color: #1C0A05; }
 
+  /* ═══ Mockup border/chrome overrides on the deck-wide dark background ═══ */
+  body section .browser {
+    border-color: rgba(247, 241, 232, 0.16);
+    box-shadow: 0 24px 60px rgba(0, 0, 0, 0.4);
+  }
+  body section .b-chrome {
+    background: #1F1A15;
+    border-bottom-color: rgba(247, 241, 232, 0.14);
+  }
+  body section .b-url {
+    background: #14110E;
+    border-color: rgba(247, 241, 232, 0.16);
+    color: rgba(247, 241, 232, 0.72);
+  }
+  body section .b-card {
+    background: #1F1A15;
+    border-color: rgba(247, 241, 232, 0.14);
+  }
+  body section .b-card .t {
+    color: #F7F1E8;
+  }
+  body section .b-card .s {
+    color: rgba(247, 241, 232, 0.45);
+  }
+
+  body section .terminal {
+    border: 1.5px solid rgba(247, 241, 232, 0.16);
+    background: #1F1A15;
+    box-shadow: 0 24px 60px rgba(0, 0, 0, 0.4);
+  }
+  body section .terminal-bar {
+    border-bottom: 1px solid rgba(247, 241, 232, 0.10);
+    padding-bottom: 12px;
+  }
+
+  body section .prompt {
+    background: #1F1A15;
+    border-color: #FF6A3D;
+  }
+  body section .prompt .lbl {
+    background: #14110E;
+    color: #FF6A3D;
+  }
+  body section .prompt pre {
+    color: #F7F1E8;
+  }
+
+  body section .tree {
+    background: #1F1A15;
+    border-color: rgba(247, 241, 232, 0.16);
+    color: rgba(247, 241, 232, 0.72);
+  }
+
+  body section .db .table {
+    border-color: rgba(247, 241, 232, 0.16);
+    background: #1F1A15;
+  }
+  body section .db .table .th {
+    background: #14110E;
+    color: #F7F1E8;
+  }
+  body section .db .table .tr {
+    color: rgba(247, 241, 232, 0.72);
+    border-top-color: rgba(247, 241, 232, 0.10);
+  }
+  body section .db .table .tr .ty {
+    color: rgba(247, 241, 232, 0.45);
+  }
+
+  body section .node {
+    background: #1F1A15;
+    border-color: rgba(247, 241, 232, 0.16);
+    color: #F7F1E8;
+  }
+  body section .node.filled {
+    background: #EE4B1A;
+    border-color: #EE4B1A;
+    color: #fff;
+  }
+
+  body section .step {
+    background: #1F1A15;
+    border: 1.5px solid rgba(247, 241, 232, 0.14);
+  }
+  body section .step-title {
+    color: #F7F1E8;
+  }
+  body section .step-body {
+    color: rgba(247, 241, 232, 0.72);
+  }
+
+  body section .timeline .tl-card.old {
+    background: #1F1A15;
+    border: 1.5px solid rgba(247, 241, 232, 0.10);
+  }
+  body section .timeline .tl-card.old .d {
+    color: rgba(247, 241, 232, 0.45);
+  }
+  body section .timeline .tl-card.old .h {
+    color: #F7F1E8;
+  }
+  body section .timeline .tl-card.old .t {
+    color: rgba(247, 241, 232, 0.72);
+  }
+
+  body section .dtable {
+    border-top-color: rgba(247, 241, 232, 0.16);
+  }
+  body section .dt-row {
+    border-top-color: rgba(247, 241, 232, 0.10);
+  }
+  body section .dt-row .c {
+    color: rgba(247, 241, 232, 0.72);
+  }
+  body section .dt-row .c.b {
+    color: #F7F1E8;
+  }
+
+  body section .clist .row {
+    border-top-color: rgba(247, 241, 232, 0.10);
+  }
+  body section .clist .desc {
+    color: rgba(247, 241, 232, 0.72);
+  }
+
+  body section .highlight {
+    background: #1F1A15;
+    border: 1.5px solid rgba(247, 241, 232, 0.14);
+  }
+  body section .highlight .sub {
+    color: rgba(247, 241, 232, 0.72);
+  }
+
+  body section .diag-bars .panel {
+    background: #1F1A15;
+    border-color: rgba(247, 241, 232, 0.10);
+  }
+  body section .diag-bars .panel.loser {
+    border-color: rgba(193, 59, 26, 0.3);
+  }
+  body section .diag-bars .panel .foot {
+    color: #FF6A3D;
+  }
+  body section .diag-bars .panel.loser .foot {
+    color: #C13B1A;
+  }
+
+  body section .quote-inset {
+    background: #1F1A15;
+    border-left-color: #EE4B1A;
+  }
+  body section .qi-body {
+    color: #F7F1E8;
+  }
+
+  body section .mock {
+    background: #1F1A15;
+    border-color: rgba(247, 241, 232, 0.16);
+  }
+  body section .mock-head {
+    color: rgba(247, 241, 232, 0.45);
+    border-bottom-color: rgba(247, 241, 232, 0.14);
+  }
+  body section .mock-field {
+    background: #14110E;
+    border-color: rgba(247, 241, 232, 0.16);
+    color: #F7F1E8;
+  }
+
   /* ═══ Cover Ink surface — heavier than body Ink: adds the Ember corner halo ═══ */
   section.cover-ink { position: relative; }
   section.cover-ink::before {
