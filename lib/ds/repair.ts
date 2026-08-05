@@ -1,4 +1,4 @@
-import { mockupSchema, slidePlanSchema, type SlidePlan } from "@/lib/ds/schema";
+import { mockupSchema, slidePlanSchema, coverHookSchema, type SlidePlan } from "@/lib/ds/schema";
 
 /**
  * Best-effort repair of a raw LLM slide-plan object BEFORE strict validation.
@@ -96,6 +96,11 @@ export function repairSlidePlan(raw: any): SlidePlan {
         if (s.role === "outro" && s.cta && typeof s.cta === "object") {
           s.cta.strong = clampStr(s.cta.strong, 60);
           s.cta.sub = clampStr(s.cta.sub, 90);
+        }
+        if (s.role === "cover" && s.hook !== undefined) {
+          const res = coverHookSchema.safeParse(s.hook);
+          if (res.success) s.hook = res.data;
+          else delete s.hook; // fall back to the hero cover template
         }
       }
     }
