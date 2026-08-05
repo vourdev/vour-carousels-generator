@@ -364,3 +364,26 @@ describe("cover Ink surface", () => {
     expect(html).toContain("cover-ink");
   });
 });
+
+describe("cover badge hook", () => {
+  it("renders the badge role and strike when struck", () => {
+    const html = renderSlide({
+      role: "cover", eyebrow: "HOT TAKE", headline: "DevOps Bukan Jabatan", accentWord: "Bukan",
+      hook: { kind: "badge", role: "DevOps Engineer", sub: "// satu job title", struck: true },
+    });
+    expect(html).toContain("cover-badge");
+    expect(html).toContain("DevOps Engineer");
+    expect(html).toContain("cover-strike");
+    expect(html).toContain("cover-ink");
+    expect(html).not.toContain("BADGE_ROLE_INJECT");
+  });
+
+  it("omits the strike when not struck and applies the eyebrowLine default", () => {
+    const html = renderSlide({
+      role: "cover", eyebrow: "X", headline: "Y Bukan Z", accentWord: "Bukan",
+      hook: { kind: "badge", role: "Sysadmin" },
+    });
+    expect(html).not.toContain("cover-strike");
+    expect(html).toContain("ID · 2026");
+  });
+});

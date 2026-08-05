@@ -351,10 +351,12 @@ In `lib/ds/schema.ts`, before the union (after `coverHookBadge`):
 /** Cover anchor — a NOC status grid, all nodes down (risk) or up (recovered) */
 const coverHookNocGrid = z.object({
   kind: z.literal("nocgrid"),
-  cols: z.number().int().min(3).max(6).default(6),
-  rows: z.number().int().min(2).max(4).default(3),
-  state: z.enum(["down", "up"]).default("down"),
-  banner: z.string().max(24).default("100% PACKET LOSS"),
+  // NOTE: use .optional() not .default() — Zod .default() makes a field REQUIRED on the
+  // inferred OUTPUT type (Slide), breaking object literals. Renderer supplies fallbacks.
+  cols: z.number().int().min(3).max(6).optional(),
+  rows: z.number().int().min(2).max(4).optional(),
+  state: z.enum(["down", "up"]).optional(),
+  banner: z.string().max(24).optional(),
 });
 ```
 
@@ -406,18 +408,21 @@ In `lib/ds/render-slide.ts` (import `coverNocGridTemplate`):
 
 ```ts
 function renderNocGridHook(h: Extract<CoverHook, { kind: "nocgrid" }>): string {
-  const down = h.state === "down";
+  const cols = h.cols ?? 6;
+  const rows = h.rows ?? 3;
+  const down = (h.state ?? "down") === "down";
+  const banner = h.banner ?? "100% PACKET LOSS";
   // NOTE: slugs MUST be in lib/ds/icons.generated allowlist or renderIcon falls back
   // to "sparkles". Verified present: x-circle, check-circle, alert-triangle.
   const nodeIcon = renderIcon(down ? "x-circle" : "check-circle", { size: 34, color: down ? "#FF5A4D" : "#4E9E5C" });
-  const nodes = Array.from({ length: h.cols * h.rows })
+  const nodes = Array.from({ length: cols * rows })
     .map(() => `<span class="node ${down ? "down" : "up"}">${nodeIcon}</span>`)
     .join("");
   const bannerIcon = renderIcon(down ? "alert-triangle" : "check-circle", { size: 40, color: down ? "#FF5A4D" : "#4E9E5C" });
   return coverNocGridTemplate
-    .replace("GRID_COLS_INJECT", () => String(h.cols))
+    .replace("GRID_COLS_INJECT", () => String(cols))
     .replace("NODES_INJECT", () => nodes)
-    .replace("BANNER_INJECT", () => `${bannerIcon}${escapeHtml(h.banner)}`);
+    .replace("BANNER_INJECT", () => `${bannerIcon}${escapeHtml(banner)}`);
 }
 ```
 
@@ -478,7 +483,7 @@ In `lib/ds/schema.ts`, before the union (after `coverHookNocGrid`):
 /** Cover anchor — a Norman door: pull handle labeled with a contradicting action */
 const coverHookDoor = z.object({
   kind: z.literal("door"),
-  label: z.string().max(12).default("DORONG"),
+  label: z.string().max(12).optional(), // renderer falls back to "DORONG"
   pull: z.boolean().optional(),
 });
 ```
@@ -547,7 +552,7 @@ function renderDoorHook(h: Extract<CoverHook, { kind: "door" }>): string {
   const handIcon = renderIcon("arrow-right", { size: 96, color: "#FF6A3D" });
   const handle = h.pull === false ? "" : `<div class="handle"></div>`;
   return coverDoorTemplate
-    .replace("LABEL_INJECT", () => escapeHtml(h.label))
+    .replace("LABEL_INJECT", () => escapeHtml(h.label ?? "DORONG"))
     .replace("HANDLE_INJECT", () => handle)
     .replace("HAND_INJECT", () => handIcon);
 }

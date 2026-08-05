@@ -259,10 +259,20 @@ const coverHookCustom = z.object({
   html: z.string().max(4000),
 });
 
+/** Cover anchor — an ID badge (contrarian "X is not a job title" angle) */
+const coverHookBadge = z.object({
+  kind: z.literal("badge"),
+  eyebrowLine: z.string().max(24).optional(), // renderer falls back to "ID · 2026"
+  role: z.string().max(22),
+  sub: z.string().max(40).optional(),
+  struck: z.boolean().optional(),
+});
+
 export const coverHookSchema = z.discriminatedUnion("kind", [
   coverHookDevice,
   coverHookImage,
   coverHookCustom,
+  coverHookBadge,
 ]);
 
 export type CoverHook = z.infer<typeof coverHookSchema>;

@@ -54,6 +54,20 @@ export const carouselExtraCss = String.raw`
   /* Cover anchor wrapper — centers the single visual anchor in the free space */
   .anchor-wrap { flex: 1; min-height: 0; display: flex; align-items: center; justify-content: center; }
 
+  /* Cover anchor — ID badge (NOT .badge; that is the step-number badge) */
+  .cover-badge { position: relative; width: 560px; padding: 48px 44px 44px; border-radius: 26px;
+    background: #1F1A15; border: 1.5px solid #2B241D; transform: rotate(-4deg);
+    box-shadow: 0 40px 90px rgba(0,0,0,0.55); }
+  .cover-badge .hole { position: absolute; top: 18px; left: 50%; transform: translateX(-50%);
+    width: 120px; height: 16px; border-radius: 8px; background: #14110E; border: 1.5px solid #2B241D; }
+  .cover-badge .brow { display: flex; align-items: center; gap: 12px; margin-top: 20px;
+    font-family: 'JetBrains Mono'; font-size: 22px; color: rgba(247,241,232,0.45); letter-spacing: 0.08em; }
+  .cover-badge .role { font-family: 'Sora'; font-weight: 800; font-size: 72px; line-height: 1;
+    color: #F7F1E8; margin-top: 22px; }
+  .cover-badge .sub { font-family: 'JetBrains Mono'; font-size: 24px; color: rgba(247,241,232,0.45); margin-top: 14px; }
+  .cover-badge .cover-strike { position: absolute; left: -10px; right: -10px; top: 56%; height: 12px;
+    border-radius: 6px; background: #FF6A3D; transform: rotate(-9deg); box-shadow: 0 8px 30px rgba(255,106,61,0.5); }
+
   /* ═══ v1.0 Stage-B mockups — browser · quote · datatable · commandlist · timeline ═══ */
 
   /* Browser window */

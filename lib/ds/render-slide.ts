@@ -3,6 +3,7 @@ import { fillTemplate, escapeHtml } from "@/lib/ds/fill";
 import { brandMarkDataUri } from "@/lib/ds/brand";
 import { coverTemplate } from "@/lib/ds/templates/cover";
 import { coverCompactTemplate } from "@/lib/ds/templates/cover-compact";
+import { coverBadgeTemplate } from "@/lib/ds/templates/cover-badge";
 import { sanitizeHookHtml } from "@/lib/ds/sanitize";
 import { renderIcon } from "@/lib/ds/icons";
 import { pointTemplate } from "@/lib/ds/templates/point";
@@ -296,6 +297,17 @@ function renderImageHook(h: Extract<CoverHook, { kind: "image" }>): string {
   return `<div class="diag-wrap mt-40"><img src="${src}" alt="" style="max-width:100%; border-radius:20px;"></div>`;
 }
 
+function renderBadgeHook(h: Extract<CoverHook, { kind: "badge" }>): string {
+  const gitIcon = renderIcon("git-branch", { size: 24, color: "#FF6A3D" });
+  const sub = h.sub ? `<div class="sub">${escapeHtml(h.sub)}</div>` : "";
+  const strike = h.struck ? `<div class="cover-strike"></div>` : "";
+  return coverBadgeTemplate
+    .replace("BADGE_BROW_INJECT", () => `${gitIcon}${escapeHtml(h.eyebrowLine ?? "ID · 2026")}`)
+    .replace("BADGE_ROLE_INJECT", () => escapeHtml(h.role))
+    .replace("BADGE_SUB_INJECT", () => sub)
+    .replace("BADGE_STRIKE_INJECT", () => strike);
+}
+
 /** Render any mockup type to an HTML fragment. */
 function renderMockup(m: Mockup): string {
   switch (m.type) {
@@ -380,6 +392,7 @@ export function renderSlide(slide: Slide): string {
       if (h.kind === "device") fragment = renderDeviceHook(h);
       else if (h.kind === "custom") fragment = sanitizeHookHtml(h.html);
       else if (h.kind === "image") fragment = renderImageHook(h);
+      else if (h.kind === "badge") fragment = renderBadgeHook(h);
       const base = fillTemplate(coverCompactTemplate, {
         brand,
         coverSurface: "ink cover-ink",
