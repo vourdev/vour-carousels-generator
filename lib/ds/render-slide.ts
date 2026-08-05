@@ -5,6 +5,7 @@ import { coverTemplate } from "@/lib/ds/templates/cover";
 import { coverCompactTemplate } from "@/lib/ds/templates/cover-compact";
 import { coverBadgeTemplate } from "@/lib/ds/templates/cover-badge";
 import { coverNocGridTemplate } from "@/lib/ds/templates/cover-nocgrid";
+import { coverDoorTemplate } from "@/lib/ds/templates/cover-door";
 import { sanitizeHookHtml } from "@/lib/ds/sanitize";
 import { renderIcon } from "@/lib/ds/icons";
 import { pointTemplate } from "@/lib/ds/templates/point";
@@ -326,6 +327,17 @@ function renderNocGridHook(h: Extract<CoverHook, { kind: "nocgrid" }>): string {
     .replace("BANNER_INJECT", () => `${bannerIcon}${escapeHtml(banner)}`);
 }
 
+function renderDoorHook(h: Extract<CoverHook, { kind: "door" }>): string {
+  // "hand"/"pointer" are NOT in the icon allowlist; arrow-right is verified present
+  // and reads as the (wrong) push direction the label demands.
+  const handIcon = renderIcon("arrow-right", { size: 96, color: "#FF6A3D" });
+  const handle = h.pull === false ? "" : `<div class="handle"></div>`;
+  return coverDoorTemplate
+    .replace("LABEL_INJECT", () => escapeHtml(h.label ?? "DORONG"))
+    .replace("HANDLE_INJECT", () => handle)
+    .replace("HAND_INJECT", () => handIcon);
+}
+
 /** Render any mockup type to an HTML fragment. */
 function renderMockup(m: Mockup): string {
   switch (m.type) {
@@ -412,6 +424,7 @@ export function renderSlide(slide: Slide): string {
       else if (h.kind === "image") fragment = renderImageHook(h);
       else if (h.kind === "badge") fragment = renderBadgeHook(h);
       else if (h.kind === "nocgrid") fragment = renderNocGridHook(h);
+      else if (h.kind === "door") fragment = renderDoorHook(h);
       const base = fillTemplate(coverCompactTemplate, {
         brand,
         coverSurface: "ink cover-ink",

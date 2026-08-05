@@ -411,3 +411,25 @@ describe("cover nocgrid hook", () => {
     expect(html).toContain("100% PACKET LOSS");
   });
 });
+
+describe("cover door hook", () => {
+  it("renders the label and hand, and shows the pull handle by default", () => {
+    const html = renderSlide({
+      role: "cover", eyebrow: "MISKONSEPSI", headline: "Cantik Tapi Nggak Kepakai", accentWord: "Nggak Kepakai",
+      hook: { kind: "door", label: "DORONG" },
+    });
+    expect(html).toContain("cover-door");
+    expect(html).toContain("DORONG");
+    expect(html).toContain("handle");
+    expect(html).not.toContain("LABEL_INJECT");
+  });
+
+  it("hides the handle when pull is false and defaults the label", () => {
+    const html = renderSlide({
+      role: "cover", eyebrow: "M", headline: "Salah Desain", accentWord: "Salah",
+      hook: { kind: "door", pull: false },
+    });
+    expect(html).not.toContain('class="handle"');
+    expect(html).toContain("DORONG");
+  });
+});

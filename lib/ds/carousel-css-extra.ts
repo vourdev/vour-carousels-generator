@@ -78,6 +78,16 @@ export const carouselExtraCss = String.raw`
     font-family: 'JetBrains Mono'; font-size: 38px; font-weight: 600; letter-spacing: 0.08em; color: #FF5A4D; }
   .cover-noc .node svg { display: block; }
 
+  /* Cover anchor — Norman door (pull handle contradicts the label) */
+  .cover-door { position: relative; width: 340px; height: 460px; border-radius: 16px;
+    background: #1F1A15; border: 1.5px solid #2B241D; display: flex; align-items: center; justify-content: flex-end;
+    padding-right: 30px; box-shadow: 0 40px 90px rgba(0,0,0,0.55); }
+  .cover-door .label { position: absolute; top: 34px; left: 0; right: 0; text-align: center;
+    font-family: 'JetBrains Mono'; font-size: 34px; font-weight: 600; letter-spacing: 0.22em; color: #FF6A3D; }
+  .cover-door .handle { width: 26px; height: 200px; border-radius: 13px; background: #F7F1E8; box-shadow: 0 8px 24px rgba(0,0,0,0.4); }
+  .cover-door .hand { position: absolute; right: -6px; top: 50%; transform: translateY(-50%); }
+  .cover-door .hand svg { display: block; }
+
   /* ═══ v1.0 Stage-B mockups — browser · quote · datatable · commandlist · timeline ═══ */
 
   /* Browser window */

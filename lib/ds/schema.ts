@@ -279,12 +279,20 @@ const coverHookNocGrid = z.object({
   banner: z.string().max(24).optional(),
 });
 
+/** Cover anchor — a Norman door: pull handle labeled with a contradicting action */
+const coverHookDoor = z.object({
+  kind: z.literal("door"),
+  label: z.string().max(12).optional(), // renderer falls back to "DORONG"
+  pull: z.boolean().optional(),
+});
+
 export const coverHookSchema = z.discriminatedUnion("kind", [
   coverHookDevice,
   coverHookImage,
   coverHookCustom,
   coverHookBadge,
   coverHookNocGrid,
+  coverHookDoor,
 ]);
 
 export type CoverHook = z.infer<typeof coverHookSchema>;
