@@ -41,6 +41,8 @@ export const carouselExtraCss = String.raw`
      flip to cream on ink (nodes/tiles keep their own light backgrounds). */
   section.ink .catatan-body { color: #F7F1E8; }
   section.ink .checklist li { color: #F7F1E8; }
+  section.ink .brand-handle { color: #F7F1E8; }
+  section.ink .geser { color: rgba(247,241,232,0.45); }
 
   /* ═══ Cover Ink surface — heavier than body Ink: adds the Ember corner halo ═══ */
   section.cover-ink { position: relative; }
