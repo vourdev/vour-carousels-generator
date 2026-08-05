@@ -379,6 +379,9 @@ function renderMockup(m: Mockup): string {
       return renderDatabaseMockup(m);
     case "gitbranch":
       return renderGitBranchMockup(m);
+    case "custom":
+      const styleBlock = m.css ? `<style>${m.css}</style>` : "";
+      return `${styleBlock}${sanitizeHookHtml(m.html)}`;
     case "card":
       // Card is rendered inline via the point template's {{#card}} block, not here.
       return "";
@@ -419,8 +422,12 @@ export function renderSlide(slide: Slide): string {
       }
       const h = slide.hook;
       let fragment = "";
+      let styleBlock = "";
       if (h.kind === "device") fragment = renderDeviceHook(h);
-      else if (h.kind === "custom") fragment = sanitizeHookHtml(h.html);
+      else if (h.kind === "custom") {
+        fragment = sanitizeHookHtml(h.html);
+        if (h.css) styleBlock = `<style>${h.css}</style>`;
+      }
       else if (h.kind === "image") fragment = renderImageHook(h);
       else if (h.kind === "badge") fragment = renderBadgeHook(h);
       else if (h.kind === "nocgrid") fragment = renderNocGridHook(h);
@@ -434,7 +441,7 @@ export function renderSlide(slide: Slide): string {
       });
       // Function replacer: a bare string would let $-sequences ($$, $&, $`, $')
       // in hook fragments be interpreted by String.replace and corrupt output.
-      return base.replace("HOOK_INJECT", () => fragment);
+      return `${styleBlock}${base.replace("HOOK_INJECT", () => fragment)}`;
     }
     case "point": {
       const mockup = resolveMockup(slide);
@@ -483,8 +490,10 @@ export function renderSlide(slide: Slide): string {
     }
     case "outro": {
       const cta = slide.cta ?? { strong: "" };
+      const surfaceClass = slide.surface === "ink" ? "ink" : "";
       return fillTemplate(outroTemplate, {
         brand,
+        surfaceClass,
         eyebrow: slide.eyebrow ?? "",
         ...splitHeadline(slide.headline, slide.accentWord),
         body: slide.body ?? "",

@@ -1098,7 +1098,21 @@ export function Wizard({
       try {
         if (step === 2) {
           addMessage("ai", "Merevisi brief outline berdasarkan instruksi Anda...");
-          const res = await briefAction(`Current brief:\n${brief}\n\nRevision request:\n${currentRevision}`, model as ModelId);
+          const res = await briefAction(
+            `You are revising an existing brief.
+Here is the current brief:
+${brief}
+
+Here is the user's revision request:
+"${currentRevision}"
+
+CRITICAL INSTRUCTIONS FOR REVISION:
+1. You MUST generate and output the COMPLETE revised brief document containing all sections.
+2. Do NOT omit, truncate, or skip any sections.
+3. You MUST include the '# Carousel Content — <Title>', '# Caption', and '# Hashtag' sections in the output. If the revision request doesn't ask to change them, preserve them or update them to reflect the slide changes. Do not output just the slides.
+4. Output the full Markdown document matching the required structure start-to-finish.`,
+            model as ModelId
+          );
           setFinalBrief(res);
           setBrief(res);
           addMessage("ai", "Brief outline berhasil diperbarui.");

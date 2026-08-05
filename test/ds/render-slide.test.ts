@@ -433,3 +433,39 @@ describe("cover door hook", () => {
     expect(html).toContain("DORONG");
   });
 });
+
+describe("custom mockup and cover css", () => {
+  it("renders a slide with a custom mockup and optional custom CSS", () => {
+    const html = renderSlide({
+      role: "point",
+      counter: "04/05",
+      eyebrow: "CUSTOM HTML",
+      headline: "Custom Slide",
+      body: "Ini adalah slide dengan mockup kustom.",
+      mockup: {
+        type: "custom",
+        html: "<div class='my-special-class'>Halo Dunia</div>",
+        css: ".my-special-class { color: red; }"
+      }
+    });
+
+    expect(html).toContain("<style>.my-special-class { color: red; }</style>");
+    expect(html).toContain("<div class='my-special-class'>Halo Dunia</div>");
+  });
+
+  it("renders a custom cover hook with custom css", () => {
+    const html = renderSlide({
+      role: "cover",
+      eyebrow: "COVER DUST",
+      headline: "Custom Cover",
+      hook: {
+        kind: "custom",
+        html: "<div class='cover-special'>Special Content</div>",
+        css: ".cover-special { font-size: 50px; }"
+      }
+    });
+
+    expect(html).toContain("<style>.cover-special { font-size: 50px; }</style>");
+    expect(html).toContain("<div class='cover-special'>Special Content</div>");
+  });
+});

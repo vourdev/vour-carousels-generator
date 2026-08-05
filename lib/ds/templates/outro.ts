@@ -2,7 +2,7 @@
 // "design-system/TEMPLATE-editorial-v3.html" (§ "SLIDE · OUTRO").
 // Restores the bundle's counter/eyebrow + .highlight CTA block (strong + sub);
 // every {{slot}} here maps to a var renderSlide produces.
-export const outroTemplate = String.raw`<section data-screen-label="Outro">
+export const outroTemplate = String.raw`<section class="{{surfaceClass}}" data-screen-label="Outro">
   {{#eyebrow}}
   <div class="eyebrow mt-64">{{eyebrow}}</div>
   {{/eyebrow}}

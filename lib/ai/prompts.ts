@@ -493,6 +493,9 @@ MOCKUP TYPES — every "point" slide MUST include a "mockup" object with one of 
 20. { type: "timeline", oldLabel: "2015", oldTitle: "...", oldBody: "...", newLabel: "Sekarang", newTitle: "...", newBody: "..." }
    → Two dated cards (dulu/sekarang, then/now). Use for evolution over time.
 
+21. { type: "custom", html: "...", css?: "..." }
+   → Custom HTML & CSS mockup. Use this for highly specific or flexible layouts that do not fit any predefined template (such as custom multi-column layout, split views with custom inline styles, or unique structural blocks). You can design complete custom HTML structures, write markup containing iconify-icon components, and provide custom CSS rules inside the 'css' field. Do not wrap in '.diag-wrap' as the renderer handles placement.
+
 ${MOCKUP_VARIETY_RULE}
 
 ICON RULES
