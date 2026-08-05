@@ -268,11 +268,23 @@ const coverHookBadge = z.object({
   struck: z.boolean().optional(),
 });
 
+/** Cover anchor — a NOC status grid, all nodes down (risk) or up (recovered).
+ *  .optional() not .default(): .default() makes fields REQUIRED on the inferred
+ *  output type (Slide), breaking literals. The renderer supplies fallbacks. */
+const coverHookNocGrid = z.object({
+  kind: z.literal("nocgrid"),
+  cols: z.number().int().min(3).max(6).optional(),
+  rows: z.number().int().min(2).max(4).optional(),
+  state: z.enum(["down", "up"]).optional(),
+  banner: z.string().max(24).optional(),
+});
+
 export const coverHookSchema = z.discriminatedUnion("kind", [
   coverHookDevice,
   coverHookImage,
   coverHookCustom,
   coverHookBadge,
+  coverHookNocGrid,
 ]);
 
 export type CoverHook = z.infer<typeof coverHookSchema>;

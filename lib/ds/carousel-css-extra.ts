@@ -68,6 +68,16 @@ export const carouselExtraCss = String.raw`
   .cover-badge .cover-strike { position: absolute; left: -10px; right: -10px; top: 56%; height: 12px;
     border-radius: 6px; background: #FF6A3D; transform: rotate(-9deg); box-shadow: 0 8px 30px rgba(255,106,61,0.5); }
 
+  /* Cover anchor — NOC status grid */
+  .cover-noc { width: 100%; max-width: 840px; }
+  .cover-noc .grid { display: grid; gap: 14px; }
+  .cover-noc .node { aspect-ratio: 1; border-radius: 14px; display: flex; align-items: center; justify-content: center; }
+  .cover-noc .node.down { background: rgba(193,59,26,0.16); border: 1.5px solid #C13B1A; box-shadow: inset 0 0 24px rgba(193,59,26,0.25); }
+  .cover-noc .node.up { background: rgba(78,158,92,0.14); border: 1.5px solid #4E9E5C; box-shadow: inset 0 0 24px rgba(78,158,92,0.20); }
+  .cover-noc .banner { margin-top: 28px; display: flex; align-items: center; justify-content: center; gap: 14px;
+    font-family: 'JetBrains Mono'; font-size: 38px; font-weight: 600; letter-spacing: 0.08em; color: #FF5A4D; }
+  .cover-noc .node svg { display: block; }
+
   /* ═══ v1.0 Stage-B mockups — browser · quote · datatable · commandlist · timeline ═══ */
 
   /* Browser window */

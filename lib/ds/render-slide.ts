@@ -4,6 +4,7 @@ import { brandMarkDataUri } from "@/lib/ds/brand";
 import { coverTemplate } from "@/lib/ds/templates/cover";
 import { coverCompactTemplate } from "@/lib/ds/templates/cover-compact";
 import { coverBadgeTemplate } from "@/lib/ds/templates/cover-badge";
+import { coverNocGridTemplate } from "@/lib/ds/templates/cover-nocgrid";
 import { sanitizeHookHtml } from "@/lib/ds/sanitize";
 import { renderIcon } from "@/lib/ds/icons";
 import { pointTemplate } from "@/lib/ds/templates/point";
@@ -308,6 +309,23 @@ function renderBadgeHook(h: Extract<CoverHook, { kind: "badge" }>): string {
     .replace("BADGE_STRIKE_INJECT", () => strike);
 }
 
+function renderNocGridHook(h: Extract<CoverHook, { kind: "nocgrid" }>): string {
+  const cols = h.cols ?? 6;
+  const rows = h.rows ?? 3;
+  const down = (h.state ?? "down") === "down";
+  const banner = h.banner ?? "100% PACKET LOSS";
+  // Slugs MUST be in the icons allowlist or renderIcon falls back to "sparkles".
+  const nodeIcon = renderIcon(down ? "x-circle" : "check-circle", { size: 34, color: down ? "#FF5A4D" : "#4E9E5C" });
+  const nodes = Array.from({ length: cols * rows })
+    .map(() => `<span class="node ${down ? "down" : "up"}">${nodeIcon}</span>`)
+    .join("");
+  const bannerIcon = renderIcon(down ? "alert-triangle" : "check-circle", { size: 40, color: down ? "#FF5A4D" : "#4E9E5C" });
+  return coverNocGridTemplate
+    .replace("GRID_COLS_INJECT", () => String(cols))
+    .replace("NODES_INJECT", () => nodes)
+    .replace("BANNER_INJECT", () => `${bannerIcon}${escapeHtml(banner)}`);
+}
+
 /** Render any mockup type to an HTML fragment. */
 function renderMockup(m: Mockup): string {
   switch (m.type) {
@@ -393,6 +411,7 @@ export function renderSlide(slide: Slide): string {
       else if (h.kind === "custom") fragment = sanitizeHookHtml(h.html);
       else if (h.kind === "image") fragment = renderImageHook(h);
       else if (h.kind === "badge") fragment = renderBadgeHook(h);
+      else if (h.kind === "nocgrid") fragment = renderNocGridHook(h);
       const base = fillTemplate(coverCompactTemplate, {
         brand,
         coverSurface: "ink cover-ink",

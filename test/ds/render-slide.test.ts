@@ -387,3 +387,27 @@ describe("cover badge hook", () => {
     expect(html).toContain("ID · 2026");
   });
 });
+
+describe("cover nocgrid hook", () => {
+  it("emits exactly cols*rows nodes and the banner", () => {
+    const html = renderSlide({
+      role: "cover", eyebrow: "RISK", headline: "Satu Typo, Semua Mati", accentWord: "Mati",
+      hook: { kind: "nocgrid", cols: 6, rows: 3, state: "down", banner: "100% PACKET LOSS" },
+    });
+    const nodeCount = (html.match(/class="node/g) ?? []).length;
+    expect(nodeCount).toBe(18);
+    expect(html).toContain("100% PACKET LOSS");
+    expect(html).toContain("cover-noc");
+    expect(html).not.toContain("NODES_INJECT");
+  });
+
+  it("applies defaults (6x3, down, banner) when fields are omitted", () => {
+    const html = renderSlide({
+      role: "cover", eyebrow: "R", headline: "Semua Down", accentWord: "Down",
+      hook: { kind: "nocgrid" },
+    });
+    const nodeCount = (html.match(/class="node/g) ?? []).length;
+    expect(nodeCount).toBe(18);
+    expect(html).toContain("100% PACKET LOSS");
+  });
+});
