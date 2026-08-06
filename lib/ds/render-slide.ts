@@ -145,9 +145,17 @@ function renderBigstatMockup(m: Extract<Mockup, { type: "bigstat" }>): string {
 }
 
 function renderFlowMockup(m: Extract<Mockup, { type: "flow" }>): string {
+  // Each arrow is glued to the node it points AT, not left as a sibling between
+  // them: the row wraps now (long chains used to overflow the canvas), and a
+  // free-standing arrow would be left dangling at the end of a wrapped row
+  // pointing into empty space. Grouped, every wrapped row opens with an arrow,
+  // which reads as the continuation it is.
   const nodes = m.steps
-    .map((s) => `<div class="node${s.focus ? " filled" : ""}">${escapeHtml(s.label)}</div>`)
-    .join('<div class="arrow">→</div>');
+    .map((s, i) => {
+      const node = `<div class="node${s.focus ? " filled" : ""}">${escapeHtml(s.label)}</div>`;
+      return i === 0 ? node : `<div class="flow-step"><span class="arrow">→</span>${node}</div>`;
+    })
+    .join("");
   return injectSentinels(flowTemplate, {
     FLOW_NODES_INJECT: nodes,
     NOTE_INJECT: renderNote(m.note),

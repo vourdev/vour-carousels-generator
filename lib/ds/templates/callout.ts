@@ -1,10 +1,15 @@
-// DarkCallout mockup — dark banner with icon for key takeaways.
+// DarkCallout mockup — high-contrast banner with icon for key takeaways.
 // Adapted from "design-system" DarkCallout component.
+//
+// The banner INVERTS against its surface (--ms-invert-*): near-black on Paper,
+// cream on Ink. It used to be a hard-coded #14110E panel, which on the Ink
+// canvas (#14110E) meant an invisible callout — the emphasis component being
+// the least visible thing on the slide.
 export const calloutTemplate = String.raw`<div class="diag-wrap mt-40">
-    <div style="background:#14110E;border-radius:20px;padding:26px 30px;display:flex;align-items:flex-start;gap:20px;width:100%">
-      <div style="min-width:40px;height:40px;border-radius:10px;background:rgba(255,255,255,0.08);display:flex;align-items:center;justify-content:center;flex:none">
+    <div style="background:var(--ms-invert-bg);border-radius:20px;padding:26px 30px;display:flex;align-items:flex-start;gap:20px;width:100%">
+      <div style="min-width:40px;height:40px;border-radius:10px;background:var(--ms-invert-chip);display:flex;align-items:center;justify-content:center;flex:none">
         ICON_INJECT
       </div>
-      <div style="font-family:'Inter',sans-serif;font-weight:600;font-size:26px;color:#F7F1E8;line-height:1.4;word-break:break-word">{{calloutText}}</div>
+      <div style="font-family:'Inter',sans-serif;font-weight:600;font-size:26px;color:var(--ms-invert-fg);line-height:1.4;word-break:break-word">{{calloutText}}</div>
     </div>
   </div>`;

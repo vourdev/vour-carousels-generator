@@ -94,7 +94,11 @@ describe("renderSlide", () => {
         text: "Never store secrets in JWT payload",
       },
     });
-    expect(html).toContain("background:#1F0904");
+    // Inverts against the slide surface via tokens: near-black on Paper, cream on
+    // Ink. The old assertion pinned a legacy hex (#1F0904) that the palette had
+    // already moved off, so it could not catch a real regression.
+    expect(html).toContain("background:var(--ms-invert-bg)");
+    expect(html).toContain("color:var(--ms-invert-fg)");
     expect(html).toContain("<svg");
     expect(html).not.toContain("iconify-icon");
     expect(html).toContain("Never store secrets in JWT payload");

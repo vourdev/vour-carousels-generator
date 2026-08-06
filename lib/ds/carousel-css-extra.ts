@@ -1,6 +1,42 @@
 // Additive carousel styles that must NOT live in the verbatim DS-bundle block
 // (lib/ds/carousel-css.ts is marked DO NOT EDIT). Appended after it in assemble.
 export const carouselExtraCss = String.raw`
+  /* ═══ Surface tokens ═══
+     A mockup must never name a literal ink/paper colour. Descendant CSS can be
+     re-scoped per surface, but an inline style="color:#1C0A05" or an SVG
+     fill="#1C0A05" cannot — which is why bigstat's unit and gitbranch's main
+     line rendered near-black on the near-black Ink canvas. Templates resolve
+     these tokens instead, so one declaration below flips the whole component.
+
+     Defaults are the Paper values, matching the DO-NOT-EDIT base palette; the
+     Ink block re-binds them. Anything reading a token is correct on BOTH
+     surfaces with no per-surface rule of its own. */
+  section {
+    --ms-fg: #1C0A05;
+    --ms-fg-muted: #3D2419;
+    --ms-fg-faint: #A48C7E;
+    --ms-panel: #FFFDF9;
+    --ms-panel-deep: #FBF6EF;
+    --ms-line: rgba(28, 10, 5, 0.14);
+    --ms-accent: #EE4B1A;
+    /* Callout inverts against its surface — that inversion IS the emphasis. */
+    --ms-invert-bg: #14110E;
+    --ms-invert-fg: #F7F1E8;
+    --ms-invert-chip: rgba(255, 255, 255, 0.08);
+  }
+  body section:not(.paper) {
+    --ms-fg: #F7F1E8;
+    --ms-fg-muted: rgba(247, 241, 232, 0.72);
+    --ms-fg-faint: rgba(247, 241, 232, 0.45);
+    --ms-panel: #1F1A15;
+    --ms-panel-deep: #14110E;
+    --ms-line: rgba(247, 241, 232, 0.16);
+    --ms-accent: #FF6A3D;
+    --ms-invert-bg: #FDFBF6;
+    --ms-invert-fg: #1C0A05;
+    --ms-invert-chip: rgba(28, 10, 5, 0.08);
+  }
+
   /* Text-only editorial cover: brand-row pinned top, "Geser" pinned bottom,
      lead block optically centered on the 1080×1350 canvas. */
   .cover-editorial .cover-lead {
@@ -59,16 +95,24 @@ export const carouselExtraCss = String.raw`
 
   /* ═══ Deck-wide Dark Ink default (matches cover-slides.html) ═══
      Ink is the DEFAULT surface for every slide. carousel-css.ts is DO-NOT-EDIT and
-     paints Paper via a bare "section {}" selector (specificity 0-0-1). This file is
-     appended AFTER it in assemble.ts, so scoping under "body section" (0-0-2) wins on
-     specificity + source order WITHOUT !important — leaving custom slides/covers free
-     to override with a plain class. A slide can opt back to Paper via section.paper. */
-  body section {
+     paints Paper via bare selectors (specificity 0-0-1 / 0-1-0). This file is
+     appended AFTER it in assemble.ts, so scoping under "body section" wins on
+     specificity + source order WITHOUT !important.
+
+     EVERY ink rule below is scoped ":not(.paper)". That is load-bearing, not
+     cosmetic: a bare "body section .node" also matches a section.paper, so a
+     cream slide was being handed dark-surface mockups (hub/concept/flow nodes,
+     datatable rules, steps, terminal, quote, browser, …) and the mockup no
+     longer matched the slide it sat on. Paper is now simply the ABSENCE of these
+     rules — it falls through to the DO-NOT-EDIT base, so there is no second copy
+     of the cream palette to keep in sync. When adding an ink rule here, scope it
+     the same way; do not add a paper counterpart. */
+  body section:not(.paper) {
     position: relative;
     background: linear-gradient(rgba(247,241,232,0.03), transparent 200px), #14110E;
     color: #F7F1E8;
   }
-  body section::before {
+  body section:not(.paper)::before {
     content: ""; position: absolute; inset: 0; pointer-events: none; z-index: 0;
     background:
       radial-gradient(60% 42% at 100% 0%, rgba(238,75,26,0.16), transparent 60%),
@@ -77,205 +121,229 @@ export const carouselExtraCss = String.raw`
   body section > * { position: relative; z-index: 1; }
 
   /* Text + default elements coloring on the dark canvas. */
-  body section .counter { color: rgba(247,241,232,0.45); }
-  body section .eyebrow { color: #FF6A3D; }
-  body section h1 { color: #F7F1E8; }
-  body section h1 .a { color: #FF6A3D; }
-  body section .lede,
-  body section .body-text { color: rgba(247,241,232,0.72); }
-  body section .geser { color: rgba(247,241,232,0.45); }
+  body section:not(.paper) .counter { color: rgba(247,241,232,0.45); }
+  body section:not(.paper) .eyebrow { color: #FF6A3D; }
+  body section:not(.paper) h1 { color: #F7F1E8; }
+  body section:not(.paper) h1 .a { color: #FF6A3D; }
+  body section:not(.paper) .lede,
+  body section:not(.paper) .body-text { color: rgba(247,241,232,0.72); }
+  body section:not(.paper) .geser { color: rgba(247,241,232,0.45); }
 
   /* Info cards keep their LIGHT tone background + dark text on ink (they read as
      raised light tiles) — only soften the edge against the dark canvas. */
-  body section .card { box-shadow: 0 24px 60px rgba(0,0,0,0.35); }
-  body section .catatan-body { color: #F7F1E8; }
-  body section .checklist li { color: #F7F1E8; }
-  body section .brand-handle { color: #F7F1E8; }
+  body section:not(.paper) .card { box-shadow: 0 24px 60px rgba(0,0,0,0.35); }
+  body section:not(.paper) .catatan-body { color: #F7F1E8; }
+  body section:not(.paper) .checklist li { color: #F7F1E8; }
+  body section:not(.paper) .brand-handle { color: #F7F1E8; }
 
-  /* Opt-out: a slide can force the classic Paper surface via section.paper. */
-  body section.paper {
-    background:
-      radial-gradient(55% 40% at 100% 0%, rgba(238,75,26,0.06), transparent 65%),
-      radial-gradient(60% 50% at 10% 100%, rgba(238,75,26,0.04), transparent 70%),
-      #FBF6EF;
-    color: #1C0A05;
+  /* Panels that are dark BY DESIGN (terminal, command palette) sit only 11 points
+     of luminance above the Ink canvas, so on Ink they read as a smudge rather
+     than a device. A hairline edge is what separates them from the background. */
+  body section:not(.paper) .cmdp {
+    border-color: rgba(247, 241, 232, 0.16);
+    box-shadow: 0 24px 60px rgba(0, 0, 0, 0.45);
   }
-  body section.paper::before { display: none; }
-  body section.paper .counter { color: #A48C7E; }
-  body section.paper .eyebrow { color: #EE4B1A; }
-  body section.paper h1 { color: #1C0A05; }
-  body section.paper h1 .a { color: #EE4B1A; }
-  body section.paper .lede,
-  body section.paper .body-text { color: #3D2419; }
-  body section.paper .geser { color: #A48C7E; }
-  body section.paper .catatan-body { color: #1C0A05; }
-  body section.paper .checklist li { color: #1C0A05; }
-  body section.paper .brand-handle { color: #1C0A05; }
+  body section:not(.paper) .cmdp .search { border-bottom-color: rgba(247, 241, 232, 0.14); }
 
-  /* ═══ Mockup border/chrome overrides on the deck-wide dark background ═══ */
-  body section .browser {
+  /* Git branch SVG — bound to the surface tokens. CSS beats SVG presentation
+     attributes, so these win wherever the template still carries a literal. */
+  .git .g-main { stroke: var(--ms-fg); }
+  .git .g-dot { fill: var(--ms-fg); }
+  .git .g-label { fill: var(--ms-fg-muted); }
+  .git .g-feat { stroke: var(--ms-accent); }
+  .git .g-fdot { fill: var(--ms-accent); }
+  .git .g-flabel { fill: var(--ms-accent); }
+
+  /* ═══ Mockup fit — surface-independent, applies on Paper and Ink alike ═══ */
+
+  /* Flow chain: the row could not wrap and .node forbids wrapping its own text,
+     so a 4-5 step flow (labels up to 24 chars) overflowed the 920px content box.
+     justify-content:center then split the overflow, clipping the first and last
+     node against section{overflow:hidden}. Wrapping keeps every step on canvas. */
+  .diag-flow { flex-wrap: wrap; row-gap: 16px; max-width: 100%; }
+  .diag-flow .flow-step { display: inline-flex; align-items: center; gap: 20px; max-width: 100%; }
+  .diag-flow .node {
+    max-width: 100%;
+    white-space: normal;
+    text-align: center;
+    font-size: 24px;
+    padding: 14px 20px;
+  }
+
+  /* Recap checklist: 40px Sora blew past the canvas once a deck used 5-6 items,
+     and a single 48-char item was wider than the content box on its own. */
+  .checklist { width: 100%; }
+  .checklist li {
+    align-items: flex-start;
+    font-size: 32px;
+    line-height: 1.3;
+  }
+  .checklist .tick { font-size: 32px; line-height: 1.3; width: 36px; }
+
+  /* ═══ Mockup border/chrome overrides — INK SURFACE ONLY ═══ */
+  body section:not(.paper) .browser {
     border-color: rgba(247, 241, 232, 0.16);
     box-shadow: 0 24px 60px rgba(0, 0, 0, 0.4);
   }
-  body section .b-chrome {
+  body section:not(.paper) .b-chrome {
     background: #1F1A15;
     border-bottom-color: rgba(247, 241, 232, 0.14);
   }
-  body section .b-url {
+  body section:not(.paper) .b-url {
     background: #14110E;
     border-color: rgba(247, 241, 232, 0.16);
     color: rgba(247, 241, 232, 0.72);
   }
-  body section .b-card {
+  body section:not(.paper) .b-card {
     background: #1F1A15;
     border-color: rgba(247, 241, 232, 0.14);
   }
-  body section .b-card .t {
+  body section:not(.paper) .b-card .t {
     color: #F7F1E8;
   }
-  body section .b-card .s {
+  body section:not(.paper) .b-card .s {
     color: rgba(247, 241, 232, 0.45);
   }
 
-  body section .terminal {
+  body section:not(.paper) .terminal {
     border: 1.5px solid rgba(247, 241, 232, 0.16);
     background: #1F1A15;
     box-shadow: 0 24px 60px rgba(0, 0, 0, 0.4);
   }
-  body section .terminal-bar {
+  body section:not(.paper) .terminal-bar {
     border-bottom: 1px solid rgba(247, 241, 232, 0.10);
     padding-bottom: 12px;
   }
 
-  body section .prompt {
+  body section:not(.paper) .prompt {
     background: #1F1A15;
     border-color: #FF6A3D;
   }
-  body section .prompt .lbl {
+  body section:not(.paper) .prompt .lbl {
     background: #14110E;
     color: #FF6A3D;
   }
-  body section .prompt pre {
+  body section:not(.paper) .prompt pre {
     color: #F7F1E8;
   }
 
-  body section .tree {
+  body section:not(.paper) .tree {
     background: #1F1A15;
     border-color: rgba(247, 241, 232, 0.16);
     color: rgba(247, 241, 232, 0.72);
   }
 
-  body section .db .table {
+  body section:not(.paper) .db .table {
     border-color: rgba(247, 241, 232, 0.16);
     background: #1F1A15;
   }
-  body section .db .table .th {
+  body section:not(.paper) .db .table .th {
     background: #14110E;
     color: #F7F1E8;
   }
-  body section .db .table .tr {
+  body section:not(.paper) .db .table .tr {
     color: rgba(247, 241, 232, 0.72);
     border-top-color: rgba(247, 241, 232, 0.10);
   }
-  body section .db .table .tr .ty {
+  body section:not(.paper) .db .table .tr .ty {
     color: rgba(247, 241, 232, 0.45);
   }
 
-  body section .node {
+  body section:not(.paper) .node {
     background: #1F1A15;
     border-color: rgba(247, 241, 232, 0.16);
     color: #F7F1E8;
   }
-  body section .node.filled {
+  body section:not(.paper) .node.filled {
     background: #EE4B1A;
     border-color: #EE4B1A;
     color: #fff;
   }
 
-  body section .step {
+  body section:not(.paper) .step {
     background: #1F1A15;
     border: 1.5px solid rgba(247, 241, 232, 0.14);
   }
-  body section .step-title {
+  body section:not(.paper) .step-title {
     color: #F7F1E8;
   }
-  body section .step-body {
+  body section:not(.paper) .step-body {
     color: rgba(247, 241, 232, 0.72);
   }
 
-  body section .timeline .tl-card.old {
+  body section:not(.paper) .timeline .tl-card.old {
     background: #1F1A15;
     border: 1.5px solid rgba(247, 241, 232, 0.10);
   }
-  body section .timeline .tl-card.old .d {
+  body section:not(.paper) .timeline .tl-card.old .d {
     color: rgba(247, 241, 232, 0.45);
   }
-  body section .timeline .tl-card.old .h {
+  body section:not(.paper) .timeline .tl-card.old .h {
     color: #F7F1E8;
   }
-  body section .timeline .tl-card.old .t {
+  body section:not(.paper) .timeline .tl-card.old .t {
     color: rgba(247, 241, 232, 0.72);
   }
 
-  body section .dtable {
+  body section:not(.paper) .dtable {
     border-top-color: rgba(247, 241, 232, 0.16);
   }
-  body section .dt-row {
+  body section:not(.paper) .dt-row {
     border-top-color: rgba(247, 241, 232, 0.10);
   }
-  body section .dt-row .c {
+  body section:not(.paper) .dt-row .c {
     color: rgba(247, 241, 232, 0.72);
   }
-  body section .dt-row .c.b {
+  body section:not(.paper) .dt-row .c.b {
     color: #F7F1E8;
   }
 
-  body section .clist .row {
+  body section:not(.paper) .clist .row {
     border-top-color: rgba(247, 241, 232, 0.10);
   }
-  body section .clist .desc {
+  body section:not(.paper) .clist .desc {
     color: rgba(247, 241, 232, 0.72);
   }
 
-  body section .highlight {
+  body section:not(.paper) .highlight {
     background: #1F1A15;
     border: 1.5px solid rgba(247, 241, 232, 0.14);
   }
-  body section .highlight .sub {
+  body section:not(.paper) .highlight .sub {
     color: rgba(247, 241, 232, 0.72);
   }
 
-  body section .diag-bars .panel {
+  body section:not(.paper) .diag-bars .panel {
     background: #1F1A15;
     border-color: rgba(247, 241, 232, 0.10);
   }
-  body section .diag-bars .panel.loser {
+  body section:not(.paper) .diag-bars .panel.loser {
     border-color: rgba(193, 59, 26, 0.3);
   }
-  body section .diag-bars .panel .foot {
+  body section:not(.paper) .diag-bars .panel .foot {
     color: #FF6A3D;
   }
-  body section .diag-bars .panel.loser .foot {
+  body section:not(.paper) .diag-bars .panel.loser .foot {
     color: #C13B1A;
   }
 
-  body section .quote-inset {
+  body section:not(.paper) .quote-inset {
     background: #1F1A15;
     border-left-color: #EE4B1A;
   }
-  body section .qi-body {
+  body section:not(.paper) .qi-body {
     color: #F7F1E8;
   }
 
-  body section .mock {
+  body section:not(.paper) .mock {
     background: #1F1A15;
     border-color: rgba(247, 241, 232, 0.16);
   }
-  body section .mock-head {
+  body section:not(.paper) .mock-head {
     color: rgba(247, 241, 232, 0.45);
     border-bottom-color: rgba(247, 241, 232, 0.14);
   }
-  body section .mock-field {
+  body section:not(.paper) .mock-field {
     background: #14110E;
     border-color: rgba(247, 241, 232, 0.16);
     color: #F7F1E8;

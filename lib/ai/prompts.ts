@@ -33,7 +33,20 @@ const MOCKUP_BUDGETS = `- Terminal: filename + 4-6 code lines max (≤ 45 chars 
 - CommandPalette: query (≤ 30) + 2-5 rows (icon + label ≤ 40, optional active) — Cmd+K menus, action lists, "everything via one shortcut".
 - Database: EXACTLY 2 tables (name ≤ 20, each 2-4 rows of col ≤ 16 + type ≤ 8) + relation (≤ 12, e.g. "1 ─< ∞") — schema / ERD / foreign-key relations.
 - GitBranch: main 2-6 commit labels (≤ 16) + branch { name ≤ 16, at } + mergeLabel (≤ 12) — branch/merge workflow, feature-branch story.
-Array-count rule (HARD): concept/hub/checklist/flow/steps must meet their minimum item count. If you cannot fill the minimum, choose a different mockup type (e.g. card or callout) — do NOT emit a diagram with too few items.`;
+Array-count rule (HARD): concept/hub/checklist/flow/steps must meet their minimum item count. If you cannot fill the minimum, choose a different mockup type (e.g. card or callout) — do NOT emit a diagram with too few items.
+
+PROPORTION (the caps above are LIMITS, not targets):
+- A mockup shares one 1080×1350 slide with a counter, eyebrow, headline and body.
+  It gets roughly the lower half. Fill it, do not overflow it.
+- Aim for the MIDDLE of every range, not the maximum. 3 flow steps beat 5;
+  4 checklist items beat 6; 4 terminal lines beat 8. Fewer, sharper items read
+  better at thumbnail size than a dense list nobody can parse.
+- Keep item text WELL under its cap. A flow label at 24 chars or a checklist item
+  at 48 wraps to two lines and the diagram stops looking deliberate. Treat ~60%
+  of each cap as the comfortable length.
+- One idea per mockup. If the content needs more rows than the cap allows, that
+  is a signal to split it across two slides, not to cram it into one.
+- Never restate the slide body inside the mockup. The mockup SHOWS, the body TELLS.`;
 
 const COPY_CAPS = `- Eyebrow ≤ 3 words (max 30 chars), ALL CAPS.
 - Headline ≤ 7 words (max 60 chars) with exactly ONE accent word.
@@ -194,9 +207,24 @@ WRITING A custom MOCKUP (when you do reach for it):
   so your rules cannot touch anything outside your own markup.
 - Therefore: never style shared chrome (section, body, h1, .eyebrow, .counter,
   .geser, .diag-wrap, .anchor-wrap) — those rules are scoped away and do nothing.
-- Stay inside the palette: Ember #EE4B1A / Ember-bright #FF6A3D, Paper #FBF6EF,
-  Ink #14110E, cream #F7F1E8. Max 3 colors. No backdrop-filter (dies on export).
-- Size it to fit: the slot is ~920px wide and shares the 1080×1350 canvas.
+- COLOUR — use the surface tokens, NEVER a literal hex for text/panel/border:
+    var(--ms-fg)         primary text on this slide's surface
+    var(--ms-fg-muted)   secondary text
+    var(--ms-fg-faint)   labels, captions
+    var(--ms-panel)      a raised panel / card background
+    var(--ms-panel-deep) a recessed well inside a panel
+    var(--ms-line)       hairline borders and dividers
+    var(--ms-accent)     the Ember accent (ONE per mockup)
+  You do NOT know whether your slide renders on the cream Paper surface or the
+  near-black Ink surface — the deck alternates them. A hard-coded #1C0A05 is
+  invisible on Ink and a hard-coded #F7F1E8 is invisible on Paper. The tokens
+  resolve to the right value on both, so a token-only mockup is always legible.
+  Literal hex is allowed ONLY for a deliberate always-dark device (a terminal
+  window) or an always-Ember fill.
+- No backdrop-filter (dies on screenshot export). Max 3 colours.
+- Size it to fit: the slot is ~920px wide and gets roughly the lower half of the
+  1080×1350 canvas. Keep it to a handful of elements and short labels; a custom
+  mockup that needs a dense grid is the wrong call for the slide.
 
 NOT AVAILABLE in auto-generation — do NOT fake these; pick the closest above:
 - real screenshots / photographic evidence → use browser (a rebuilt UI, not a
@@ -470,9 +498,10 @@ Headline rules: hook word FIRST (a number, or a negative like "Salah"/"Jangan"/"
 Accent exactly ONE keyword with the Ember-bright span. Cover is ALWAYS the Ink surface.
 SURFACE RHYTHM (DESIGN.md §13): a point slide defaults to "paper" (warm cream). Set surface:"ink"
 (full dark) on AT MOST ~1 slide per 3, and NEVER two ink slides in a row — it is a rhythm accent,
-not a theme. Do NOT put an already-dark mockup (terminal, callout, commandpalette) on an ink slide;
-those need a paper surface for contrast. Good ink picks (render as light tiles / read on dark):
-card, flow, concept, hub, checklist, foldertree, database. Prefer those for an ink slide.
+not a theme. Do NOT put an always-dark device (terminal, commandpalette) on an ink slide: it is a
+near-black panel on a near-black canvas. (The renderer flips such a slide back to paper, but pick
+correctly rather than relying on that.) Every other mockup follows the slide surface automatically.
+Good ink picks: card, flow, concept, hub, checklist, foldertree, database, callout, bigstat.
 
 MOCKUP TYPES — every "point" slide MUST include a "mockup" object with one of these types:
 
@@ -537,7 +566,7 @@ MOCKUP TYPES — every "point" slide MUST include a "mockup" object with one of 
    → Two dated cards (dulu/sekarang, then/now). Use for evolution over time.
 
 21. { type: "custom", html: "...", css?: "..." }
-   → Hand-written HTML + CSS. The escape hatch for a layout none of types 1-20 can draw (a bespoke split view, an unusual structural block, a visual metaphor). Write self-contained markup with your OWN class names and put the matching rules in 'css'. The renderer wraps your fragment in the flex slot and SCOPES your CSS to it, so do NOT add a '.diag-wrap' wrapper and do NOT style shared chrome (section, body, h1, .eyebrow, .counter, .geser) — those rules are scoped away and do nothing. Palette: Ember #EE4B1A / #FF6A3D, Paper #FBF6EF, Ink #14110E, cream #F7F1E8, max 3 colors, no backdrop-filter. Max ~1 per deck.
+   → Hand-written HTML + CSS. The escape hatch for a layout none of types 1-20 can draw (a bespoke split view, an unusual structural block, a visual metaphor). Write self-contained markup with your OWN class names and put the matching rules in 'css'. The renderer wraps your fragment in the flex slot and SCOPES your CSS to it, so do NOT add a '.diag-wrap' wrapper and do NOT style shared chrome (section, body, h1, .eyebrow, .counter, .geser) — those rules are scoped away and do nothing. Colours MUST come from the surface tokens (var(--ms-fg), --ms-fg-muted, --ms-fg-faint, --ms-panel, --ms-panel-deep, --ms-line, --ms-accent) — a literal hex breaks on the surface you did not picture. See "WRITING A custom MOCKUP" above. Max 3 colors, no backdrop-filter, max ~1 per deck.
 
 ${MOCKUP_VARIETY_RULE}
 
