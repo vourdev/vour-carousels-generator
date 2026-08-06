@@ -1,13 +1,13 @@
 import type { Slide, Mockup, CoverHook } from "@/lib/ds/schema";
 import { fillTemplate, escapeHtml } from "@/lib/ds/fill";
 import { brandMarkDataUri } from "@/lib/ds/brand";
-import { coverTemplate } from "@/lib/ds/templates/cover";
 import { coverEditorialTemplate } from "@/lib/ds/templates/cover-editorial";
 import { coverCompactTemplate } from "@/lib/ds/templates/cover-compact";
 import { coverBadgeTemplate } from "@/lib/ds/templates/cover-badge";
 import { coverNocGridTemplate } from "@/lib/ds/templates/cover-nocgrid";
 import { coverDoorTemplate } from "@/lib/ds/templates/cover-door";
 import { sanitizeHookHtml } from "@/lib/ds/sanitize";
+import { scopeCss } from "@/lib/ds/scope-css";
 import { renderIcon } from "@/lib/ds/icons";
 import { pointTemplate } from "@/lib/ds/templates/point";
 import { outroTemplate } from "@/lib/ds/templates/outro";
@@ -60,6 +60,29 @@ function renderNote(note?: string): string {
 function injectSentinels(template: string, map: Record<string, string>): string {
   const tokens = Object.keys(map).sort((a, b) => b.length - a.length);
   return template.replace(new RegExp(tokens.join("|"), "g"), (t) => map[t]);
+}
+
+/**
+ * Render an LLM-authored HTML/CSS fragment as a proportional slide element.
+ *
+ * Two things every other mockup gets for free but a raw fragment does not:
+ *  - a flex wrapper (`.diag-wrap` on a point, `.anchor-wrap` on a cover) so the
+ *    fragment centers in the free space instead of hugging the headline;
+ *  - a scope class, so its <style> block cannot restyle the slide chrome
+ *    (`section`, `h1`, `.geser`) or bleed into the other slides.
+ */
+function renderCustomFragment(
+  html: string,
+  css: string | undefined,
+  scopeId: string,
+  wrapper: "diag-wrap" | "anchor-wrap"
+): string {
+  const cls = `cm-${scopeId}`;
+  const styleBlock = css ? `<style>${scopeCss(css, `.${cls}`)}</style>` : "";
+  // The `.cm` class makes the scope div transparent to layout (see
+  // carousel-css-extra.ts) — without it the div shrink-wraps as a flex item and
+  // a `width:100%` inside the fragment resolves against its own content.
+  return `${styleBlock}<div class="${wrapper}"><div class="cm ${cls}">${sanitizeHookHtml(html)}</div></div>`;
 }
 
 /* ── Mockup renderers ─────────────────────────────────────────── */
@@ -295,9 +318,11 @@ export function renderDeviceHook(h: Extract<CoverHook, { kind: "device" }>): str
 }
 
 // Phase-2 refinement pending (ImagePlate styling). Minimal, escaped, safe today.
+// .anchor-wrap (not .diag-wrap) so the image centers in the cover's free space
+// exactly like the badge/nocgrid/door anchors do.
 function renderImageHook(h: Extract<CoverHook, { kind: "image" }>): string {
   const src = escapeHtml(h.src);
-  return `<div class="diag-wrap mt-40"><img src="${src}" alt="" style="max-width:100%; border-radius:20px;"></div>`;
+  return `<div class="anchor-wrap"><img src="${src}" alt="" style="max-width:100%; max-height:100%; border-radius:20px;"></div>`;
 }
 
 function renderBadgeHook(h: Extract<CoverHook, { kind: "badge" }>): string {
@@ -339,8 +364,8 @@ function renderDoorHook(h: Extract<CoverHook, { kind: "door" }>): string {
     .replace("HAND_INJECT", () => handIcon);
 }
 
-/** Render any mockup type to an HTML fragment. */
-function renderMockup(m: Mockup): string {
+/** Render any mockup type to an HTML fragment. `scopeId` scopes `custom` CSS. */
+function renderMockup(m: Mockup, scopeId: string): string {
   switch (m.type) {
     case "terminal":
       return renderTerminalMockup(m);
@@ -381,8 +406,7 @@ function renderMockup(m: Mockup): string {
     case "gitbranch":
       return renderGitBranchMockup(m);
     case "custom":
-      const styleBlock = m.css ? `<style>${m.css}</style>` : "";
-      return `${styleBlock}${sanitizeHookHtml(m.html)}`;
+      return renderCustomFragment(m.html, m.css, scopeId, "diag-wrap");
     case "card":
       // Card is rendered inline via the point template's {{#card}} block, not here.
       return "";
@@ -408,16 +432,20 @@ function resolveMockup(slide: Extract<Slide, { role: "point" }>): Mockup {
 
 /* ── Main render ──────────────────────────────────────────────── */
 
-export function renderSlide(slide: Slide): string {
+export function renderSlide(slide: Slide, slideIndex = 0): string {
   const brand = brandMarkDataUri;
+  const scopeId = String(slideIndex);
   switch (slide.role) {
     case "cover": {
+      // The series stamp is part of the cover anatomy (DESIGN.md §16), so it is
+      // defaulted rather than left blank when the model omits it.
+      const stamp = slide.stamp ?? "Engineering Notes";
       if (!slide.hook) {
         const base = fillTemplate(coverEditorialTemplate, {
           brand,
           coverSurface: "cover-ink",
           eyebrow: slide.eyebrow,
-          stamp: slide.stamp ?? "",
+          stamp,
           ...splitHeadline(slide.headline, slide.accentWord),
           lede: slide.lede ?? "",
         });
@@ -428,12 +456,9 @@ export function renderSlide(slide: Slide): string {
       }
       const h = slide.hook;
       let fragment = "";
-      let styleBlock = "";
       if (h.kind === "device") fragment = renderDeviceHook(h);
-      else if (h.kind === "custom") {
-        fragment = sanitizeHookHtml(h.html);
-        if (h.css) styleBlock = `<style>${h.css}</style>`;
-      }
+      else if (h.kind === "custom")
+        fragment = renderCustomFragment(h.html, h.css, scopeId, "anchor-wrap");
       else if (h.kind === "image") fragment = renderImageHook(h);
       else if (h.kind === "badge") fragment = renderBadgeHook(h);
       else if (h.kind === "nocgrid") fragment = renderNocGridHook(h);
@@ -442,12 +467,13 @@ export function renderSlide(slide: Slide): string {
         brand,
         coverSurface: "ink cover-ink",
         eyebrow: slide.eyebrow,
+        stamp,
         ...splitHeadline(slide.headline, slide.accentWord),
         lede: slide.lede ?? "",
       });
       // Function replacer: a bare string would let $-sequences ($$, $&, $`, $')
       // in hook fragments be interpreted by String.replace and corrupt output.
-      return `${styleBlock}${base.replace("HOOK_INJECT", () => fragment)}`;
+      return base.replace("HOOK_INJECT", () => fragment);
     }
     case "point": {
       const mockup = resolveMockup(slide);
@@ -476,7 +502,7 @@ export function renderSlide(slide: Slide): string {
       }
 
       // For non-card mockups, render the mockup fragment and inject it after the body
-      const mockupHtml = renderMockup(mockup);
+      const mockupHtml = renderMockup(mockup, scopeId);
       const base = fillTemplate(pointTemplate, {
         brand,
         surfaceClass,

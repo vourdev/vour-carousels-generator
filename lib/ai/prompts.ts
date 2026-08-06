@@ -172,7 +172,8 @@ CATEGORY → allowed mockup types (choose by the slide's actual content):
 - ERROR_FIX  (wrong→right, bug, anti-pattern)    → datatable · comparison · terminal (diff-style)
 - CODE_DEMO  (real code / command / config)      → terminal · commandlist · commandpalette · promptcard · database
 - EVIDENCE   (a real product / UI you built)     → browser
-- ABSTRACT   (concept / principle / analogy)     → concept · hub · quote · card
+- ABSTRACT   (concept / principle / analogy)     → concept · hub · quote · card · custom
+- BESPOKE    (a layout none of the above can draw)→ custom (hand-written HTML + CSS)
 
 ANTI-REPETITION (hard rules):
 1. NEVER the same mockup type on two consecutive slides.
@@ -183,9 +184,21 @@ ANTI-REPETITION (hard rules):
 4. Rotate tone colors; never the same card/diagram tone twice running.
 5. Surface rhythm: at most ~1 "ink" (dark) slide per 3, never two in a row.
 6. A good 8-slide deck uses ≥ 5 different mockup types.
+7. custom — MAX ~1 per deck. It is the escape hatch for a layout the 20 typed
+   mockups genuinely cannot draw, not a shortcut around picking the right type.
+   If a typed mockup fits, use the typed mockup.
+
+WRITING A custom MOCKUP (when you do reach for it):
+- Ship self-contained markup plus its own CSS. Invent your own class names.
+- The renderer wraps your fragment in the flex slot and SCOPES your CSS to it,
+  so your rules cannot touch anything outside your own markup.
+- Therefore: never style shared chrome (section, body, h1, .eyebrow, .counter,
+  .geser, .diag-wrap, .anchor-wrap) — those rules are scoped away and do nothing.
+- Stay inside the palette: Ember #EE4B1A / Ember-bright #FF6A3D, Paper #FBF6EF,
+  Ink #14110E, cream #F7F1E8. Max 3 colors. No backdrop-filter (dies on export).
+- Size it to fit: the slot is ~920px wide and shares the 1080×1350 canvas.
 
 NOT AVAILABLE in auto-generation — do NOT fake these; pick the closest above:
-- custom illustration / analogy artwork → use concept · hub · quote instead.
 - real screenshots / photographic evidence → use browser (a rebuilt UI, not a
   pasted image).
 - human elements (hands / person / character) → not supported; stay editorial.
@@ -225,19 +238,34 @@ You MUST follow this EXACT Markdown structure (matching the Vour Dev design syst
 ## Headline
 <Short impact line with ONE **accent word** wrapped in double asterisks, e.g. JWT Itu Bukan **Enkripsi**.>
 
+## Stamp
+<The EB Garamond series mark printed top-right on the cover, e.g. Engineering Notes / Deep Dive /
+Field Notes. ONE per deck. Always fill this in.>
+
 ## Description
 <Engaging hook explaining the problem or misconception in 2-3 short sentences.>
 
 ### Example text-only cover (no mockup needed — still looks proportional)
 Eyebrow: ISTILAH AI
 Headline: istilah AI yang wajib lo **tau**
+Stamp: Engineering Notes
 Description: biar lo gak cuma nge-prompt doang tapi ngerti cara kerjanya.
 
 ## Hook Mockup
 <OPTIONAL — a text-only cover (eyebrow + headline + description, no hook) is a first-class,
-well-proportioned intro. Include this only when a code/UI scene strengthens the opener:
-describe a synthetic device frame — browser or terminal chrome, an optional label (URL or
-filename), and 1-6 short on-topic lines that stop the scroll.>
+well-proportioned intro. Include a hook when ONE strong visual anchor makes the opener stop
+the scroll. Pick the anchor that fits the angle and describe it concretely:
+- device — a synthetic browser/terminal frame: chrome type, an optional label (URL or filename),
+  and 1-6 short on-topic lines. For a code/UI scene or a curiosity gap.
+- badge — an ID badge, optionally struck through: the role on it plus one aside line.
+  For the CONTRARIAN angle ("X is not a job title").
+- nocgrid — a monitoring grid with every node down plus a banner line ("100% PACKET LOSS").
+  For the URGENCY/RISK angle.
+- door — a door with a pull handle labeled with the opposite action ("DORONG").
+  For the MISCONCEPTION angle ("pretty but unusable").
+- custom — any other visual metaphor, drawn from scratch. Describe what it shows and how it
+  reads (e.g. "two panes side by side: five manual ssh lines vs one git push"). For BEFORE/AFTER
+  and for angles the four anchors above cannot carry.>
 
 ## Highlight
 <One-line punchy takeaway callout summary>
@@ -400,14 +428,24 @@ You convert an approved carousel brief into a structured slide plan for @vourdev
 Return ONLY structured data matching the schema.
 
 SLIDE ROLES
-- "cover": { eyebrow, headline, accentWord?, lede?, hook? } — hook is OPTIONAL.
-    A text-only cover (eyebrow + headline + lede, NO hook) is a first-class, well-proportioned
-    editorial intro. Include a hook when a strong visual anchor strengthens the opener:
-    hook (pick ONE visual anchor; cover is ALWAYS the dark Ink surface):
+- "cover": { eyebrow, headline, accentWord?, lede?, stamp?, ghostNumeral?, hook? }
+    stamp — the EB Garamond italic series mark printed top-right, e.g. "Engineering Notes",
+      "Deep Dive", "Field Notes". ONE per deck (DESIGN.md §16). Always set it; it is part of
+      the cover anatomy. Defaults to "Engineering Notes" if you omit it.
+    ghostNumeral — oversized faded numeral behind the text-only cover, e.g. "7" for a
+      "7 things" deck. Only meaningful when there is NO hook. Defaults to "01".
+    hook is OPTIONAL. A text-only cover (eyebrow + headline + lede, NO hook) is a first-class,
+    well-proportioned editorial intro. Include a hook when a strong visual anchor strengthens
+    the opener (pick ONE anchor; cover is ALWAYS the dark Ink surface):
       device  — { kind: "device", chrome: "browser"|"terminal", label?, lines: [{ text, style }] } (code/UI scene)
       badge   — { kind: "badge", role: "DevOps Engineer", sub?: "// one aside", struck?: true } (CONTRARIAN: "X is not a job title")
       nocgrid — { kind: "nocgrid", cols?: 6, rows?: 3, state?: "down"|"up", banner?: "100% PACKET LOSS" } (URGENCY/RISK: everything is down)
       door    — { kind: "door", label?: "DORONG", pull?: true } (MISCONCEPTION: pretty but unusable — pull handle labeled push)
+      custom  — { kind: "custom", html: "...", css?: "..." } (BESPOKE: the visual metaphor the
+                 four anchors above cannot draw — a struck-out invoice, a split gauge, a stacked
+                 receipt. Same rules as the custom mockup: self-contained markup + your own class
+                 names, the renderer wraps and scopes it, never style shared chrome, max 3 brand
+                 colors, no backdrop-filter.)
 - "point": { counter (e.g. "02 / 05"), eyebrow, headline, accentWord?, body, surface?: "paper"|"ink", mockup: <one of the types below> }
 - "outro": { eyebrow?, headline, accentWord?, body?, cta } — cta is REQUIRED:
     cta: { strong: "<the action, e.g. Simpan & bagikan>", sub?: "<why/how, 1 short line>" }
@@ -418,10 +456,15 @@ COVER — the first slide is an AD for the other slides, not slide 0. Make peopl
 Pick ONE trigger angle, then a headline + ONE visual anchor that fits it:
   MISCONCEPTION  → "you've been wrong about X"      → anchor: door
   URGENCY/RISK   → "not knowing this costs you"     → anchor: nocgrid
-  CURIOSITY GAP  → a question you don't answer yet  → anchor: device/image
-  NUMBERED       → "N things about X"               → mockup on slide 2: bigstat (giant number)
+  CURIOSITY GAP  → a question you don't answer yet  → anchor: device
   CONTRARIAN     → "X is overrated / not a job"     → anchor: badge (struck:true)
-  BEFORE/AFTER   → old way vs right way             → mockup on slide 2: comparison
+  NUMBERED       → "N things about X"               → no hook + ghostNumeral: "N";
+                                                      slide 2 mockup: bigstat (giant number)
+  BEFORE/AFTER   → old way vs right way             → anchor: custom (two panes, old vs new);
+                                                      slide 2 mockup: comparison
+  OTHER METAPHOR → the angle none of the above fits → anchor: custom (draw the metaphor yourself)
+ALWAYS set "stamp" on the cover. Every cover renders the same anatomy:
+brand row + stamp (top) → eyebrow → headline → anchor centered in the free space → "Geser" (bottom).
 Headline rules: hook word FIRST (a number, or a negative like "Salah"/"Jangan"/"Bukan", or a question word);
 ≤ 10 words; leave a curiosity gap (don't reveal the solution); stay credible (no misleading clickbait).
 Accent exactly ONE keyword with the Ember-bright span. Cover is ALWAYS the Ink surface.
@@ -494,7 +537,7 @@ MOCKUP TYPES — every "point" slide MUST include a "mockup" object with one of 
    → Two dated cards (dulu/sekarang, then/now). Use for evolution over time.
 
 21. { type: "custom", html: "...", css?: "..." }
-   → Custom HTML & CSS mockup. Use this for highly specific or flexible layouts that do not fit any predefined template (such as custom multi-column layout, split views with custom inline styles, or unique structural blocks). You can design complete custom HTML structures, write markup containing iconify-icon components, and provide custom CSS rules inside the 'css' field. Do not wrap in '.diag-wrap' as the renderer handles placement.
+   → Hand-written HTML + CSS. The escape hatch for a layout none of types 1-20 can draw (a bespoke split view, an unusual structural block, a visual metaphor). Write self-contained markup with your OWN class names and put the matching rules in 'css'. The renderer wraps your fragment in the flex slot and SCOPES your CSS to it, so do NOT add a '.diag-wrap' wrapper and do NOT style shared chrome (section, body, h1, .eyebrow, .counter, .geser) — those rules are scoped away and do nothing. Palette: Ember #EE4B1A / #FF6A3D, Paper #FBF6EF, Ink #14110E, cream #F7F1E8, max 3 colors, no backdrop-filter. Max ~1 per deck.
 
 ${MOCKUP_VARIETY_RULE}
 
@@ -505,7 +548,8 @@ ICON RULES
 
 VARIETY EXAMPLE (a good, non-monotone deck — mirror this diversity, not the copy):
 - cover (text-only, no hook): eyebrow "AI 101", headline "istilah AI yang wajib lo tau"
-  (accentWord "tau"), lede "biar lo gak cuma nge-prompt doang tapi ngerti cara kerjanya."
+  (accentWord "tau"), lede "biar lo gak cuma nge-prompt doang tapi ngerti cara kerjanya.",
+  stamp "Engineering Notes", ghostNumeral "01"
 - point → concept (parent + 3-4 children)
 - point → flow (3-4 steps, one focus)
 - point → hub (center + 3-4 tool icons)
@@ -548,7 +592,9 @@ STRICT REVISION INSTRUCTIONS
 1. IDENTIFY TARGET SLIDE:
    - "outro" / "slide outro" -> Update the slide with role "outro" (the final slide in the array).
    - "cover" / "slide cover" / "slide 1" -> Update the slide with role "cover" (the first slide).
-   - Cover hook edits: the cover carries a \`hook\` (kind "device": chrome/label/lines, or kind "custom": html). Update these when asked to change the intro visual.
+   - Cover hook edits: the cover carries an optional \`hook\` — kind "device" (chrome/label/lines), "badge" (role/sub/struck), "nocgrid" (cols/rows/state/banner), "door" (label/pull), or "custom" (html + css). Set, swap, or remove it when asked to change the intro visual; removing it falls back to the text-only cover with its \`ghostNumeral\`.
+   - Cover \`stamp\` is the italic series mark top-right ("Engineering Notes"). Update it when asked to change the series label; never blank it out.
+   - custom hook/mockup html+css must stay self-contained with its own class names. Never style shared chrome (section, h1, .eyebrow, .geser) — the renderer scopes those rules away.
    - "slide N" or "slide point N" -> Update the slide at that 1-based index in the slides array.
    - General requests -> Apply requested edits across all relevant slides.
 
@@ -568,14 +614,68 @@ STRICT REVISION INSTRUCTIONS
    - Keep all other slides intact unless asked to modify or remove them.
    - Ensure every "point" slide retains a valid mockup object.
    - Keep copy within caps (headline ≤ 60 chars, body ≤ 120 chars).
-   - ${HASHTAG_RULE}`;
+   - ${HASHTAG_RULE}
 
-export function reviseUserPrompt(planJson: string, message: string): string {
-  return `CURRENT SLIDE PLAN (JSON):
+6. HONOUR THE REVISION HISTORY:
+   - The prompt may carry a REVISION HISTORY: every earlier change the user asked for on
+     this same draft, oldest first. It is the record of what has already been settled.
+   - NEVER undo or re-litigate an earlier accepted revision while applying the new one.
+     If turn 1 shortened a headline, turn 3 must not restore the long version.
+   - Read a vague request ("make it shorter again", "same for the next one", "undo that")
+     against the history to resolve what "it" / "that" / "the same" refers to. The latest
+     entry is the most likely referent.
+   - If the new request genuinely contradicts an earlier one, the NEW request wins — apply
+     it, and treat the earlier entry as superseded rather than trying to satisfy both.`;
+
+/**
+ * Render the accumulated revision log as a prompt block.
+ * Returns "" when there is no history, so the prompt is unchanged on turn 1.
+ */
+export function revisionHistoryBlock(
+  history: { request: string; outcome?: string | null }[]
+): string {
+  if (!history.length) return "";
+  const lines = history
+    .map((h, i) => `${i + 1}. asked: "${h.request}"${h.outcome ? `\n   result: ${h.outcome}` : ""}`)
+    .join("\n");
+  return `REVISION HISTORY (already applied to this draft, oldest first):
+${lines}
+
+`;
+}
+
+export function reviseUserPrompt(
+  planJson: string,
+  message: string,
+  history: { request: string; outcome?: string | null }[] = []
+): string {
+  return `${revisionHistoryBlock(history)}CURRENT SLIDE PLAN (JSON):
 ${planJson}
 
-USER REVISION REQUEST:
+NEW USER REVISION REQUEST:
 "${message}"
 
-Perform the requested revision now. Return the COMPLETE updated SlidePlan JSON matching the schema.`;
+Perform the requested revision now, keeping every earlier revision above intact.
+Return the COMPLETE updated SlidePlan JSON matching the schema.`;
+}
+
+/** Same history block for the Gate-1 brief editor, which revises Markdown, not JSON. */
+export function briefRevisionPrompt(
+  brief: string,
+  message: string,
+  history: { request: string; outcome?: string | null }[] = []
+): string {
+  return `${revisionHistoryBlock(history)}You are revising an existing brief.
+Here is the current brief:
+${brief}
+
+Here is the user's NEW revision request:
+"${message}"
+
+CRITICAL INSTRUCTIONS FOR REVISION:
+1. You MUST generate and output the COMPLETE revised brief document containing all sections.
+2. Do NOT omit, truncate, or skip any sections.
+3. You MUST include the '# Carousel Content — <Title>', '# Caption', and '# Hashtag' sections in the output. If the revision request doesn't ask to change them, preserve them or update them to reflect the slide changes. Do not output just the slides.
+4. Keep every earlier revision in the history above intact — never undo an accepted change while applying the new one. If the new request contradicts an earlier one, the new request wins.
+5. Output the full Markdown document matching the required structure start-to-finish.`;
 }

@@ -13,6 +13,7 @@
     "test:watch": "vitest",
     "db:migrate": "tsx --env-file=.env scripts/migrate.ts",
     "db:migrate-topics": "tsx --env-file=.env scripts/migrate-topics.ts",
+    "db:migrate-memory": "tsx --env-file=.env scripts/migrate-memory.ts",
     "db:seed": "ALLOW_SIGNUP=true tsx --env-file=.env scripts/seed-user.ts"
   },
   "dependencies": {

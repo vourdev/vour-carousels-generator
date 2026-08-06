@@ -21,11 +21,13 @@ export const carouselExtraCss = String.raw`
   .series-stamp.active { color: #EE4B1A; }
 
   /* Improvised editorial-Ink intro container & ghost spacing */
+  /* No height here: "section" already pins 1350px, and a "height:100%" on this
+     class outranks it and resolves against a body with no height, collapsing the
+     cover to its content. */
   .cover-editorial-ink {
     position: relative;
     display: flex;
     flex-direction: column;
-    height: 100%;
   }
   .ce-top {
     display: flex;
@@ -288,8 +290,53 @@ export const carouselExtraCss = String.raw`
       radial-gradient(50% 40% at 0% 100%, rgba(238,75,26,0.08), transparent 65%);
   }
   section.cover-ink > * { position: relative; z-index: 1; }
+  /* …except the ghost numeral, which must stay out of flow. "section.cover-ink > *"
+     (0-1-1) outranks ".ce-ghost" (0-1-0), so without this the numeral is laid out
+     as a relative block at the top of the column and eats the cover's free space. */
+  section.cover-ink > .ce-ghost { position: absolute; }
   /* Cover anchor wrapper — centers the single visual anchor in the free space */
   .anchor-wrap { flex: 1; min-height: 0; display: flex; align-items: center; justify-content: center; }
+  .anchor-wrap > * { max-width: 100%; max-height: 100%; }
+
+  /* Scope div for a custom mockup/hook. It exists only to give the fragment's CSS
+     a scope root, so it must not behave like a box: it fills its slot and passes
+     the centering through, otherwise it shrink-wraps as a flex item and a
+     width:100% inside the fragment resolves against the fragment's own content. */
+  .diag-wrap > .cm,
+  .anchor-wrap > .cm {
+    width: 100%; min-height: 0; max-height: 100%;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .diag-wrap > .cm > *,
+  .anchor-wrap > .cm > * { max-width: 100%; }
+
+  /* Cover CTA follows the cover-slides.html prototype: the last FLOW child, not an
+     absolutely-positioned overlay. carousel-css.ts (DO-NOT-EDIT) pins .geser with
+     position:absolute, which takes it out of the column — .anchor-wrap{flex:1} then
+     expands through the CTA band and the anchor sits on top of "Geser". Going back
+     to static makes the CTA reserve its own band, and its left edge falls on the
+     content box (the same 80px grid as the eyebrow and headline) instead of being
+     measured separately. */
+  section.cover-ink .geser {
+    position: static;
+    margin-top: 32px;
+    /* The cover CTA is the one instruction on the slide — it carries the accent,
+       not the muted body tint the inner slides use. */
+    color: #FF6A3D;
+    font-weight: 600;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    display: inline-flex;
+    align-items: center;
+    gap: 12px;
+  }
+  /* Ember rule under the CTA so it reads as a control, not stray copy. */
+  section.cover-ink .geser::before {
+    content: "";
+    width: 56px; height: 2px;
+    background: #FF6A3D;
+    border-radius: 1px;
+  }
 
   /* Cover anchor — ID badge (NOT .badge; that is the step-number badge) */
   .cover-badge { position: relative; width: 560px; padding: 48px 44px 44px; border-radius: 26px;

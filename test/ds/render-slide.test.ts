@@ -447,9 +447,12 @@ describe("custom mockup and cover css", () => {
         html: "<div class='my-special-class'>Halo Dunia</div>",
         css: ".my-special-class { color: red; }"
       }
-    });
+    }, 4);
 
-    expect(html).toContain("<style>.my-special-class { color: red; }</style>");
+    // Scoped to this slide's fragment, and dropped into the flex slot every
+    // other mockup gets — otherwise it hugs the headline and leaves dead space.
+    expect(html).toContain(".cm-4 .my-special-class{ color: red; }");
+    expect(html).toContain('<div class="diag-wrap"><div class="cm cm-4">');
     expect(html).toContain("<div class='my-special-class'>Halo Dunia</div>");
   });
 
@@ -463,9 +466,47 @@ describe("custom mockup and cover css", () => {
         html: "<div class='cover-special'>Special Content</div>",
         css: ".cover-special { font-size: 50px; }"
       }
-    });
+    }, 7);
 
-    expect(html).toContain("<style>.cover-special { font-size: 50px; }</style>");
+    expect(html).toContain(".cm-7 .cover-special{ font-size: 50px; }");
+    expect(html).toContain('<div class="anchor-wrap"><div class="cm cm-7">');
     expect(html).toContain("<div class='cover-special'>Special Content</div>");
+  });
+
+  it("keeps a custom fragment's css from reaching the slide chrome", () => {
+    // A rule on shared chrome used to leak to EVERY slide and shift "Geser".
+    const html = renderSlide({
+      role: "point", counter: "01/03", eyebrow: "E", headline: "H", body: "b",
+      mockup: { type: "custom", html: "<div>x</div>", css: ".geser{left:400px}section{padding:0}" },
+    }, 2);
+    expect(html).toContain(".cm-2 .geser{left:400px}");
+    expect(html).toContain(".cm-2 section{padding:0}");
+    expect(html).not.toContain("<style>.geser{left:400px}");
+  });
+
+  it("prints the series stamp on both cover variants, defaulting it", () => {
+    const textOnly = renderSlide({ role: "cover", eyebrow: "E", headline: "H" });
+    expect(textOnly).toContain("series-stamp");
+    expect(textOnly).toContain("Engineering Notes");
+
+    const withHook = renderSlide({
+      role: "cover", eyebrow: "E", headline: "H",
+      hook: { kind: "door", label: "DORONG" },
+    });
+    expect(withHook).toContain("series-stamp");
+    expect(withHook).toContain("Engineering Notes");
+
+    const explicit = renderSlide({ role: "cover", eyebrow: "E", headline: "H", stamp: "Deep Dive" });
+    expect(explicit).toContain("Deep Dive");
+    expect(explicit).not.toContain("Engineering Notes");
+  });
+
+  it("centers an image cover hook in the anchor slot", () => {
+    const html = renderSlide({
+      role: "cover", eyebrow: "E", headline: "H",
+      hook: { kind: "image", src: "https://example.com/a.png", frame: "browser" },
+    });
+    expect(html).toContain('class="anchor-wrap"');
+    expect(html).toContain("https://example.com/a.png");
   });
 });

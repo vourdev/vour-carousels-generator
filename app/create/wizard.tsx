@@ -18,7 +18,7 @@ import { namedBlobs, downloadNamedBlobs } from "@/lib/export/download";
 import { captureCarousel } from "@/lib/export/capture";
 import type { ModelId } from "@/lib/ai/registry";
 import type { SlidePlan } from "@/lib/ds/schema";
-import { briefAction, planAction, reviseAction, uploadSingleImageAction, publishAction, getPublishingConfigAction } from "./actions";
+import { planAction, reviseAction, reviseBriefAction, clearRevisionMemoryAction, uploadSingleImageAction, publishAction, getPublishingConfigAction } from "./actions";
 import { saveExportedCarouselAction, markCarouselStatusAction, deleteCarouselAction } from "@/app/history/actions";
 import {
   expandTopicBriefAction,
@@ -298,6 +298,13 @@ export function Wizard({
     ttPostId?: string;
   }>({ status: "idle", progressMsg: "" });
   const [carouselId, setCarouselId] = useState<string | null>(null);
+  /**
+   * Key for this draft's server-side revision memory. Minted here rather than
+   * reusing carouselId because a carousel row only exists after export, while
+   * revisions start at Gate 1. Restored with the draft so memory survives a
+   * reload; cleared once the draft is scheduled, stocked, or reset.
+   */
+  const [draftId, setDraftId] = useState<string>(() => crypto.randomUUID());
   const [uploadedHtml, setUploadedHtml] = useState<string | null>(null);
   const htmlInputRef = useRef<HTMLInputElement>(null);
   // Mobile shows one panel at a time (desktop keeps the 2-col layout).
@@ -452,6 +459,7 @@ export function Wizard({
         if (parsed.mdMode) setMdMode(parsed.mdMode);
         if (parsed.uploadedHtml) setUploadedHtml(parsed.uploadedHtml);
         if (parsed.carouselId) setCarouselId(parsed.carouselId);
+        if (parsed.draftId) setDraftId(parsed.draftId);
         if (parsed.dueAt) setDueAt(parsed.dueAt);
         if (parsed.editableTitle) setEditableTitle(parsed.editableTitle);
         if (parsed.editableCaption) setEditableCaption(parsed.editableCaption);
@@ -480,6 +488,7 @@ export function Wizard({
       mdMode,
       uploadedHtml,
       carouselId,
+      draftId,
       dueAt,
       editableTitle,
       editableCaption,
@@ -506,6 +515,7 @@ export function Wizard({
     mounted,
     uploadedHtml,
     carouselId,
+    draftId,
     dueAt,
     editableTitle,
     editableCaption,
@@ -740,6 +750,10 @@ export function Wizard({
           caption: editableCaption,
         }).catch(console.error);
       }
+      // Scheduled: the draft has left the editor, so its revision memory is dead
+      // weight. Dropped here rather than on unmount so a closed tab still clears.
+      clearRevisionMemoryAction(draftId).catch(console.error);
+
       // Topic Bank trigger: the source topic is now published/scheduled.
       if (topicId) {
         markTopicPublishedAction(topicId).catch(console.error);
@@ -816,6 +830,9 @@ export function Wizard({
         });
       }
 
+      // Saved to stock: same end-of-life as scheduling — no more revisions.
+      clearRevisionMemoryAction(draftId).catch(console.error);
+
       setPublishState({
         status: "success",
         progressMsg: "Berhasil disimpan ke Stock Konten!",
@@ -851,6 +868,10 @@ export function Wizard({
         console.error("Failed to delete draft from db on reset:", err);
       }
     }
+    // The reset draft is gone; its revision memory must not survive into the next one.
+    clearRevisionMemoryAction(draftId).catch((err) =>
+      console.error("Failed to clear revision memory on reset:", err)
+    );
     setStep(1);
     setIdea("");
     setBrief("");
@@ -869,6 +890,7 @@ export function Wizard({
     setExportedImages([]);
     setDueAt("");
     setCarouselId(null);
+    setDraftId(crypto.randomUUID());
     setUploadedHtml(null);
     setTopicId(null);
     setTopicTitle(null);
@@ -1098,21 +1120,9 @@ export function Wizard({
       try {
         if (step === 2) {
           addMessage("ai", "Merevisi brief outline berdasarkan instruksi Anda...");
-          const res = await briefAction(
-            `You are revising an existing brief.
-Here is the current brief:
-${brief}
-
-Here is the user's revision request:
-"${currentRevision}"
-
-CRITICAL INSTRUCTIONS FOR REVISION:
-1. You MUST generate and output the COMPLETE revised brief document containing all sections.
-2. Do NOT omit, truncate, or skip any sections.
-3. You MUST include the '# Carousel Content — <Title>', '# Caption', and '# Hashtag' sections in the output. If the revision request doesn't ask to change them, preserve them or update them to reflect the slide changes. Do not output just the slides.
-4. Output the full Markdown document matching the required structure start-to-finish.`,
-            model as ModelId
-          );
+          // draftId lets the server replay this draft's earlier revisions so a
+          // follow-up ("shorten it again") resolves against what already changed.
+          const res = await reviseBriefAction(brief, currentRevision, model as ModelId, draftId);
           setFinalBrief(res);
           setBrief(res);
           addMessage("ai", "Brief outline berhasil diperbarui.");
@@ -1122,7 +1132,7 @@ CRITICAL INSTRUCTIONS FOR REVISION:
             setStep(3);
             setActiveTab("preview");
           }
-          const updatedPlan = await reviseAction(plan, currentRevision, model as ModelId);
+          const updatedPlan = await reviseAction(plan, currentRevision, model as ModelId, draftId);
           setPlan(updatedPlan);
           setApproved(false);
           addMessage("ai", "Rancangan slide berhasil disesuaikan. Silakan cek preview terbaru.");
