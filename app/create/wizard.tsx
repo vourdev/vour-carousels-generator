@@ -27,7 +27,7 @@ import {
   markTopicPublishedAction,
 } from "@/app/topics/actions";
 import type { Topic } from "@/lib/topics/bank";
-import { Sparkles, Brain, Zap, RotateCcw, Check, Send, Eye, FileText, LayoutGrid, User, Upload, Clock, CheckCircle2, XCircle, AlertCircle, Calendar, Globe, ArrowLeft, Search, ChevronDown, SlidersHorizontal, Square } from "lucide-react";
+import { Sparkles, Brain, Zap, RotateCcw, Check, Send, Eye, FileText, LayoutGrid, User, Upload, Clock, CheckCircle2, XCircle, AlertCircle, Calendar, Globe, ArrowLeft, Search, ChevronDown, SlidersHorizontal, Square, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 
 interface Message {
@@ -252,6 +252,146 @@ function renderMarkdown(md: string) {
   return <div className="space-y-0.5">{elements}</div>;
 }
 
+/* ── Per-step loading state ──────────────────────────────────────────────
+ * Every long-running step in the wizard declares a job here. The phases are
+ * indicative (the AI/export calls don't stream progress) so the loader shows a
+ * real elapsed clock next to them and parks on the last phase until the call
+ * actually resolves — it never fakes a completion. */
+const LOADING_JOBS = {
+  brief: {
+    title: "Menyusun brief outline",
+    phases: [
+      "Membaca ide & sudut pandangnya",
+      "Menyusun kerangka slide",
+      "Menulis copy dengan voice @vourdev",
+      "Merapikan caption & hashtag",
+    ],
+  },
+  briefRevise: {
+    title: "Merevisi brief outline",
+    phases: [
+      "Membaca instruksi revisi",
+      "Menyesuaikan bagian yang diminta",
+      "Menjaga voice tetap konsisten",
+    ],
+  },
+  plan: {
+    title: "Merender rancangan slide",
+    phases: [
+      "Membaca brief yang disetujui",
+      "Memilih mockup tiap slide",
+      "Menyusun slide plan",
+      "Validasi budget copy & ikon",
+    ],
+  },
+  planRevise: {
+    title: "Merevisi rancangan slide",
+    phases: [
+      "Mencari slide yang dimaksud",
+      "Menerapkan perubahan",
+      "Merender ulang preview",
+    ],
+  },
+  export: {
+    title: "Mengekspor slide ke JPEG",
+    phases: [
+      "Merender HTML tiap slide",
+      "Memotret canvas 1080×1350",
+      "Menyiapkan berkas gambar",
+    ],
+  },
+} as const;
+
+type LoadingKind = keyof typeof LOADING_JOBS;
+
+/**
+ * Shared loading indicator. "panel" overlays the step's workspace with a phase
+ * checklist; "inline" is the compact form used inside the step-1 chat feed.
+ * Render with key={kind} — a new job remounts it instead of resetting state.
+ */
+function StepLoader({ kind, variant = "panel" }: { kind: LoadingKind; variant?: "panel" | "inline" }) {
+  const { title, phases } = LOADING_JOBS[kind];
+  const [phase, setPhase] = useState(0);
+  const [elapsed, setElapsed] = useState(0);
+
+  useEffect(() => {
+    const clock = setInterval(() => setElapsed((s) => s + 1), 1000);
+    // Hold on the final phase rather than looping — the caller unmounts us when done.
+    const advance = setInterval(
+      () => setPhase((p) => Math.min(p + 1, phases.length - 1)),
+      4000
+    );
+    return () => {
+      clearInterval(clock);
+      clearInterval(advance);
+    };
+  }, [phases.length]);
+
+  if (variant === "inline") {
+    return (
+      <div className="flex items-center gap-2.5 self-start max-w-[85%]">
+        <div className="size-7 rounded-full bg-primary/10 border border-primary/20 flex items-center justify-center shrink-0">
+          <Loader2 className="size-3.5 text-primary animate-spin" />
+        </div>
+        <div className="p-3.5 bg-card border border-hairline rounded-2xl rounded-tl-none flex flex-col gap-1.5 min-w-0">
+          <div className="flex items-center gap-2">
+            <span className="text-xs font-medium text-foreground">{title}</span>
+            <span className="text-[10px] font-mono text-muted-foreground tabular-nums">{elapsed}s</span>
+          </div>
+          <div className="flex items-center gap-1.5 text-[11px] text-muted-foreground">
+            <span className="size-1.5 rounded-full bg-primary animate-pulse shrink-0" />
+            <span className="truncate">{phases[phase]}…</span>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="absolute inset-0 z-20 flex items-center justify-center bg-card/85 backdrop-blur-sm animate-in fade-in duration-200">
+      <div className="w-full max-w-xs flex flex-col gap-3.5 p-5 rounded-2xl border border-hairline bg-card shadow-lg">
+        <div className="flex items-center gap-2.5">
+          <Loader2 className="size-4 text-primary animate-spin shrink-0" />
+          <span className="text-xs font-semibold truncate">{title}</span>
+          <span className="ml-auto text-[10px] font-mono text-muted-foreground tabular-nums shrink-0">
+            {elapsed}s
+          </span>
+        </div>
+        <ul className="flex flex-col gap-2">
+          {phases.map((label, i) => {
+            const done = i < phase;
+            const active = i === phase;
+            return (
+              <li
+                key={label}
+                className={`flex items-center gap-2 text-[11px] leading-snug transition-colors ${
+                  active ? "text-foreground font-medium" : done ? "text-muted-foreground" : "text-muted-foreground/50"
+                }`}
+              >
+                {done ? (
+                  <Check className="size-3 text-emerald-500 shrink-0" />
+                ) : active ? (
+                  <span className="size-3 flex items-center justify-center shrink-0">
+                    <span className="size-1.5 rounded-full bg-primary animate-pulse" />
+                  </span>
+                ) : (
+                  <span className="size-3 flex items-center justify-center shrink-0">
+                    <span className="size-1.5 rounded-full border border-muted-foreground/40" />
+                  </span>
+                )}
+                <span className="truncate">{label}</span>
+              </li>
+            );
+          })}
+        </ul>
+        <p className="text-[10px] text-muted-foreground border-t border-hairline pt-2.5">
+          Jangan tutup tab ini sampai prosesnya selesai.
+        </p>
+      </div>
+    </div>
+  );
+}
+
 export function Wizard({
   models,
   initialTopic,
@@ -326,6 +466,9 @@ export function Wizard({
   const [briefPending, setBriefPending] = useState(false);
   const genRunRef = useRef(0);
   const abortRef = useRef<AbortController | null>(null);
+
+  // Which long-running job is in flight, so each step can show its own loader.
+  const [loadingJob, setLoadingJob] = useState<LoadingKind | null>(null);
 
   // Prompt history state (terminal-style ArrowUp / ArrowDown navigation)
   const [promptHistory, setPromptHistory] = useState<string[]>([]);
@@ -527,7 +670,7 @@ export function Wizard({
   // Auto-scroll chat feed to bottom
   useEffect(() => {
     chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [messages, pending, isTyping]);
+  }, [messages, pending, isTyping, loadingJob]);
 
   // Cleanup typewriter interval on unmount
   useEffect(() => {
@@ -609,6 +752,7 @@ export function Wizard({
   const handleExport = async () => {
     if (!html) return;
     setExportPending(true);
+    setLoadingJob("export");
     addMessage("ai", "Mengekspor slide rancangan menjadi gambar PNG...");
     try {
       const generatedBlobs = await captureCarousel(html);
@@ -658,6 +802,7 @@ export function Wizard({
       addMessage("ai", `Gagal memproses ekspor gambar: ${msg}`);
     } finally {
       setExportPending(false);
+      setLoadingJob(null);
     }
   };
 
@@ -883,6 +1028,7 @@ export function Wizard({
     setEditableCaption("");
     setIsTyping(false);
     setBriefPending(false);
+    setLoadingJob(null);
     setActiveTab("brief");
     setMdMode("split");
     setBlobs([]);
@@ -1014,6 +1160,7 @@ export function Wizard({
     abortRef.current = controller;
     const runId = ++genRunRef.current;
     setBriefPending(true);
+    setLoadingJob("brief");
 
     fetchFn(controller.signal)
       .then((brief) => {
@@ -1028,7 +1175,9 @@ export function Wizard({
         addMessage("ai", `${errorLabel}: ${summarizeError(msg)}`);
       })
       .finally(() => {
-        if (genRunRef.current === runId) setBriefPending(false);
+        if (genRunRef.current !== runId) return;
+        setBriefPending(false);
+        setLoadingJob(null);
       });
   }
 
@@ -1065,6 +1214,7 @@ export function Wizard({
     abortRef.current?.abort();
     genRunRef.current++;
     setBriefPending(false);
+    setLoadingJob(null);
     if (typewriterIntervalRef.current) clearInterval(typewriterIntervalRef.current);
     setIsTyping(false);
     addMessage("ai", "Generasi dibatalkan. Silakan ketik ide baru atau pilih topic lain.");
@@ -1088,6 +1238,7 @@ export function Wizard({
   function handlePlanGeneration() {
     if (!brief) return;
     addMessage("user", "Approve brief outline & generate Slide design.");
+    setLoadingJob("plan");
     start(async () => {
       try {
         const generatedPlan = await planAction(brief, model as ModelId);
@@ -1101,6 +1252,8 @@ export function Wizard({
         const msg = e instanceof Error ? e.message : "failed";
         toast.error(msg);
         addMessage("ai", `Gagal merender slide: ${summarizeError(msg)}`);
+      } finally {
+        setLoadingJob(null);
       }
     });
   }
@@ -1115,7 +1268,8 @@ export function Wizard({
     pushPromptToHistory(currentRevision);
     addMessage("user", currentRevision);
     setRevision("");
-    
+    setLoadingJob(step === 2 ? "briefRevise" : "planRevise");
+
     start(async () => {
       try {
         if (step === 2) {
@@ -1141,6 +1295,8 @@ export function Wizard({
         const msg = e instanceof Error ? e.message : "failed";
         toast.error(msg);
         addMessage("ai", `Revisi gagal: ${summarizeError(msg)}`);
+      } finally {
+        setLoadingJob(null);
       }
     });
   }
@@ -1197,7 +1353,7 @@ export function Wizard({
                   <span className={`size-5 rounded-full flex items-center justify-center text-[10px] font-bold ${
                     isActive ? "bg-primary-foreground text-primary" : "bg-muted text-muted-foreground"
                   }`}>
-                    {s.id}
+                    {isActive && loadingJob ? <Loader2 className="size-3 animate-spin" /> : s.id}
                   </span>
                   <span>{s.label}</span>
                 </button>
@@ -1270,18 +1426,7 @@ export function Wizard({
                 </div>
               </div>
             ))}
-            {(pending || briefPending) && (
-              <div className="flex items-center gap-2.5 self-start max-w-[85%]">
-                <div className="size-7 rounded-full bg-primary/10 border border-primary/20 flex items-center justify-center animate-pulse">
-                  <Sparkles className="size-3.5 text-indigo-500 animate-spin" />
-                </div>
-                <div className="p-3.5 bg-card border border-hairline rounded-2xl rounded-tl-none text-xs text-muted-foreground flex items-center gap-1.5 animate-pulse">
-                  <div className="size-1.5 rounded-full bg-primary animate-bounce delay-75" />
-                  <div className="size-1.5 rounded-full bg-primary animate-bounce delay-150" />
-                  <div className="size-1.5 rounded-full bg-primary animate-bounce delay-300" />
-                </div>
-              </div>
-            )}
+            {loadingJob && <StepLoader key={loadingJob} kind={loadingJob} variant="inline" />}
             <div ref={chatEndRef} />
           </div>
 
@@ -1592,6 +1737,8 @@ export function Wizard({
                     </div>
                   </div>
                 )}
+
+                {loadingJob && <StepLoader key={loadingJob} kind={loadingJob} />}
               </div>
 
               {/* Bottom AI Revision Row */}
@@ -1614,8 +1761,12 @@ export function Wizard({
                   onClick={handleRevisionSend}
                   className="h-10 text-xs px-4 rounded-xl gap-1.5"
                 >
-                  <Send className="size-3.5" />
-                  Revisi Brief
+                  {loadingJob === "briefRevise" ? (
+                    <Loader2 className="size-3.5 animate-spin" />
+                  ) : (
+                    <Send className="size-3.5" />
+                  )}
+                  {loadingJob === "briefRevise" ? "Merevisi…" : "Revisi Brief"}
                 </Button>
               </div>
 
@@ -1631,8 +1782,17 @@ export function Wizard({
                   onClick={handlePlanGeneration}
                   className="gap-1.5 font-semibold px-5"
                 >
-                  <Check className="size-4" />
-                  Approve &amp; Render Slide
+                  {loadingJob === "plan" ? (
+                    <>
+                      <Loader2 className="size-4 animate-spin" />
+                      Merender Slide…
+                    </>
+                  ) : (
+                    <>
+                      <Check className="size-4" />
+                      Approve &amp; Render Slide
+                    </>
+                  )}
                 </Button>
               </div>
             </CardContent>
@@ -1676,7 +1836,7 @@ export function Wizard({
               </div>
 
               {/* Main Preview Frame */}
-              <div className="w-full flex justify-center py-4 bg-canvas-soft border border-hairline rounded-2xl min-h-[460px] shadow-inner">
+              <div className="relative w-full flex justify-center py-4 bg-canvas-soft border border-hairline rounded-2xl min-h-[460px] shadow-inner overflow-hidden">
                 {activeTab === "preview" ? (
                   <PreviewFrame html={html} slideCount={slideCount} />
                 ) : (
@@ -1686,6 +1846,8 @@ export function Wizard({
                     className="font-mono text-xs h-96 w-full p-4 bg-transparent border-none resize-none"
                   />
                 )}
+
+                {loadingJob && <StepLoader key={loadingJob} kind={loadingJob} />}
               </div>
 
               {/* AI Revision Prompt Input */}
@@ -1708,8 +1870,12 @@ export function Wizard({
                   onClick={handleRevisionSend}
                   className="h-10 text-xs px-4 rounded-xl gap-1.5"
                 >
-                  <Send className="size-3.5" />
-                  Revisi Desain
+                  {loadingJob === "planRevise" ? (
+                    <Loader2 className="size-3.5 animate-spin" />
+                  ) : (
+                    <Send className="size-3.5" />
+                  )}
+                  {loadingJob === "planRevise" ? "Merevisi…" : "Revisi Desain"}
                 </Button>
               </div>
 
@@ -1725,8 +1891,12 @@ export function Wizard({
                   onClick={handleExport}
                   className="gap-1.5 font-semibold px-5"
                 >
-                  <Upload className="size-4" />
-                  {exportPending ? "Exporting..." : "Approve & Export JPEGs"}
+                  {exportPending ? (
+                    <Loader2 className="size-4 animate-spin" />
+                  ) : (
+                    <Upload className="size-4" />
+                  )}
+                  {exportPending ? "Mengekspor…" : "Approve & Export JPEGs"}
                 </Button>
               </div>
             </CardContent>
@@ -1742,21 +1912,41 @@ export function Wizard({
               <div className="flex items-center justify-between border-b pb-4">
                 <div>
                   <h3 className="font-bold text-base flex items-center gap-2">
-                    <CheckCircle2 className="size-5 text-emerald-500" />
-                    JPEG Assets Ready
+                    {exportPending ? (
+                      <Loader2 className="size-5 text-primary animate-spin" />
+                    ) : (
+                      <CheckCircle2 className="size-5 text-emerald-500" />
+                    )}
+                    {exportPending ? "Menyiapkan JPEG Assets" : "JPEG Assets Ready"}
                   </h3>
                   <p className="text-xs text-muted-foreground mt-0.5">
-                    {exportedImages.length} slide berhasil di-export ke format gambar JPEG resolusi tinggi.
+                    {exportPending
+                      ? `Merender ${slideCount || "…"} slide ke gambar resolusi tinggi.`
+                      : `${exportedImages.length} slide berhasil di-export ke format gambar JPEG resolusi tinggi.`}
                   </p>
                 </div>
-                <Button size="sm" variant="outline" onClick={handleDownloadAll} className="gap-1.5 font-mono text-xs">
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={handleDownloadAll}
+                  disabled={exportPending || blobs.length === 0}
+                  className="gap-1.5 font-mono text-xs"
+                >
                   <Upload className="size-3.5" /> Download All ZIP
                 </Button>
               </div>
 
               {/* Exported JPEGs Grid */}
-              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4 py-2">
-                {exportedImages.map((src, i) => (
+              <div className="relative grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4 py-2 min-h-[240px]">
+                {exportPending &&
+                  Array.from({ length: Math.max(slideCount, 4) }).map((_, i) => (
+                    <div
+                      key={`skeleton-${i}`}
+                      className="aspect-[4/5] rounded-xl border border-hairline bg-muted/50 animate-pulse"
+                    />
+                  ))}
+                {exportPending && loadingJob && <StepLoader key={loadingJob} kind={loadingJob} />}
+                {!exportPending && exportedImages.map((src, i) => (
                   <div key={i} className="flex flex-col gap-2 group">
                     <div className="aspect-[4/5] rounded-xl border border-hairline overflow-hidden bg-muted relative shadow-sm group-hover:shadow-md transition-shadow">
                       <img src={src} alt={`Slide ${i + 1}`} className="size-full object-cover" />
@@ -1781,7 +1971,12 @@ export function Wizard({
                   <ArrowLeft className="size-3.5" /> Back ke Design
                 </Button>
 
-                <Button size="sm" onClick={() => setStep(5)} className="gap-1.5 font-semibold px-5">
+                <Button
+                  size="sm"
+                  onClick={() => setStep(5)}
+                  disabled={exportPending || exportedImages.length === 0}
+                  className="gap-1.5 font-semibold px-5"
+                >
                   Lanjut ke Penjadwalan <span className="text-xs">→</span>
                 </Button>
               </div>
