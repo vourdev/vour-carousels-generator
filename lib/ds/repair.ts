@@ -63,6 +63,14 @@ function stripDashesDeep(v: any): void {
   }
 }
 
+/**
+ * Mockups that are a dark device by design and stay dark on any surface (a
+ * terminal window, a Cmd+K palette). Everything else either follows the surface
+ * tokens or deliberately inverts against them (callout), so only these two
+ * collide with a full-Ink slide.
+ */
+const ALWAYS_DARK_MOCKUPS = new Set(["terminal", "commandpalette"]);
+
 /** Return a schema-valid mockup, or `undefined` to drop it (falls back to card). */
 function repairMockup(m: any): any | undefined {
   if (!m || typeof m !== "object") return undefined;
@@ -92,6 +100,19 @@ export function repairSlidePlan(raw: any): SlidePlan {
           const fixed = repairMockup(s.mockup);
           if (fixed) s.mockup = fixed;
           else delete s.mockup; // fall back to auto-card in resolveMockup
+        }
+        // Surface/mockup collision. The prompt asks the model to keep a dark
+        // device off a dark slide, but asking is not enforcing: a terminal on an
+        // Ink slide is a near-black panel on a near-black canvas. Flip the slide
+        // to Paper rather than dropping a mockup the deck needs — the surface is
+        // rhythm, the mockup is content.
+        if (
+          s.role === "point" &&
+          s.surface === "ink" &&
+          s.mockup &&
+          ALWAYS_DARK_MOCKUPS.has(s.mockup.type)
+        ) {
+          s.surface = "paper";
         }
         if (s.role === "outro" && s.cta && typeof s.cta === "object") {
           s.cta.strong = clampStr(s.cta.strong, 60);

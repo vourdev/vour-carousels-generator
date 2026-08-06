@@ -33,7 +33,20 @@ const MOCKUP_BUDGETS = `- Terminal: filename + 4-6 code lines max (≤ 45 chars 
 - CommandPalette: query (≤ 30) + 2-5 rows (icon + label ≤ 40, optional active) — Cmd+K menus, action lists, "everything via one shortcut".
 - Database: EXACTLY 2 tables (name ≤ 20, each 2-4 rows of col ≤ 16 + type ≤ 8) + relation (≤ 12, e.g. "1 ─< ∞") — schema / ERD / foreign-key relations.
 - GitBranch: main 2-6 commit labels (≤ 16) + branch { name ≤ 16, at } + mergeLabel (≤ 12) — branch/merge workflow, feature-branch story.
-Array-count rule (HARD): concept/hub/checklist/flow/steps must meet their minimum item count. If you cannot fill the minimum, choose a different mockup type (e.g. card or callout) — do NOT emit a diagram with too few items.`;
+Array-count rule (HARD): concept/hub/checklist/flow/steps must meet their minimum item count. If you cannot fill the minimum, choose a different mockup type (e.g. card or callout) — do NOT emit a diagram with too few items.
+
+PROPORTION (the caps above are LIMITS, not targets):
+- A mockup shares one 1080×1350 slide with a counter, eyebrow, headline and body.
+  It gets roughly the lower half. Fill it, do not overflow it.
+- Aim for the MIDDLE of every range, not the maximum. 3 flow steps beat 5;
+  4 checklist items beat 6; 4 terminal lines beat 8. Fewer, sharper items read
+  better at thumbnail size than a dense list nobody can parse.
+- Keep item text WELL under its cap. A flow label at 24 chars or a checklist item
+  at 48 wraps to two lines and the diagram stops looking deliberate. Treat ~60%
+  of each cap as the comfortable length.
+- One idea per mockup. If the content needs more rows than the cap allows, that
+  is a signal to split it across two slides, not to cram it into one.
+- Never restate the slide body inside the mockup. The mockup SHOWS, the body TELLS.`;
 
 const COPY_CAPS = `- Eyebrow ≤ 3 words (max 30 chars), ALL CAPS.
 - Headline ≤ 7 words (max 60 chars) with exactly ONE accent word.
@@ -237,40 +250,68 @@ RITME ANTAR SLIDE (cek setelah semua slide jadi)
 
 const MOCKUP_VARIETY_RULE = `
 ═══════════════════════════════════════════════════════════════
-CRITICAL: MOCKUP VARIETY IS MANDATORY
+VISUAL DIRECTOR — anti-repetition is MANDATORY
 ═══════════════════════════════════════════════════════════════
 
-NEVER repeat the same mockup type across slides. If you have 8 slides:
-- Slide 2-7 = 6 different mockup types
-- Mix: 2 diagrams + 2 editorial + 2 Update 7 mockups
+Classify each middle slide by its CONTENT category, then pick a mockup that
+fits that category. These are the ONLY mockup types the renderer can draw — do
+NOT invent others (invented types get dropped and the slide falls back to a
+plain card, which reads as generic).
 
-BAD EXAMPLE (repetitive):
-❌ Slide 2: Terminal
-❌ Slide 3: Terminal  
-❌ Slide 4: Card
-❌ Slide 5: Card
-❌ Slide 6: Callout
-❌ Slide 7: Callout
+CATEGORY → allowed mockup types (choose by the slide's actual content):
+- STAT_HOOK  (big number / count as a hook)      → bigstat
+- COMPARISON (X vs Y, before/after, two options) → comparison · datatable · timeline
+- PROCESS    (flow / step-by-step / how it works)→ flow · steps · concept · hub · foldertree · gitbranch
+- ERROR_FIX  (wrong→right, bug, anti-pattern)    → datatable · comparison · terminal (diff-style)
+- CODE_DEMO  (real code / command / config)      → terminal · commandlist · commandpalette · promptcard · database
+- EVIDENCE   (a real product / UI you built)     → browser
+- ABSTRACT   (concept / principle / analogy)     → concept · hub · quote · card · custom
+- BESPOKE    (a layout none of the above can draw)→ custom (hand-written HTML + CSS)
 
-GOOD EXAMPLE (varied):
-✅ Slide 2: Terminal (code example)
-✅ Slide 3: BigStat (performance metric)
-✅ Slide 4: Comparison (before/after)
-✅ Slide 5: BrowserMockup (UI screenshot)
-✅ Slide 6: CommandList (CLI examples)
-✅ Slide 7: PullQuote (testimonial)
+ANTI-REPETITION (hard rules):
+1. NEVER the same mockup type on two consecutive slides.
+2. If two consecutive slides share a category, change the visual approach
+   (PROCESS twice → e.g. flow then foldertree, not flow then flow).
+3. Dark code mockups (terminal + commandpalette) — MAX 1 per 5 slides combined.
+   browser — MAX 1 per deck. Reach for them only when code/UI is the point.
+4. Rotate tone colors; never the same card/diagram tone twice running.
+5. Surface rhythm: at most ~1 "ink" (dark) slide per 3, never two in a row.
+6. A good 8-slide deck uses ≥ 5 different mockup types.
+7. custom — MAX ~1 per deck. It is the escape hatch for a layout the 20 typed
+   mockups genuinely cannot draw, not a shortcut around picking the right type.
+   If a typed mockup fits, use the typed mockup.
 
-VARIETY STRATEGY:
-1. Start with most relevant mockup for Point #1
-2. Pick DIFFERENT type for each subsequent slide
-3. Use Update 7 mockups (NumeralHero, BrowserMockup, CommandList, etc.) liberally
-4. Save Terminal for actual code (use ONCE max)
-5. Visual interest = mix technical + editorial + Update 7
+WRITING A custom MOCKUP (when you do reach for it):
+- Ship self-contained markup plus its own CSS. Invent your own class names.
+- The renderer wraps your fragment in the flex slot and SCOPES your CSS to it,
+  so your rules cannot touch anything outside your own markup.
+- Therefore: never style shared chrome (section, body, h1, .eyebrow, .counter,
+  .geser, .diag-wrap, .anchor-wrap) — those rules are scoped away and do nothing.
+- COLOUR — use the surface tokens, NEVER a literal hex for text/panel/border:
+    var(--ms-fg)         primary text on this slide's surface
+    var(--ms-fg-muted)   secondary text
+    var(--ms-fg-faint)   labels, captions
+    var(--ms-panel)      a raised panel / card background
+    var(--ms-panel-deep) a recessed well inside a panel
+    var(--ms-line)       hairline borders and dividers
+    var(--ms-accent)     the Ember accent (ONE per mockup)
+  You do NOT know whether your slide renders on the cream Paper surface or the
+  near-black Ink surface — the deck alternates them. A hard-coded #1C0A05 is
+  invisible on Ink and a hard-coded #F7F1E8 is invisible on Paper. The tokens
+  resolve to the right value on both, so a token-only mockup is always legible.
+  Literal hex is allowed ONLY for a deliberate always-dark device (a terminal
+  window) or an always-Ember fill.
+- No backdrop-filter (dies on screenshot export). Max 3 colours.
+- Size it to fit: the slot is ~920px wide and gets roughly the lower half of the
+  1080×1350 canvas. Keep it to a handful of elements and short labels; a custom
+  mockup that needs a dense grid is the wrong call for the slide.
 
-Available mockups by category:
-• DIAGRAMS (9): Terminal, Comparison, Steps, Flow, Hub, Concept, Callout, Card, Checklist
-• EDITORIAL (5): BigStat, PullQuote, ImagePlate, SplitPanel, MediaGrid
-• UPDATE 7 (11): NumeralHero, StackedContrast, HistoryTimeline, AnnotatedIllustration, BrowserMockup, StampBadge, CommandList, PromptCard, DataTable, CatalogList, QuoteInset
+NOT AVAILABLE in auto-generation — do NOT fake these; pick the closest above:
+- real screenshots / photographic evidence → use browser (a rebuilt UI, not a
+  pasted image).
+- human elements (hands / person / character) → not supported; stay editorial.
+If a brief explicitly needs a real screenshot or photo, describe it as a MANUAL
+capture step in the brief text — never emit a placeholder mockup for it.
 
 ═══════════════════════════════════════════════════════════════
 `;
@@ -307,19 +348,34 @@ You MUST follow this EXACT Markdown structure (matching the Vour Dev design syst
 ## Headline
 <Short impact line with ONE **accent word** wrapped in double asterisks, e.g. JWT Itu Bukan **Enkripsi**.>
 
+## Stamp
+<The EB Garamond series mark printed top-right on the cover, e.g. Engineering Notes / Deep Dive /
+Field Notes. ONE per deck. Always fill this in.>
+
 ## Description
 <Engaging hook explaining the problem or misconception in 2-3 short sentences.>
 
 ### Example text-only cover (no mockup needed — still looks proportional)
 Eyebrow: ISTILAH AI
 Headline: istilah AI yang wajib lo **tau**
+Stamp: Engineering Notes
 Description: biar lo gak cuma nge-prompt doang tapi ngerti cara kerjanya.
 
 ## Hook Mockup
 <OPTIONAL — a text-only cover (eyebrow + headline + description, no hook) is a first-class,
-well-proportioned intro. Include this only when a code/UI scene strengthens the opener:
-describe a synthetic device frame — browser or terminal chrome, an optional label (URL or
-filename), and 1-6 short on-topic lines that stop the scroll.>
+well-proportioned intro. Include a hook when ONE strong visual anchor makes the opener stop
+the scroll. Pick the anchor that fits the angle and describe it concretely:
+- device — a synthetic browser/terminal frame: chrome type, an optional label (URL or filename),
+  and 1-6 short on-topic lines. For a code/UI scene or a curiosity gap.
+- badge — an ID badge, optionally struck through: the role on it plus one aside line.
+  For the CONTRARIAN angle ("X is not a job title").
+- nocgrid — a monitoring grid with every node down plus a banner line ("100% PACKET LOSS").
+  For the URGENCY/RISK angle.
+- door — a door with a pull handle labeled with the opposite action ("DORONG").
+  For the MISCONCEPTION angle ("pretty but unusable").
+- custom — any other visual metaphor, drawn from scratch. Describe what it shows and how it
+  reads (e.g. "two panes side by side: five manual ssh lines vs one git push"). For BEFORE/AFTER
+  and for angles the four anchors above cannot carry.>
 
 ## Highlight
 <One-line punchy takeaway callout summary>
@@ -347,76 +403,71 @@ filename), and 1-6 short on-topic lines that stop the scroll.>
 ## Mockup Type
 <Choose ONE per slide — pick by content, ADD VARIETY, avoid repetition:>
 
-**DIAGRAM MOCKUPS** (Technical / Visual):
-- Terminal — code snippets, CLI commands, config (MAX ONCE per deck)
-- Comparison — before/after, good vs bad, loser vs winner
-- Steps — 2-4 numbered tutorial steps
-- Flow — pipelines, sequences (request → handler → db)
-- Hub — center concept wiring to 3-4 related items
-- Concept — parent term broken into 3-4 sub-concepts
+These are the ONLY mockup types the renderer can draw. Reference them by these
+exact names — do NOT invent others (an unknown type gets dropped to a plain card).
+Grouped by VISUAL DIRECTOR category (pick by the slide's content):
 
-**EDITORIAL MOCKUPS** (Content / Visual Interest):
+**STAT_HOOK** (a number is the hook):
 - BigStat — impressive number + unit + caption (e.g., "3× faster")
-- PullQuote — testimonial or impactful quote with attribution
-- ImagePlate — screenshot, diagram, or image insert
-- SplitPanel — text on one side, image on the other
-- MediaGrid — 2×2 grid of images/screenshots (4 items)
 
-**UPDATE 7 MOCKUPS** (Rich Visual Variety):
-- NumeralHero — large number (e.g., "42%") + explanation
-- StackedContrast — two contrasting items stacked vertically
-- HistoryTimeline — chronological events or version history
-- AnnotatedIllustration — diagram with callout labels
-- BrowserMockup — website/app screenshot in browser chrome
-- StampBadge — badge/label graphic (e.g., "VERIFIED", "NEW")
-- CommandList — CLI command examples with descriptions
-- PromptCard — AI prompt example or template
-- DataTable — structured data in table format
-- CatalogList — feature list or product catalog
-- QuoteInset — pull quote with decorative styling
+**COMPARISON** (X vs Y / before-after):
+- Comparison — two-panel loser vs winner
+- DataTable — ✗/✓ two-column table (jangan/lakukan, myth/reality)
+- Timeline — two dated cards (dulu/sekarang, then/now)
 
-**INFO CARDS** (Simple Text):
+**PROCESS** (flow / step-by-step / structure):
+- Flow — pipelines, sequences (request → handler → db)
+- Steps — 2-4 numbered tutorial steps
+- Concept — parent term broken into 3-4 sub-concepts
+- Hub — center concept wiring to 3-4 related items
+- FolderTree — project/file structure (mono directory listing)
+- GitBranch — branch/merge feature-branch workflow
+
+**CODE_DEMO** (real code / command / schema):
+- Terminal — code snippets, CLI, config (dark; use sparingly)
+- CommandList — CLI commands + descriptions
+- CommandPalette — Cmd+K action menu (dark)
+- PromptCard — copy-paste AI prompt / snippet
+- Database — 2 related tables + relation glyph (ERD)
+
+**EVIDENCE** (a real product/UI):
+- Browser — browser chrome + stat cards ("here's what I built", max 1/deck)
+
+**ABSTRACT** (principle / concept / analogy):
+- Concept / Hub — as above
+- Quote — editorial pull-quote (principle, expert claim, testimonial)
 - Card — general info card with icon, title, body
-- Callout — dark banner for key takeaways/warnings
-- Checklist — bulleted list for recap/summary
+
+**INFO / RECAP**:
+- Callout — dark banner for a key takeaway/warning
+- Checklist — 3-6 ticked recap items
 
 ## Mockup Details
-<Provide specific content for the chosen mockup type:>
-
-**DIAGRAMS:**
+<Provide specific content for the chosen mockup type. Field caps:>
 - Terminal: filename + 4-6 code lines (≤45 chars/line)
 - Comparison: loser label/line vs winner label/line (≤50 chars each)
-- Steps: 2-4 steps (title ≤35 chars, body ≤55 chars)
-- Flow: 2-5 step labels (≤24 chars), note (≤90 chars)
-- Hub: center label + 3-4 tools (icon + label ≤16 chars)
-- Concept: parent + 3-4 children (≤18 chars)
+- DataTable: noLabel/okLabel (≤20) + 2-4 rows (no/ok ≤50 each)
+- Timeline: oldLabel/oldTitle/oldBody + newLabel/newTitle/newBody
+- Steps: 2-4 steps (title ≤35, body ≤55)
+- Flow: 2-5 step labels (≤24), note (≤90)
+- Hub: center + 3-4 tools (icon + label ≤16)
+- Concept: parent + 3-4 children (≤18)
+- FolderTree: 3-8 lines (≤48 each, one optional active)
+- GitBranch: main 2-6 commits + branch {name, at} + mergeLabel
+- BigStat: number (≤6), unit (≤20), caption (≤70)
+- Quote: quote (≤180) + optional author (≤40)
+- Browser: url (≤40) + 2-4 cards (label ≤24, value ≤16)
+- CommandList: 2-6 rows (cmd ≤24, desc ≤48)
+- CommandPalette: query (≤30) + 2-5 rows (icon + label ≤40)
+- Database: 2 tables (name ≤20, 2-4 rows of col ≤16 + type ≤8) + relation
+- PromptCard: label (≤20) + body (≤180)
+- Card: icon slug, title (≤40), body (≤100), tone
+- Callout: icon slug + takeaway (≤90)
+- Checklist: 3-6 items (≤48 each)
 
-**EDITORIAL:**
-- BigStat: number (≤6 chars), unit (≤20 chars), caption (≤70 chars)
-- PullQuote: quote text + attribution ("— Name, Role")
-- ImagePlate: src path + variant (window-mac|window-web|phone|framed|plain)
-- SplitPanel: text content + image src
-- MediaGrid: 4 image paths (bulleted list)
-
-**UPDATE 7:**
-- NumeralHero: large number + supporting text
-- StackedContrast: item 1 vs item 2 (contrasting pair)
-- HistoryTimeline: chronological events (year/version + description)
-- AnnotatedIllustration: image + 3-4 callout labels
-- BrowserMockup: URL + screenshot description
-- StampBadge: badge text + context
-- CommandList: 3-4 commands with descriptions
-- PromptCard: AI prompt text + expected output
-- DataTable: headers + 3-5 rows of data
-- CatalogList: 3-5 items (name + description)
-- QuoteInset: quote + author + role
-
-**INFO CARDS:**
-- Card: icon slug, title (≤40 chars), body (≤100 chars), tone
-- Callout: icon slug + takeaway (≤90 chars)
-- Checklist: 3-6 items (≤48 chars each)
-
-**IMPORTANT**: Use DIFFERENT mockup types across slides. Vary between diagrams, editorial, and Update 7 mockups for visual interest!
+**IMPORTANT**: Follow the VISUAL DIRECTOR anti-repetition rules — never the same
+mockup type (or category-visual) on consecutive slides; dark code mockups
+(Terminal + CommandPalette) max 1 per 5 slides; Browser max 1 per deck.
 
 ## Highlight
 <Key takeaway callout or card summary>
@@ -493,14 +544,24 @@ Return ONLY structured data matching the schema.
 ${HUMAN_VOICE_EDITOR}
 
 SLIDE ROLES
-- "cover": { eyebrow, headline, accentWord?, lede?, hook? } — hook is OPTIONAL.
-    A text-only cover (eyebrow + headline + lede, NO hook) is a first-class, well-proportioned
-    editorial intro. Include a hook when a strong visual anchor strengthens the opener:
-    hook (pick ONE visual anchor; cover is ALWAYS the dark Ink surface):
+- "cover": { eyebrow, headline, accentWord?, lede?, stamp?, ghostNumeral?, hook? }
+    stamp — the EB Garamond italic series mark printed top-right, e.g. "Engineering Notes",
+      "Deep Dive", "Field Notes". ONE per deck (DESIGN.md §16). Always set it; it is part of
+      the cover anatomy. Defaults to "Engineering Notes" if you omit it.
+    ghostNumeral — oversized faded numeral behind the text-only cover, e.g. "7" for a
+      "7 things" deck. Only meaningful when there is NO hook. Defaults to "01".
+    hook is OPTIONAL. A text-only cover (eyebrow + headline + lede, NO hook) is a first-class,
+    well-proportioned editorial intro. Include a hook when a strong visual anchor strengthens
+    the opener (pick ONE anchor; cover is ALWAYS the dark Ink surface):
       device  — { kind: "device", chrome: "browser"|"terminal", label?, lines: [{ text, style }] } (code/UI scene)
       badge   — { kind: "badge", role: "DevOps Engineer", sub?: "// one aside", struck?: true } (CONTRARIAN: "X is not a job title")
       nocgrid — { kind: "nocgrid", cols?: 6, rows?: 3, state?: "down"|"up", banner?: "100% PACKET LOSS" } (URGENCY/RISK: everything is down)
       door    — { kind: "door", label?: "DORONG", pull?: true } (MISCONCEPTION: pretty but unusable — pull handle labeled push)
+      custom  — { kind: "custom", html: "...", css?: "..." } (BESPOKE: the visual metaphor the
+                 four anchors above cannot draw — a struck-out invoice, a split gauge, a stacked
+                 receipt. Same rules as the custom mockup: self-contained markup + your own class
+                 names, the renderer wraps and scopes it, never style shared chrome, max 3 brand
+                 colors, no backdrop-filter.)
 - "point": { counter (e.g. "02 / 05"), eyebrow, headline, accentWord?, body, surface?: "paper"|"ink", mockup: <one of the types below> }
 - "outro": { eyebrow?, headline, accentWord?, body?, cta } — cta is REQUIRED:
     cta: { strong: "<the action, e.g. Simpan & bagikan>", sub?: "<why/how, 1 short line>" }
@@ -511,18 +572,24 @@ COVER — the first slide is an AD for the other slides, not slide 0. Make peopl
 Pick ONE trigger angle, then a headline + ONE visual anchor that fits it:
   MISCONCEPTION  → "you've been wrong about X"      → anchor: door
   URGENCY/RISK   → "not knowing this costs you"     → anchor: nocgrid
-  CURIOSITY GAP  → a question you don't answer yet  → anchor: device/image
-  NUMBERED       → "N things about X"               → mockup on slide 2: bigstat (giant number)
+  CURIOSITY GAP  → a question you don't answer yet  → anchor: device
   CONTRARIAN     → "X is overrated / not a job"     → anchor: badge (struck:true)
-  BEFORE/AFTER   → old way vs right way             → mockup on slide 2: comparison
+  NUMBERED       → "N things about X"               → no hook + ghostNumeral: "N";
+                                                      slide 2 mockup: bigstat (giant number)
+  BEFORE/AFTER   → old way vs right way             → anchor: custom (two panes, old vs new);
+                                                      slide 2 mockup: comparison
+  OTHER METAPHOR → the angle none of the above fits → anchor: custom (draw the metaphor yourself)
+ALWAYS set "stamp" on the cover. Every cover renders the same anatomy:
+brand row + stamp (top) → eyebrow → headline → anchor centered in the free space → "Geser" (bottom).
 Headline rules: hook word FIRST (a number, or a negative like "Salah"/"Jangan"/"Bukan", or a question word);
 ≤ 10 words; leave a curiosity gap (don't reveal the solution); stay credible (no misleading clickbait).
 Accent exactly ONE keyword with the Ember-bright span. Cover is ALWAYS the Ink surface.
 SURFACE RHYTHM (DESIGN.md §13): a point slide defaults to "paper" (warm cream). Set surface:"ink"
 (full dark) on AT MOST ~1 slide per 3, and NEVER two ink slides in a row — it is a rhythm accent,
-not a theme. Do NOT put an already-dark mockup (terminal, callout, commandpalette) on an ink slide;
-those need a paper surface for contrast. Good ink picks (render as light tiles / read on dark):
-card, flow, concept, hub, checklist, foldertree, database. Prefer those for an ink slide.
+not a theme. Do NOT put an always-dark device (terminal, commandpalette) on an ink slide: it is a
+near-black panel on a near-black canvas. (The renderer flips such a slide back to paper, but pick
+correctly rather than relying on that.) Every other mockup follows the slide surface automatically.
+Good ink picks: card, flow, concept, hub, checklist, foldertree, database, callout, bigstat.
 
 MOCKUP TYPES — every "point" slide MUST include a "mockup" object with one of these types:
 
@@ -571,6 +638,26 @@ MOCKUP TYPES — every "point" slide MUST include a "mockup" object with one of 
 15. { type: "gitbranch", main: ["init", "feat"], branch: { name: "feat/auth", at: 1 }, mergeLabel?: "merge" }
    → Fixed branch/merge SVG. Use for git workflow / feature-branch stories.
 
+16. { type: "browser", url: "app.vour.dev/dashboard", cards: [{ label: "deploys", value: "1,284" }], note?: "..." }
+   → Browser chrome + 2-4 stat cards. Use for "here's what I built" / product/dashboard evidence. Max 1 per deck.
+
+17. { type: "quote", quote: "...", author?: "..." }
+   → Editorial pull-quote (serif). Use for a principle / expert claim / testimonial.
+
+18. { type: "datatable", noLabel?: "Jangan", okLabel?: "Lakukan", rows: [{ no: "...", ok: "..." }] }
+   → ✗/✓ two-column table (2-4 rows). Use for don't/do, myth/reality, wrong/right.
+
+19. { type: "commandlist", rows: [{ cmd: "git switch -c", desc: "..." }], note?: "..." }
+   → Mono cmd → desc rows (2-6). Use for CLI menus, shortcut lists, command catalogs.
+
+20. { type: "timeline", oldLabel: "2015", oldTitle: "...", oldBody: "...", newLabel: "Sekarang", newTitle: "...", newBody: "..." }
+   → Two dated cards (dulu/sekarang, then/now). Use for evolution over time.
+
+21. { type: "custom", html: "...", css?: "..." }
+   → Hand-written HTML + CSS. The escape hatch for a layout none of types 1-20 can draw (a bespoke split view, an unusual structural block, a visual metaphor). Write self-contained markup with your OWN class names and put the matching rules in 'css'. The renderer wraps your fragment in the flex slot and SCOPES your CSS to it, so do NOT add a '.diag-wrap' wrapper and do NOT style shared chrome (section, body, h1, .eyebrow, .counter, .geser) — those rules are scoped away and do nothing. Colours MUST come from the surface tokens (var(--ms-fg), --ms-fg-muted, --ms-fg-faint, --ms-panel, --ms-panel-deep, --ms-line, --ms-accent) — a literal hex breaks on the surface you did not picture. See "WRITING A custom MOCKUP" above. Max 3 colors, no backdrop-filter, max ~1 per deck.
+
+${MOCKUP_VARIETY_RULE}
+
 ICON RULES
 - Every "icon" MUST be one of these exact slugs (the "lucide:" prefix is optional):
   ${ICON_ALLOWLIST}.
@@ -578,7 +665,8 @@ ICON RULES
 
 VARIETY EXAMPLE (a good, non-monotone deck — mirror this diversity, not the copy):
 - cover (text-only, no hook): eyebrow "AI 101", headline "istilah AI yang wajib lo tau"
-  (accentWord "tau"), lede "biar lo gak cuma nge-prompt doang tapi ngerti cara kerjanya."
+  (accentWord "tau"), lede "biar lo gak cuma nge-prompt doang tapi ngerti cara kerjanya.",
+  stamp "Engineering Notes", ghostNumeral "01"
 - point → concept (parent + 3-4 children)
 - point → flow (3-4 steps, one focus)
 - point → hub (center + 3-4 tool icons)
@@ -597,9 +685,11 @@ ${MOCKUP_BUDGETS}
 4. CONTEXT-DRIVEN MOCKUP CHOICE: pick the mockup that best fits the slide's content —
    flow for pipelines/sequences, hub for one thing wiring to several tools, concept for a
    term's sub-concepts, comparison for bad-vs-good, steps for how-to, bigstat for a metric,
-   callout for a warning, card for a general point, checklist for a recap. Use "terminal"
-   ONLY when the slide shows real code/CLI/config, and AT MOST ONCE per deck. Every deck
-   MUST use ≥ 3 distinct mockup types and must not repeat a type on consecutive slides.
+   callout for a warning, card for a general point, checklist for a recap. Follow the
+   VISUAL DIRECTOR category map + anti-repetition rules above: dark code mockups
+   (terminal + commandpalette) MAX 1 per 5 slides combined, browser MAX 1 per deck.
+   Every deck MUST use ≥ 5 distinct mockup types and must NEVER repeat a type on
+   consecutive slides (nor the same category-visual twice running).
 5. Title MUST be highly informative, descriptive, and engaging.
 6. Caption MUST be comprehensive and detailed (hook, key takeaway bullets, and a CTA to save/share).
 7. ${HASHTAG_RULE}
@@ -626,7 +716,9 @@ STRICT REVISION INSTRUCTIONS
 1. IDENTIFY TARGET SLIDE:
    - "outro" / "slide outro" -> Update the slide with role "outro" (the final slide in the array).
    - "cover" / "slide cover" / "slide 1" -> Update the slide with role "cover" (the first slide).
-   - Cover hook edits: the cover carries a \`hook\` (kind "device": chrome/label/lines, or kind "custom": html). Update these when asked to change the intro visual.
+   - Cover hook edits: the cover carries an optional \`hook\` — kind "device" (chrome/label/lines), "badge" (role/sub/struck), "nocgrid" (cols/rows/state/banner), "door" (label/pull), or "custom" (html + css). Set, swap, or remove it when asked to change the intro visual; removing it falls back to the text-only cover with its \`ghostNumeral\`.
+   - Cover \`stamp\` is the italic series mark top-right ("Engineering Notes"). Update it when asked to change the series label; never blank it out.
+   - custom hook/mockup html+css must stay self-contained with its own class names. Never style shared chrome (section, h1, .eyebrow, .geser) — the renderer scopes those rules away.
    - "slide N" or "slide point N" -> Update the slide at that 1-based index in the slides array.
    - General requests -> Apply requested edits across all relevant slides.
 
@@ -648,18 +740,72 @@ STRICT REVISION INSTRUCTIONS
    - Keep copy within caps (headline ≤ 60 chars, body ≤ 120 chars).
    - ${HASHTAG_RULE}
 
-6. HUMAN VOICE PASS (mandatory on every string you touch):
+6. HONOUR THE REVISION HISTORY:
+   - The prompt may carry a REVISION HISTORY: every earlier change the user asked for on
+     this same draft, oldest first. It is the record of what has already been settled.
+   - NEVER undo or re-litigate an earlier accepted revision while applying the new one.
+     If turn 1 shortened a headline, turn 3 must not restore the long version.
+   - Read a vague request ("make it shorter again", "same for the next one", "undo that")
+     against the history to resolve what "it" / "that" / "the same" refers to. The latest
+     entry is the most likely referent.
+   - If the new request genuinely contradicts an earlier one, the NEW request wins — apply
+     it, and treat the earlier entry as superseded rather than trying to satisfy both.
+
+7. HUMAN VOICE PASS (mandatory on every string you touch):
    - Anything you rewrite MUST clear the HUMAN VOICE EDITOR rules above.
    - Never soften an opinionated line into false balance while revising. If the user asks
      to "perhalus", tighten the wording — do not add "tapi ada sisi positifnya juga".
    - Do not introduce generic openers or "Jadi, kesimpulannya…" into the outro.`;
 
-export function reviseUserPrompt(planJson: string, message: string): string {
-  return `CURRENT SLIDE PLAN (JSON):
+/**
+ * Render the accumulated revision log as a prompt block.
+ * Returns "" when there is no history, so the prompt is unchanged on turn 1.
+ */
+export function revisionHistoryBlock(
+  history: { request: string; outcome?: string | null }[]
+): string {
+  if (!history.length) return "";
+  const lines = history
+    .map((h, i) => `${i + 1}. asked: "${h.request}"${h.outcome ? `\n   result: ${h.outcome}` : ""}`)
+    .join("\n");
+  return `REVISION HISTORY (already applied to this draft, oldest first):
+${lines}
+
+`;
+}
+
+export function reviseUserPrompt(
+  planJson: string,
+  message: string,
+  history: { request: string; outcome?: string | null }[] = []
+): string {
+  return `${revisionHistoryBlock(history)}CURRENT SLIDE PLAN (JSON):
 ${planJson}
 
-USER REVISION REQUEST:
+NEW USER REVISION REQUEST:
 "${message}"
 
-Perform the requested revision now. Return the COMPLETE updated SlidePlan JSON matching the schema.`;
+Perform the requested revision now, keeping every earlier revision above intact.
+Return the COMPLETE updated SlidePlan JSON matching the schema.`;
+}
+
+/** Same history block for the Gate-1 brief editor, which revises Markdown, not JSON. */
+export function briefRevisionPrompt(
+  brief: string,
+  message: string,
+  history: { request: string; outcome?: string | null }[] = []
+): string {
+  return `${revisionHistoryBlock(history)}You are revising an existing brief.
+Here is the current brief:
+${brief}
+
+Here is the user's NEW revision request:
+"${message}"
+
+CRITICAL INSTRUCTIONS FOR REVISION:
+1. You MUST generate and output the COMPLETE revised brief document containing all sections.
+2. Do NOT omit, truncate, or skip any sections.
+3. You MUST include the '# Carousel Content — <Title>', '# Caption', and '# Hashtag' sections in the output. If the revision request doesn't ask to change them, preserve them or update them to reflect the slide changes. Do not output just the slides.
+4. Keep every earlier revision in the history above intact — never undo an accepted change while applying the new one. If the new request contradicts an earlier one, the new request wins.
+5. Output the full Markdown document matching the required structure start-to-finish.`;
 }

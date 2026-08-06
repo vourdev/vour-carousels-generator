@@ -94,7 +94,11 @@ describe("renderSlide", () => {
         text: "Never store secrets in JWT payload",
       },
     });
-    expect(html).toContain("background:#1F0904");
+    // Inverts against the slide surface via tokens: near-black on Paper, cream on
+    // Ink. The old assertion pinned a legacy hex (#1F0904) that the palette had
+    // already moved off, so it could not catch a real regression.
+    expect(html).toContain("background:var(--ms-invert-bg)");
+    expect(html).toContain("color:var(--ms-invert-fg)");
     expect(html).toContain("<svg");
     expect(html).not.toContain("iconify-icon");
     expect(html).toContain("Never store secrets in JWT payload");
@@ -278,7 +282,7 @@ describe("renderSlide", () => {
     expect(html).not.toContain("HOOK_INJECT");
     expect(html).toContain("Geser");
     expect(html).toContain("cover-editorial");
-    expect(html).toContain("cover-lead");
+    expect(html).toContain("ce-lead");
   });
 
   it("renders a compact cover with a device hook", () => {
@@ -431,5 +435,82 @@ describe("cover door hook", () => {
     });
     expect(html).not.toContain('class="handle"');
     expect(html).toContain("DORONG");
+  });
+});
+
+describe("custom mockup and cover css", () => {
+  it("renders a slide with a custom mockup and optional custom CSS", () => {
+    const html = renderSlide({
+      role: "point",
+      counter: "04/05",
+      eyebrow: "CUSTOM HTML",
+      headline: "Custom Slide",
+      body: "Ini adalah slide dengan mockup kustom.",
+      mockup: {
+        type: "custom",
+        html: "<div class='my-special-class'>Halo Dunia</div>",
+        css: ".my-special-class { color: red; }"
+      }
+    }, 4);
+
+    // Scoped to this slide's fragment, and dropped into the flex slot every
+    // other mockup gets — otherwise it hugs the headline and leaves dead space.
+    expect(html).toContain(".cm-4 .my-special-class{ color: red; }");
+    expect(html).toContain('<div class="diag-wrap"><div class="cm cm-4">');
+    expect(html).toContain("<div class='my-special-class'>Halo Dunia</div>");
+  });
+
+  it("renders a custom cover hook with custom css", () => {
+    const html = renderSlide({
+      role: "cover",
+      eyebrow: "COVER DUST",
+      headline: "Custom Cover",
+      hook: {
+        kind: "custom",
+        html: "<div class='cover-special'>Special Content</div>",
+        css: ".cover-special { font-size: 50px; }"
+      }
+    }, 7);
+
+    expect(html).toContain(".cm-7 .cover-special{ font-size: 50px; }");
+    expect(html).toContain('<div class="anchor-wrap"><div class="cm cm-7">');
+    expect(html).toContain("<div class='cover-special'>Special Content</div>");
+  });
+
+  it("keeps a custom fragment's css from reaching the slide chrome", () => {
+    // A rule on shared chrome used to leak to EVERY slide and shift "Geser".
+    const html = renderSlide({
+      role: "point", counter: "01/03", eyebrow: "E", headline: "H", body: "b",
+      mockup: { type: "custom", html: "<div>x</div>", css: ".geser{left:400px}section{padding:0}" },
+    }, 2);
+    expect(html).toContain(".cm-2 .geser{left:400px}");
+    expect(html).toContain(".cm-2 section{padding:0}");
+    expect(html).not.toContain("<style>.geser{left:400px}");
+  });
+
+  it("prints the series stamp on both cover variants, defaulting it", () => {
+    const textOnly = renderSlide({ role: "cover", eyebrow: "E", headline: "H" });
+    expect(textOnly).toContain("series-stamp");
+    expect(textOnly).toContain("Engineering Notes");
+
+    const withHook = renderSlide({
+      role: "cover", eyebrow: "E", headline: "H",
+      hook: { kind: "door", label: "DORONG" },
+    });
+    expect(withHook).toContain("series-stamp");
+    expect(withHook).toContain("Engineering Notes");
+
+    const explicit = renderSlide({ role: "cover", eyebrow: "E", headline: "H", stamp: "Deep Dive" });
+    expect(explicit).toContain("Deep Dive");
+    expect(explicit).not.toContain("Engineering Notes");
+  });
+
+  it("centers an image cover hook in the anchor slot", () => {
+    const html = renderSlide({
+      role: "cover", eyebrow: "E", headline: "H",
+      hook: { kind: "image", src: "https://example.com/a.png", frame: "browser" },
+    });
+    expect(html).toContain('class="anchor-wrap"');
+    expect(html).toContain("https://example.com/a.png");
   });
 });

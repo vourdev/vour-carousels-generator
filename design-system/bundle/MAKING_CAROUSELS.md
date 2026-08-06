@@ -636,9 +636,9 @@ Note the escapes: `\n` for line breaks, `\"` for the inner quotes around `1`, `2
 
 ## 11 · Slide-introduction contract  ★ Update 6
 
-> `DESIGN.md §16` is the source of truth. This section is the build-procedure companion: how to write the intro block from a Markdown brief so the caps hold.
+> `DESIGN.legacy-update7.md §16` is the source of truth (the intro-contract section moved during the v1.0 rewrite; its caps now live across `DESIGN.md` §3, §7.4, and §14). This section is the build-procedure companion: how to write the intro block from a Markdown brief so the caps hold.
 
-Every slide's INTRO block — counter → eyebrow → headline → description — must pass DESIGN.md §16.4 pre-flight before you ship. The rules that matter when translating a brief:
+Every slide's INTRO block — counter → eyebrow → headline → description — must pass the `DESIGN.legacy-update7.md §16.4` pre-flight before you ship. The rules that matter when translating a brief:
 
 ### 11.1 Eyebrow cap (≤ 3 words / ≤ 20 chars)
 
@@ -685,7 +685,7 @@ Count `dan / atau / tapi / kalau / karena / soalnya / makanya`. **Two = split.**
 
 ## 12 · Single-mockup fills the full width  ★ Update 6
 
-> `DESIGN.md §17` is the source of truth. In practice, when you're placing a mockup from a brief:
+> `DESIGN.legacy-update7.md §17` is the source of truth (full-width mockup sizing; in v1.0 see `DESIGN.md` §5 and §10). In practice, when you're placing a mockup from a brief:
 
 | Brief describes… | Layout | Component |
 |---|---|---|
@@ -700,7 +700,7 @@ A single `ImagePlate` alone in `.diag-wrap` MUST omit `ratio` — the plate fill
 
 ## 13 · Extended mockup catalog  ★ Update 6
 
-> `DESIGN.md §18` is the source of truth. Cheat-sheet for briefs:
+> `DESIGN.legacy-update7.md §18` is the source of truth (extended mockup catalog; in v1.0 see the `DESIGN.md` §5 components + §10 layout library). Cheat-sheet for briefs:
 
 | Brief hints at… | Reach for |
 |---|---|
@@ -734,4 +734,4 @@ Extra brief subheadings for these roles (used inside a slide already using one o
 
 ---
 
-*Update 6 addendum · 2026-07 · build-procedure companion for `DESIGN.md §16–§18`.*
+*Update 6 addendum · 2026-07 · build-procedure companion for `DESIGN.legacy-update7.md §16–§18` (archived numbering; v1.0 equivalents noted inline per section).*

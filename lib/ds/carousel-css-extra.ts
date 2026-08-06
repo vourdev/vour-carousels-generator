@@ -1,6 +1,42 @@
 // Additive carousel styles that must NOT live in the verbatim DS-bundle block
 // (lib/ds/carousel-css.ts is marked DO NOT EDIT). Appended after it in assemble.
 export const carouselExtraCss = String.raw`
+  /* ═══ Surface tokens ═══
+     A mockup must never name a literal ink/paper colour. Descendant CSS can be
+     re-scoped per surface, but an inline style="color:#1C0A05" or an SVG
+     fill="#1C0A05" cannot — which is why bigstat's unit and gitbranch's main
+     line rendered near-black on the near-black Ink canvas. Templates resolve
+     these tokens instead, so one declaration below flips the whole component.
+
+     Defaults are the Paper values, matching the DO-NOT-EDIT base palette; the
+     Ink block re-binds them. Anything reading a token is correct on BOTH
+     surfaces with no per-surface rule of its own. */
+  section {
+    --ms-fg: #1C0A05;
+    --ms-fg-muted: #3D2419;
+    --ms-fg-faint: #A48C7E;
+    --ms-panel: #FFFDF9;
+    --ms-panel-deep: #FBF6EF;
+    --ms-line: rgba(28, 10, 5, 0.14);
+    --ms-accent: #EE4B1A;
+    /* Callout inverts against its surface — that inversion IS the emphasis. */
+    --ms-invert-bg: #14110E;
+    --ms-invert-fg: #F7F1E8;
+    --ms-invert-chip: rgba(255, 255, 255, 0.08);
+  }
+  body section:not(.paper) {
+    --ms-fg: #F7F1E8;
+    --ms-fg-muted: rgba(247, 241, 232, 0.72);
+    --ms-fg-faint: rgba(247, 241, 232, 0.45);
+    --ms-panel: #1F1A15;
+    --ms-panel-deep: #14110E;
+    --ms-line: rgba(247, 241, 232, 0.16);
+    --ms-accent: #FF6A3D;
+    --ms-invert-bg: #FDFBF6;
+    --ms-invert-fg: #1C0A05;
+    --ms-invert-chip: rgba(28, 10, 5, 0.08);
+  }
+
   /* Text-only editorial cover: brand-row pinned top, "Geser" pinned bottom,
      lead block optically centered on the 1080×1350 canvas. */
   .cover-editorial .cover-lead {
@@ -20,29 +56,298 @@ export const carouselExtraCss = String.raw`
   }
   .series-stamp.active { color: #EE4B1A; }
 
-  /* ═══ v1.0 Full-Ink point surface (deck rhythm — DESIGN.md §13) ═══
-     Mirrors .slide.ink from SHOWCASE-docker.html, scoped to the generator's
-     ink section (section.ink). carousel-css.ts is DO-NOT-EDIT, so every on-dark
-     override lives here. */
-  section.ink {
+  /* Improvised editorial-Ink intro container & ghost spacing */
+  /* No height here: "section" already pins 1350px, and a "height:100%" on this
+     class outranks it and resolves against a body with no height, collapsing the
+     cover to its content. */
+  .cover-editorial-ink {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+  }
+  .ce-top {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    width: 100%;
+  }
+  .ce-lead {
+    margin-top: auto;
+    margin-bottom: auto;
+    display: flex;
+    flex-direction: column;
+    z-index: 10;
+  }
+  .ce-ghost {
+    position: absolute;
+    right: -80px;
+    bottom: 200px;
+    font-family: 'Sora', sans-serif;
+    font-weight: 800;
+    font-size: 640px;
+    line-height: 0.85;
+    color: #FF6A3D;
+    opacity: 0.06;
+    pointer-events: none;
+    user-select: none;
+    z-index: 1;
+  }
+
+  /* ═══ Deck-wide Dark Ink default (matches cover-slides.html) ═══
+     Ink is the DEFAULT surface for every slide. carousel-css.ts is DO-NOT-EDIT and
+     paints Paper via bare selectors (specificity 0-0-1 / 0-1-0). This file is
+     appended AFTER it in assemble.ts, so scoping under "body section" wins on
+     specificity + source order WITHOUT !important.
+
+     EVERY ink rule below is scoped ":not(.paper)". That is load-bearing, not
+     cosmetic: a bare "body section .node" also matches a section.paper, so a
+     cream slide was being handed dark-surface mockups (hub/concept/flow nodes,
+     datatable rules, steps, terminal, quote, browser, …) and the mockup no
+     longer matched the slide it sat on. Paper is now simply the ABSENCE of these
+     rules — it falls through to the DO-NOT-EDIT base, so there is no second copy
+     of the cream palette to keep in sync. When adding an ink rule here, scope it
+     the same way; do not add a paper counterpart. */
+  body section:not(.paper) {
+    position: relative;
     background: linear-gradient(rgba(247,241,232,0.03), transparent 200px), #14110E;
     color: #F7F1E8;
   }
-  section.ink .counter { color: rgba(247,241,232,0.45); }
-  section.ink .eyebrow { color: #FF6A3D; }
-  section.ink h1 { color: #F7F1E8; }
-  section.ink h1 .a { color: #FF6A3D; }
-  section.ink .lede,
-  section.ink .body-text { color: rgba(247,241,232,0.72); }
+  body section:not(.paper)::before {
+    content: ""; position: absolute; inset: 0; pointer-events: none; z-index: 0;
+    background:
+      radial-gradient(60% 42% at 100% 0%, rgba(238,75,26,0.16), transparent 60%),
+      radial-gradient(50% 40% at 0% 100%, rgba(238,75,26,0.08), transparent 65%);
+  }
+  body section > * { position: relative; z-index: 1; }
+
+  /* Text + default elements coloring on the dark canvas. */
+  body section:not(.paper) .counter { color: rgba(247,241,232,0.45); }
+  body section:not(.paper) .eyebrow { color: #FF6A3D; }
+  body section:not(.paper) h1 { color: #F7F1E8; }
+  body section:not(.paper) h1 .a { color: #FF6A3D; }
+  body section:not(.paper) .lede,
+  body section:not(.paper) .body-text { color: rgba(247,241,232,0.72); }
+  body section:not(.paper) .geser { color: rgba(247,241,232,0.45); }
+
   /* Info cards keep their LIGHT tone background + dark text on ink (they read as
      raised light tiles) — only soften the edge against the dark canvas. */
-  section.ink .card { box-shadow: 0 24px 60px rgba(0,0,0,0.35); }
-  /* Shared mockup elements that paint dark text straight on the slide bg must
-     flip to cream on ink (nodes/tiles keep their own light backgrounds). */
-  section.ink .catatan-body { color: #F7F1E8; }
-  section.ink .checklist li { color: #F7F1E8; }
-  section.ink .brand-handle { color: #F7F1E8; }
-  section.ink .geser { color: rgba(247,241,232,0.45); }
+  body section:not(.paper) .card { box-shadow: 0 24px 60px rgba(0,0,0,0.35); }
+  body section:not(.paper) .catatan-body { color: #F7F1E8; }
+  body section:not(.paper) .checklist li { color: #F7F1E8; }
+  body section:not(.paper) .brand-handle { color: #F7F1E8; }
+
+  /* Panels that are dark BY DESIGN (terminal, command palette) sit only 11 points
+     of luminance above the Ink canvas, so on Ink they read as a smudge rather
+     than a device. A hairline edge is what separates them from the background. */
+  body section:not(.paper) .cmdp {
+    border-color: rgba(247, 241, 232, 0.16);
+    box-shadow: 0 24px 60px rgba(0, 0, 0, 0.45);
+  }
+  body section:not(.paper) .cmdp .search { border-bottom-color: rgba(247, 241, 232, 0.14); }
+
+  /* Git branch SVG — bound to the surface tokens. CSS beats SVG presentation
+     attributes, so these win wherever the template still carries a literal. */
+  .git .g-main { stroke: var(--ms-fg); }
+  .git .g-dot { fill: var(--ms-fg); }
+  .git .g-label { fill: var(--ms-fg-muted); }
+  .git .g-feat { stroke: var(--ms-accent); }
+  .git .g-fdot { fill: var(--ms-accent); }
+  .git .g-flabel { fill: var(--ms-accent); }
+
+  /* ═══ Mockup fit — surface-independent, applies on Paper and Ink alike ═══ */
+
+  /* Flow chain: the row could not wrap and .node forbids wrapping its own text,
+     so a 4-5 step flow (labels up to 24 chars) overflowed the 920px content box.
+     justify-content:center then split the overflow, clipping the first and last
+     node against section{overflow:hidden}. Wrapping keeps every step on canvas. */
+  .diag-flow { flex-wrap: wrap; row-gap: 16px; max-width: 100%; }
+  .diag-flow .flow-step { display: inline-flex; align-items: center; gap: 20px; max-width: 100%; }
+  .diag-flow .node {
+    max-width: 100%;
+    white-space: normal;
+    text-align: center;
+    font-size: 24px;
+    padding: 14px 20px;
+  }
+
+  /* Recap checklist: 40px Sora blew past the canvas once a deck used 5-6 items,
+     and a single 48-char item was wider than the content box on its own. */
+  .checklist { width: 100%; }
+  .checklist li {
+    align-items: flex-start;
+    font-size: 32px;
+    line-height: 1.3;
+  }
+  .checklist .tick { font-size: 32px; line-height: 1.3; width: 36px; }
+
+  /* ═══ Mockup border/chrome overrides — INK SURFACE ONLY ═══ */
+  body section:not(.paper) .browser {
+    border-color: rgba(247, 241, 232, 0.16);
+    box-shadow: 0 24px 60px rgba(0, 0, 0, 0.4);
+  }
+  body section:not(.paper) .b-chrome {
+    background: #1F1A15;
+    border-bottom-color: rgba(247, 241, 232, 0.14);
+  }
+  body section:not(.paper) .b-url {
+    background: #14110E;
+    border-color: rgba(247, 241, 232, 0.16);
+    color: rgba(247, 241, 232, 0.72);
+  }
+  body section:not(.paper) .b-card {
+    background: #1F1A15;
+    border-color: rgba(247, 241, 232, 0.14);
+  }
+  body section:not(.paper) .b-card .t {
+    color: #F7F1E8;
+  }
+  body section:not(.paper) .b-card .s {
+    color: rgba(247, 241, 232, 0.45);
+  }
+
+  body section:not(.paper) .terminal {
+    border: 1.5px solid rgba(247, 241, 232, 0.16);
+    background: #1F1A15;
+    box-shadow: 0 24px 60px rgba(0, 0, 0, 0.4);
+  }
+  body section:not(.paper) .terminal-bar {
+    border-bottom: 1px solid rgba(247, 241, 232, 0.10);
+    padding-bottom: 12px;
+  }
+
+  body section:not(.paper) .prompt {
+    background: #1F1A15;
+    border-color: #FF6A3D;
+  }
+  body section:not(.paper) .prompt .lbl {
+    background: #14110E;
+    color: #FF6A3D;
+  }
+  body section:not(.paper) .prompt pre {
+    color: #F7F1E8;
+  }
+
+  body section:not(.paper) .tree {
+    background: #1F1A15;
+    border-color: rgba(247, 241, 232, 0.16);
+    color: rgba(247, 241, 232, 0.72);
+  }
+
+  body section:not(.paper) .db .table {
+    border-color: rgba(247, 241, 232, 0.16);
+    background: #1F1A15;
+  }
+  body section:not(.paper) .db .table .th {
+    background: #14110E;
+    color: #F7F1E8;
+  }
+  body section:not(.paper) .db .table .tr {
+    color: rgba(247, 241, 232, 0.72);
+    border-top-color: rgba(247, 241, 232, 0.10);
+  }
+  body section:not(.paper) .db .table .tr .ty {
+    color: rgba(247, 241, 232, 0.45);
+  }
+
+  body section:not(.paper) .node {
+    background: #1F1A15;
+    border-color: rgba(247, 241, 232, 0.16);
+    color: #F7F1E8;
+  }
+  body section:not(.paper) .node.filled {
+    background: #EE4B1A;
+    border-color: #EE4B1A;
+    color: #fff;
+  }
+
+  body section:not(.paper) .step {
+    background: #1F1A15;
+    border: 1.5px solid rgba(247, 241, 232, 0.14);
+  }
+  body section:not(.paper) .step-title {
+    color: #F7F1E8;
+  }
+  body section:not(.paper) .step-body {
+    color: rgba(247, 241, 232, 0.72);
+  }
+
+  body section:not(.paper) .timeline .tl-card.old {
+    background: #1F1A15;
+    border: 1.5px solid rgba(247, 241, 232, 0.10);
+  }
+  body section:not(.paper) .timeline .tl-card.old .d {
+    color: rgba(247, 241, 232, 0.45);
+  }
+  body section:not(.paper) .timeline .tl-card.old .h {
+    color: #F7F1E8;
+  }
+  body section:not(.paper) .timeline .tl-card.old .t {
+    color: rgba(247, 241, 232, 0.72);
+  }
+
+  body section:not(.paper) .dtable {
+    border-top-color: rgba(247, 241, 232, 0.16);
+  }
+  body section:not(.paper) .dt-row {
+    border-top-color: rgba(247, 241, 232, 0.10);
+  }
+  body section:not(.paper) .dt-row .c {
+    color: rgba(247, 241, 232, 0.72);
+  }
+  body section:not(.paper) .dt-row .c.b {
+    color: #F7F1E8;
+  }
+
+  body section:not(.paper) .clist .row {
+    border-top-color: rgba(247, 241, 232, 0.10);
+  }
+  body section:not(.paper) .clist .desc {
+    color: rgba(247, 241, 232, 0.72);
+  }
+
+  body section:not(.paper) .highlight {
+    background: #1F1A15;
+    border: 1.5px solid rgba(247, 241, 232, 0.14);
+  }
+  body section:not(.paper) .highlight .sub {
+    color: rgba(247, 241, 232, 0.72);
+  }
+
+  body section:not(.paper) .diag-bars .panel {
+    background: #1F1A15;
+    border-color: rgba(247, 241, 232, 0.10);
+  }
+  body section:not(.paper) .diag-bars .panel.loser {
+    border-color: rgba(193, 59, 26, 0.3);
+  }
+  body section:not(.paper) .diag-bars .panel .foot {
+    color: #FF6A3D;
+  }
+  body section:not(.paper) .diag-bars .panel.loser .foot {
+    color: #C13B1A;
+  }
+
+  body section:not(.paper) .quote-inset {
+    background: #1F1A15;
+    border-left-color: #EE4B1A;
+  }
+  body section:not(.paper) .qi-body {
+    color: #F7F1E8;
+  }
+
+  body section:not(.paper) .mock {
+    background: #1F1A15;
+    border-color: rgba(247, 241, 232, 0.16);
+  }
+  body section:not(.paper) .mock-head {
+    color: rgba(247, 241, 232, 0.45);
+    border-bottom-color: rgba(247, 241, 232, 0.14);
+  }
+  body section:not(.paper) .mock-field {
+    background: #14110E;
+    border-color: rgba(247, 241, 232, 0.16);
+    color: #F7F1E8;
+  }
 
   /* ═══ Cover Ink surface — heavier than body Ink: adds the Ember corner halo ═══ */
   section.cover-ink { position: relative; }
@@ -53,8 +358,53 @@ export const carouselExtraCss = String.raw`
       radial-gradient(50% 40% at 0% 100%, rgba(238,75,26,0.08), transparent 65%);
   }
   section.cover-ink > * { position: relative; z-index: 1; }
+  /* …except the ghost numeral, which must stay out of flow. "section.cover-ink > *"
+     (0-1-1) outranks ".ce-ghost" (0-1-0), so without this the numeral is laid out
+     as a relative block at the top of the column and eats the cover's free space. */
+  section.cover-ink > .ce-ghost { position: absolute; }
   /* Cover anchor wrapper — centers the single visual anchor in the free space */
   .anchor-wrap { flex: 1; min-height: 0; display: flex; align-items: center; justify-content: center; }
+  .anchor-wrap > * { max-width: 100%; max-height: 100%; }
+
+  /* Scope div for a custom mockup/hook. It exists only to give the fragment's CSS
+     a scope root, so it must not behave like a box: it fills its slot and passes
+     the centering through, otherwise it shrink-wraps as a flex item and a
+     width:100% inside the fragment resolves against the fragment's own content. */
+  .diag-wrap > .cm,
+  .anchor-wrap > .cm {
+    width: 100%; min-height: 0; max-height: 100%;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .diag-wrap > .cm > *,
+  .anchor-wrap > .cm > * { max-width: 100%; }
+
+  /* Cover CTA follows the cover-slides.html prototype: the last FLOW child, not an
+     absolutely-positioned overlay. carousel-css.ts (DO-NOT-EDIT) pins .geser with
+     position:absolute, which takes it out of the column — .anchor-wrap{flex:1} then
+     expands through the CTA band and the anchor sits on top of "Geser". Going back
+     to static makes the CTA reserve its own band, and its left edge falls on the
+     content box (the same 80px grid as the eyebrow and headline) instead of being
+     measured separately. */
+  section.cover-ink .geser {
+    position: static;
+    margin-top: 32px;
+    /* The cover CTA is the one instruction on the slide — it carries the accent,
+       not the muted body tint the inner slides use. */
+    color: #FF6A3D;
+    font-weight: 600;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    display: inline-flex;
+    align-items: center;
+    gap: 12px;
+  }
+  /* Ember rule under the CTA so it reads as a control, not stray copy. */
+  section.cover-ink .geser::before {
+    content: "";
+    width: 56px; height: 2px;
+    background: #FF6A3D;
+    border-radius: 1px;
+  }
 
   /* Cover anchor — ID badge (NOT .badge; that is the step-number badge) */
   .cover-badge { position: relative; width: 560px; padding: 48px 44px 44px; border-radius: 26px;

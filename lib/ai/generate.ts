@@ -86,18 +86,23 @@ export async function generateSlidePlan(brief: string, model: LanguageModel): Pr
   });
 }
 
+/** Prior revision turns on the same draft, oldest first. See lib/memory/repo.ts. */
+export type RevisionHistory = { request: string; outcome?: string | null }[];
+
 export async function reviseSlidePlan(
   plan: SlidePlan,
   message: string,
-  model: LanguageModel
+  model: LanguageModel,
+  history: RevisionHistory = []
 ): Promise<SlidePlan> {
+  const prompt = reviseUserPrompt(JSON.stringify(plan), message, history);
   return withRetry(async () => {
     try {
       const { object } = await generateObject({
         model,
         schema: slidePlanSchema,
         system: reviseSystem,
-        prompt: reviseUserPrompt(JSON.stringify(plan), message),
+        prompt,
       });
       return object;
     } catch (err: any) {
@@ -105,7 +110,7 @@ export async function reviseSlidePlan(
       const { text } = await generateText({
         model,
         system: reviseSystem + "\nIMPORTANT: Return ONLY valid JSON matching the schema. No markdown codeblocks or extra text.",
-        prompt: reviseUserPrompt(JSON.stringify(plan), message),
+        prompt,
       });
       const parsed = extractAndParseJson(text);
       return repairSlidePlan(parsed);

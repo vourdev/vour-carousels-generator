@@ -39,11 +39,19 @@ topic → MAKING_BRIEFS.md (Strategist) → Creative Brief
 - **15 mockup types** in the generator: `card · terminal · comparison · steps · callout · bigstat · flow · concept · hub · checklist · browser · quote · datatable · commandlist · timeline`.
 - Reference decks (verified, on-brand): `design-system/SHOWCASE-docker.html` (8-slide narrative), `design-system/SHOWCASE-mockups.html` (mockup gallery). **Use these as the visual + markup source of truth for remaining mockups.**
 
+**Update 2026-08-04 (b):**
+- **TASK 1 DONE** — 5 more mockups shipped (`promptcard · foldertree · commandpalette · database · gitbranch`). Generator now **20 mockup types**. All render-verified via `assembleCarousel` + screenshot.
+- **TASK 2 DONE** — full-Ink point surface shipped (`surface: "paper"|"ink"` on point slides; `section.ink` overrides in `carousel-css-extra.ts`). Verified: a `concept` on an ink slide renders dark bg + cream text + ember accent.
+- **Visual Director policy wired** into `lib/ai/prompts.ts` — `MOCKUP_VARIETY_RULE` rewritten with the 7 content categories → real 20-type map, anti-repetition, dark-mockup budget (terminal+commandpalette ≤1/5, browser ≤1/deck), surface rhythm. Also fixed a latent bug: the prompt catalog (brief + plan stages) previously advertised **legacy mockup names the renderer can't draw** (`ImagePlate/SplitPanel/MediaGrid/NumeralHero/StampBadge/CatalogList/PullQuote/StackedContrast/AnnotatedIllustration/HistoryTimeline`) → LLM emitted invalid types → dropped to plain cards ("biasa"). All references replaced with the real 20 types. The 5 Stage-B types (browser/quote/datatable/commandlist/timeline) were also missing from the plan-stage numbered list — now added (16–20).
+
 ---
 
 ## 3. TODO — prioritized
 
-### TASK 1 — Port remaining mockup types (HIGH, additive)
+### TASK 1 — Port remaining mockup types ✅ DONE (2026-08-04)
+
+> Shipped: promptcard, foldertree, commandpalette, database, gitbranch. Kept below for the recipe (reuse when adding future types).
+
 
 Add 5 more mockup roles to the generator so decks have more visual variety. Markup + CSS already exist and are verified in **`design-system/SHOWCASE-mockups.html`** — port them, don't reinvent.
 
@@ -75,7 +83,10 @@ Notes:
 - Renders via `assembleCarousel` at 1080×1350 with no overlap, inside the 80/96/80 padding box (see verification recipe §4).
 - An intentionally-broken instance (e.g. array below min, over-long string) does **not** crash generation — `repair.ts` drops it to an auto-card. Add a case to the repair test (§4) proving it.
 
-### TASK 2 — Full-Ink surface slides (MEDIUM, variety)
+### TASK 2 — Full-Ink surface slides ✅ DONE (2026-08-04)
+
+> Shipped: `surface: "paper"|"ink"` on point slides, `section.ink` overrides in `carousel-css-extra.ts`. Spec kept below for reference.
+
 
 Today only `terminal`/`callout`/`commandpalette` are dark *cards* on a Paper slide. The reference deck (`SHOWCASE-docker.html`) alternates **entire Ink slides** for rhythm. To support that:
 
@@ -96,6 +107,17 @@ Re-render or find-replace to v1.0 (`#E94B19`→`#EE4B1A`, `#1F0904`→`#1C0A05`/
 ### TASK 4 — Reconcile `MAKING_CAROUSELS.md` section refs (LOW, docs)
 
 Its body still cites legacy `§13–§19` numbering (the header already points readers to `DESIGN.legacy-update7.md` for those). Either renumber to v1.0 `DESIGN.md` sections or leave the pointer. Component vocabulary is unchanged — only numbering drifted.
+
+### TASK 5 — Visual Director capability gaps (NEW, from the Visual Director spec)
+
+The Visual Director policy is wired into the prompts, but four of its requirements have **no generator capability yet** — the prompt currently tells the LLM to pick the closest available mockup instead of faking them. Build these to fully satisfy the spec:
+
+- **`illustration` mockup (ABSTRACT / analogy)** — a non-technical custom illustration for abstract concepts (the spec wants analogy art, explicitly *not* a browser/terminal). Hard part: illustration is bespoke. Realistic scope: a small library of **parametric line-art SVG scenes** (e.g. lock, door, pipe, scale/timbangan, box) with 1–3 labeled callouts, styled per §9 of `DESIGN.md` (2px ink stroke, one ember fill). Schema: `{ type:"illustration", scene: enum, labels: [...] }`.
+- **`imageplate` mockup (EVIDENCE / real screenshot)** — let a point slide carry a user-supplied screenshot. `schema.ts` already has a reserved `coverHookImage` (cover only); extend to a point mockup `{ type:"imageplate", src, frame:"browser"|"phone"|"plain", caption? }` and wire an upload in `app/create/wizard.tsx`. When no image is supplied, the LLM must emit a `[BUTUH SCREENSHOT ASLI: <desc>]` marker (spec STEP 2) rather than a placeholder.
+- **Human element** — spec wants a "manusiawi" element (hand/person/character) every 3–4 slides. No asset class exists. Options: a small set of line-art character/hand SVGs, or an illustration-scene variant. Decide art direction with design before building.
+- **Per-slide background variety** — spec wants `background_style` to differ slide-to-slide (gradient / dot pattern / blueprint / texture). Generator currently only has `paper` + `ink`. Add a `background` enum on slides (e.g. `paper | paper-dot | blueprint | ink`) with CSS in `carousel-css-extra.ts` (blueprint grid already exists as a token in `design-system/tokens/backgrounds.css` — mirror it). Keep it subtle (halo/paper stays the brand default; DESIGN.md §8 forbids mesh/noise-over-text).
+
+Until built, these stay documented as "NOT AVAILABLE" in `MOCKUP_VARIETY_RULE` so the LLM degrades gracefully instead of emitting broken mockups.
 
 ---
 

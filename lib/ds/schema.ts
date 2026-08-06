@@ -204,6 +204,12 @@ const mockupGitBranch = z.object({
   mergeLabel: z.string().max(12).default("merge"),
 });
 
+const mockupCustom = z.object({
+  type: z.literal("custom"),
+  html: z.string().max(8000),
+  css: z.string().max(8000).optional(),
+});
+
 export const mockupSchema = z.discriminatedUnion("type", [
   mockupCard,
   mockupTerminal,
@@ -225,6 +231,7 @@ export const mockupSchema = z.discriminatedUnion("type", [
   mockupCommandPalette,
   mockupDatabase,
   mockupGitBranch,
+  mockupCustom,
 ]);
 
 export type Mockup = z.infer<typeof mockupSchema>;
@@ -257,6 +264,7 @@ const coverHookImage = z.object({
 const coverHookCustom = z.object({
   kind: z.literal("custom"),
   html: z.string().max(4000),
+  css: z.string().max(4000).optional(),
 });
 
 /** Cover anchor — an ID badge (contrarian "X is not a job title" angle) */
@@ -305,6 +313,8 @@ const coverSlide = z.object({
   headline: z.string().max(90),
   accentWord: z.string().optional(),
   lede: z.string().max(140).optional(),
+  stamp: z.string().optional(),
+  ghostNumeral: z.string().optional(),
   hook: coverHookSchema.optional(),
 });
 
@@ -336,6 +346,7 @@ const outroSlide = z.object({
   headline: z.string().max(90),
   accentWord: z.string().optional(),
   body: z.string().max(160).optional(),
+  surface: z.enum(["paper", "ink"]).optional(),
   cta: z.object({
     strong: z.string().max(60),
     sub: z.string().max(90).optional(),

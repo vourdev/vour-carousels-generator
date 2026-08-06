@@ -11,7 +11,9 @@ export function assembleCarousel(plan: SlidePlan): string {
     null,
     2
   );
-  const body = slides.map(renderSlide).join("\n");
+  // Index is passed explicitly: renderSlide uses it to scope any custom CSS to
+  // its own slide, so one slide's <style> cannot restyle the rest of the deck.
+  const body = slides.map((slide, i) => renderSlide(slide, i)).join("\n");
   return `<!DOCTYPE html>
 <html lang="id">
 <head>
