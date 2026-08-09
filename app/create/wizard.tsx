@@ -27,7 +27,7 @@ import {
   markTopicPublishedAction,
 } from "@/app/topics/actions";
 import type { Topic } from "@/lib/topics/bank";
-import { Sparkles, Brain, Zap, RotateCcw, Check, Send, Eye, FileText, LayoutGrid, User, Upload, Clock, CheckCircle2, XCircle, AlertCircle, Calendar, Globe, ArrowLeft, Search, ChevronDown, SlidersHorizontal, Square, MessageSquare, PanelRightClose, PanelRightOpen, PanelLeftClose, PanelLeftOpen, PanelLeft } from "lucide-react";
+import { Sparkles, Brain, Zap, RotateCcw, Check, Send, Eye, FileText, LayoutGrid, User, Upload, Clock, CheckCircle2, XCircle, AlertCircle, Calendar, Globe, ArrowLeft, Search, ChevronDown, SlidersHorizontal, Square, MessageSquare, PanelRightClose, PanelRightOpen, PanelLeftClose, PanelLeftOpen, PanelLeft, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 
 interface Message {
@@ -1458,25 +1458,6 @@ export function Wizard({
         addMessage("ai", `Gagal merender slide: ${summarizeError(msg)}`);
       } finally {
         setLoadingJob(null);
-      }
-    });
-  }
-
-  function handleHumanVoicePolish() {
-    if (!brief.trim() || !model) return;
-    addMessage("user", "Jalankan Human Voice Editor (Anti-Agentic Copywriting pass)...");
-    start(async () => {
-      try {
-        addMessage("ai", "Memoles brief dengan Human Voice Editor...");
-        const polished = await humanVoiceEditorAction(brief, model as ModelId);
-        setBrief(polished);
-        setFinalBrief(polished);
-        toast.success("Brief berhasil dipoles dengan Human Voice Editor!");
-        addMessage("ai", "Brief telah diperbarui tanpa pola agentic/AI generik. Silakan periksa hasilnya.");
-      } catch (e) {
-        const msg = e instanceof Error ? e.message : "failed";
-        toast.error(msg);
-        addMessage("ai", `Gagal memoles brief: ${summarizeError(msg)}`);
       }
     });
   }
