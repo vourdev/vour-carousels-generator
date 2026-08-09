@@ -192,8 +192,8 @@ describe("concept mockup", () => {
     });
     expect(m.type).toBe("concept");
   });
-  it("rejects a concept with 2 children (min 3)", () => {
-    expect(() => mockupSchema.parse({ type: "concept", parent: "x", children: ["a", "b"] })).toThrow();
+  it("rejects a concept with 1 child (min 2)", () => {
+    expect(() => mockupSchema.parse({ type: "concept", parent: "x", children: ["a"] })).toThrow();
   });
 });
 

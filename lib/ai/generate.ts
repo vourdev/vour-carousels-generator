@@ -8,6 +8,8 @@ import {
   planUserPrompt,
   reviseSystem,
   reviseUserPrompt,
+  humanVoiceEditorSystem,
+  humanVoiceEditorUserPrompt,
 } from "@/lib/ai/prompts";
 
 const delay = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
@@ -115,5 +117,16 @@ export async function reviseSlidePlan(
       const parsed = extractAndParseJson(text);
       return repairSlidePlan(parsed);
     }
+  });
+}
+
+export async function polishBriefVoice(brief: string, model: LanguageModel): Promise<string> {
+  return withRetry(async () => {
+    const { text } = await generateText({
+      model,
+      system: humanVoiceEditorSystem,
+      prompt: humanVoiceEditorUserPrompt(brief),
+    });
+    return text;
   });
 }

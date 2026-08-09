@@ -25,10 +25,10 @@ describe("availableModels", () => {
   it("requires all OMNIROUTE vars for omniroute", () => {
     expect(availableModels({ ...base, OMNIROUTE_API_KEY: "o" })).toEqual([]);
     const fullModel = { ...base, OMNIROUTE_API_KEY: "k", OMNIROUTE_BASE_URL: "u", OMNIROUTE_MODEL: "m" };
-    expect(availableModels(fullModel)).toEqual(["omniroute"]);
+    expect(availableModels(fullModel)).toEqual(["vour-high", "vour-lite", "omniroute"]);
 
     const fullCombo = { ...base, OMNIROUTE_API_KEY: "k", OMNIROUTE_BASE_URL: "u", OMNIROUTE_COMBO: "my-combo" };
-    expect(availableModels(fullCombo)).toEqual(["omniroute"]);
+    expect(availableModels(fullCombo)).toEqual(["vour-high", "vour-lite", "omniroute"]);
   });
 });
 

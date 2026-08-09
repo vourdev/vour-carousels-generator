@@ -6,6 +6,8 @@ import {
   planUserPrompt,
   reviseSystem,
   reviseUserPrompt,
+  humanVoiceEditorSystem,
+  humanVoiceEditorUserPrompt,
 } from "@/lib/ai/prompts";
 
 describe("prompt builders", () => {
@@ -93,8 +95,8 @@ describe("planSystem", () => {
   });
   it("makes mockup choice context-driven and caps terminal at once per deck", () => {
     expect(planSystem).toMatch(/CONTEXT-DRIVEN MOCKUP CHOICE/);
-    expect(planSystem).toMatch(/ONLY when the slide shows real code/);
-    expect(planSystem).toMatch(/AT MOST ONCE per deck/);
+    expect(planSystem).toMatch(/code\/UI is the point/i);
+    expect(planSystem).toMatch(/MAX 1 per 5 slides|AT MOST ONCE per deck/i);
   });
 });
 
@@ -108,5 +110,23 @@ describe("reviseSystem", () => {
   it("covers editing the hook and the cta", () => {
     expect(reviseSystem).toMatch(/hook/);
     expect(reviseSystem).toMatch(/cta/);
+  });
+});
+
+describe("humanVoiceEditorSystem", () => {
+  it("encodes anti-agentic rules and voice signature", () => {
+    expect(humanVoiceEditorSystem).toContain("PEMBUKA GENERIK");
+    expect(humanVoiceEditorSystem).toContain("HEDGING BERLEBIHAN");
+    expect(humanVoiceEditorSystem).toContain("TRANSISI FORMULAIK");
+    expect(humanVoiceEditorSystem).toContain("PENJELASAN BERLEBIHAN");
+    expect(humanVoiceEditorSystem).toContain("RANGKUMAN PENUTUP KLISE");
+    expect(humanVoiceEditorSystem).toContain("KESEIMBANGAN PALSU");
+    expect(humanVoiceEditorSystem).toContain("@vourdev");
+  });
+
+  it("builds user prompt with brief payload", () => {
+    const prompt = humanVoiceEditorUserPrompt("# Draft Brief");
+    expect(prompt).toContain("# Draft Brief");
+    expect(prompt).toContain("Perform the Human Voice Editor pass now");
   });
 });

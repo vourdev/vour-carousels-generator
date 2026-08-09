@@ -18,7 +18,7 @@ import { namedBlobs, downloadNamedBlobs } from "@/lib/export/download";
 import { captureCarousel } from "@/lib/export/capture";
 import type { ModelId } from "@/lib/ai/registry";
 import type { SlidePlan } from "@/lib/ds/schema";
-import { planAction, reviseAction, reviseBriefAction, clearRevisionMemoryAction, uploadSingleImageAction, publishAction, getPublishingConfigAction } from "./actions";
+import { planAction, reviseAction, reviseBriefAction, humanVoiceEditorAction, clearRevisionMemoryAction, uploadSingleImageAction, publishAction, getPublishingConfigAction } from "./actions";
 import { saveExportedCarouselAction, markCarouselStatusAction, deleteCarouselAction } from "@/app/history/actions";
 import {
   expandTopicBriefAction,
@@ -27,7 +27,7 @@ import {
   markTopicPublishedAction,
 } from "@/app/topics/actions";
 import type { Topic } from "@/lib/topics/bank";
-import { Sparkles, Brain, Zap, RotateCcw, Check, Send, Eye, FileText, LayoutGrid, User, Upload, Clock, CheckCircle2, XCircle, AlertCircle, Calendar, Globe, ArrowLeft, Search, ChevronDown, SlidersHorizontal, Square } from "lucide-react";
+import { Sparkles, Brain, Zap, RotateCcw, Check, Send, Eye, FileText, LayoutGrid, User, Upload, Clock, CheckCircle2, XCircle, AlertCircle, Calendar, Globe, ArrowLeft, Search, ChevronDown, SlidersHorizontal, Square, MessageSquare, PanelRightClose, PanelRightOpen, PanelLeftClose, PanelLeftOpen, PanelLeft } from "lucide-react";
 import { toast } from "sonner";
 
 interface Message {
@@ -36,48 +36,52 @@ interface Message {
   timestamp: string;
 }
 
+const VourLogoIcon = () => (
+  <img src="/vourdev-logo.jpeg" alt="Vour" className="size-4 rounded-full object-cover shrink-0 border border-hairline" />
+);
+
 const modelDetails: Record<string, { label: string; vendor: string; description: string; icon: React.ReactNode }> = {
   gemini: {
     label: "Gemini Flash",
     vendor: "Google AI",
     description: "Model cepat & cerdas dari Google (Gratis)",
-    icon: <Sparkles className="size-4 text-indigo-500 shrink-0" />,
+    icon: <VourLogoIcon />,
   },
   deepseek: {
     label: "DeepSeek Chat",
     vendor: "DeepSeek AI",
     description: "Reasoning & content model dari DeepSeek",
-    icon: <Brain className="size-4 text-cyan-500 shrink-0" />,
+    icon: <VourLogoIcon />,
   },
   mimo: {
     label: "MIMO",
     vendor: "Xiaomi AI",
     description: "OpenAI-compatible inference engine",
-    icon: <Zap className="size-4 text-amber-500 shrink-0" />,
+    icon: <VourLogoIcon />,
   },
   openrouter: {
     label: "OpenRouter",
     vendor: "OpenRouter",
     description: "Multi-vendor AI model gateway",
-    icon: <Globe className="size-4 text-rose-500 shrink-0" />,
+    icon: <VourLogoIcon />,
   },
   "vour-high": {
     label: "Vour High",
-    vendor: "OmniRoute",
+    vendor: "Vour Model",
     description: "High-quality model - Best results",
-    icon: <Sparkles className="size-4 text-purple-500 shrink-0" />,
+    icon: <VourLogoIcon />,
   },
   "vour-lite": {
     label: "Vour Lite",
-    vendor: "OmniRoute",
+    vendor: "Vour Model",
     description: "Fast learning model - Quick generation",
-    icon: <Zap className="size-4 text-emerald-500 shrink-0" />,
+    icon: <VourLogoIcon />,
   },
   omniroute: {
     label: "Vour Model",
     vendor: "VourDev",
     description: "Model AI resmi @vourdev",
-    icon: <img src="/vourdev-logo.jpeg" alt="Vour" className="size-4 rounded-full object-cover shrink-0" />,
+    icon: <VourLogoIcon />,
   },
 };
 
@@ -138,6 +142,50 @@ function compressImageBlob(blob: Blob, maxWidth = 360): Promise<string> {
       
       ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
       const dataUrl = canvas.toDataURL("image/jpeg", 0.7);
+      resolve(dataUrl);
+    };
+    img.onerror = (e) => reject(e);
+  });
+}
+
+function processUploadedScreenshot(file: File, cropRatio = "4:5"): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    img.src = URL.createObjectURL(file);
+    img.onload = () => {
+      URL.revokeObjectURL(img.src);
+      const canvas = document.createElement("canvas");
+      const ctx = canvas.getContext("2d");
+      if (!ctx) {
+        reject(new Error("canvas context not available"));
+        return;
+      }
+
+      let targetRatio = 4 / 5;
+      if (cropRatio === "1:1") targetRatio = 1;
+      else if (cropRatio === "16:9") targetRatio = 16 / 9;
+
+      let srcWidth = img.width;
+      let srcHeight = img.height;
+      let srcX = 0;
+      let srcY = 0;
+
+      const currentRatio = srcWidth / srcHeight;
+      if (currentRatio > targetRatio) {
+        srcWidth = srcHeight * targetRatio;
+        srcX = (img.width - srcWidth) / 2;
+      } else {
+        srcHeight = srcWidth / targetRatio;
+        srcY = (img.height - srcHeight) / 2;
+      }
+
+      const outWidth = 1080;
+      const outHeight = Math.round(outWidth / targetRatio);
+      canvas.width = outWidth;
+      canvas.height = outHeight;
+
+      ctx.drawImage(img, srcX, srcY, srcWidth, srcHeight, 0, 0, outWidth, outHeight);
+      const dataUrl = canvas.toDataURL("image/jpeg", 0.8);
       resolve(dataUrl);
     };
     img.onerror = (e) => reject(e);
@@ -274,7 +322,7 @@ export function Wizard({
   const [messages, setMessages] = useState<Message[]>([
     {
       sender: "ai",
-      text: "Halo! Saya asisten pembuat carousel @vourdev. Silakan pilih AI provider di atas, lalu ketik ide konten Anda di kolom chat bawah untuk memulai.",
+      text: "Halo! Sesi pembuatan carousel @vourdev aktif. Ketik ide topik atau instruksi revisi di sini — seluruh sesi percakapan akan terjaga utuh.",
       timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
     }
   ]);
@@ -319,6 +367,11 @@ export function Wizard({
   const [bankTopics, setBankTopics] = useState<Topic[]>([]);
   const [topicPopoverOpen, setTopicPopoverOpen] = useState(false);
   const [topicSearch, setTopicSearch] = useState("");
+  const [modelPopoverOpen, setModelPopoverOpen] = useState(false);
+  const [modelSearch, setModelSearch] = useState("");
+  const [showPendingModal, setShowPendingModal] = useState(false);
+  const [showSidebar, setShowSidebar] = useState<boolean>(true);
+  const [chatInput, setChatInput] = useState<string>("");
   const initialTopicApplied = useRef(false);
 
   // Step-1 brief generation runs outside useTransition so it can be cancelled:
@@ -352,6 +405,48 @@ export function Wizard({
     }
   }, [promptHistory]);
 
+  // Load saved session draft from local storage
+  useEffect(() => {
+    const savedDraft = localStorage.getItem("vour_carousel_draft");
+    if (savedDraft) {
+      try {
+        const parsed = JSON.parse(savedDraft);
+        if (parsed.step) setStep(parsed.step);
+        if (parsed.brief) setBrief(parsed.brief);
+        if (parsed.finalBrief) setFinalBrief(parsed.finalBrief);
+        if (parsed.plan) setPlan(parsed.plan);
+        if (parsed.approved !== undefined) setApproved(parsed.approved);
+        if (parsed.draftId) setDraftId(parsed.draftId);
+        if (parsed.messages && Array.isArray(parsed.messages)) setMessages(parsed.messages);
+        if (parsed.editableTitle) setEditableTitle(parsed.editableTitle);
+        if (parsed.editableCaption) setEditableCaption(parsed.editableCaption);
+        if (parsed.topicId) setTopicId(parsed.topicId);
+        if (parsed.topicTitle) setTopicTitle(parsed.topicTitle);
+      } catch (e) {
+        console.error("Failed to parse saved carousel draft", e);
+      }
+    }
+  }, []);
+
+  // Save current session draft to local storage
+  useEffect(() => {
+    if (!brief && !plan && messages.length <= 1) return;
+    const draftPayload = {
+      step,
+      brief,
+      finalBrief,
+      plan,
+      approved,
+      draftId,
+      messages,
+      editableTitle,
+      editableCaption,
+      topicId,
+      topicTitle,
+    };
+    localStorage.setItem("vour_carousel_draft", JSON.stringify(draftPayload));
+  }, [step, brief, finalBrief, plan, approved, draftId, messages, editableTitle, editableCaption, topicId, topicTitle]);
+
   function pushPromptToHistory(text: string) {
     const trimmed = text.trim();
     if (!trimmed) return;
@@ -364,12 +459,12 @@ export function Wizard({
   }
 
   function handlePromptKeyDown(
-    e: React.KeyboardEvent<HTMLInputElement>,
+    e: React.KeyboardEvent<HTMLInputElement | HTMLTextAreaElement>,
     currentValue: string,
     setValue: (val: string) => void,
     onSubmit: () => void
   ) {
-    if (e.key === "Enter") {
+    if (e.key === "Enter" && !e.shiftKey) {
       e.preventDefault();
       if (currentValue.trim()) {
         pushPromptToHistory(currentValue);
@@ -408,6 +503,65 @@ export function Wizard({
         setValue(draftInput);
       }
       return;
+    }
+  }
+
+  function handleUnifiedSubmit(overrideText?: string) {
+    const textToSubmit = (overrideText ?? chatInput).trim();
+    if (!textToSubmit || !model) {
+      if (!model) toast.error("Pilih model AI dulu");
+      return;
+    }
+
+    pushPromptToHistory(textToSubmit);
+    addMessage("user", textToSubmit);
+    setChatInput("");
+    setIdea("");
+
+    if (uploadedHtml) {
+      toast.error("Revisi AI tidak tersedia untuk HTML upload — langsung export.");
+      return;
+    }
+
+    if (step === 1 || !brief.trim()) {
+      runBriefGeneration(
+        (signal) => fetchBrief(textToSubmit, signal),
+        "Gagal memproses"
+      );
+    } else if (step === 2) {
+      start(async () => {
+        try {
+          addMessage("ai", "Merevisi brief outline berdasarkan instruksi Anda...");
+          const res = await reviseBriefAction(brief, textToSubmit, model as ModelId, draftId);
+          setFinalBrief(res);
+          setBrief(res);
+          addMessage("ai", "Brief outline berhasil diperbarui dengan konteks penuh.");
+        } catch (e) {
+          const msg = e instanceof Error ? e.message : "failed";
+          toast.error(msg);
+          addMessage("ai", `Revisi brief gagal: ${summarizeError(msg)}`);
+        }
+      });
+    } else if (step === 3 || step === 4) {
+      start(async () => {
+        try {
+          addMessage("ai", "Merevisi rancangan slide berdasarkan instruksi Anda...");
+          if (step === 4) {
+            setStep(3);
+            setActiveTab("preview");
+          }
+          const updatedPlan = await reviseAction(plan!, textToSubmit, model as ModelId, draftId);
+          setPlan(updatedPlan);
+          setApproved(false);
+          addMessage("ai", "Rancangan slide berhasil disesuaikan. Silakan cek preview terbaru.");
+        } catch (e) {
+          const msg = e instanceof Error ? e.message : "failed";
+          toast.error(msg);
+          addMessage("ai", `Revisi slide gagal: ${summarizeError(msg)}`);
+        }
+      });
+    } else if (step === 5) {
+      addMessage("ai", "Sesi aktif: Penyesuaian metadata/caption dapat dilakukan langsung di form bawah.");
     }
   }
 
@@ -606,8 +760,59 @@ export function Wizard({
     }
   };
 
-  const handleExport = async () => {
+  const handleUpdateScreenshot = (slideIndex: number, dataUrl: string) => {
+    if (!plan) return;
+    const newSlides = [...plan.slides];
+    const slide = newSlides[slideIndex];
+    if (slide && slide.role === "point" && slide.mockup?.type === "screenshot") {
+      newSlides[slideIndex] = {
+        ...slide,
+        mockup: {
+          ...slide.mockup,
+          screenshotImage: {
+            dataUrl,
+            uploadedAt: new Date().toISOString(),
+          },
+          evidenceStatus: "captured",
+        },
+      };
+      setPlan({ ...plan, slides: newSlides });
+    }
+  };
+
+  const handleContinueWithoutScreenshots = () => {
+    setShowPendingModal(false);
+    if (plan) {
+      const updatedSlides = plan.slides.map((s) => {
+        if (s.role === "point" && s.mockup?.type === "screenshot" && s.mockup.evidenceStatus === "pending") {
+          return {
+            ...s,
+            mockup: {
+              ...s.mockup,
+              evidenceStatus: "fallback_used" as const,
+            },
+          };
+        }
+        return s;
+      });
+      setPlan({ ...plan, slides: updatedSlides });
+    }
+    handleExport(true);
+  };
+
+  const handleExport = async (forceExport = false) => {
     if (!html) return;
+
+    if (!forceExport && plan) {
+      const pendingScreenshots = plan.slides.filter(
+        (s) => s.role === "point" && s.mockup?.type === "screenshot" && s.mockup.evidenceStatus === "pending"
+      );
+      if (pendingScreenshots.length > 0) {
+        setShowPendingModal(true);
+        return;
+      }
+    }
+
     setExportPending(true);
     addMessage("ai", "Mengekspor slide rancangan menjadi gambar PNG...");
     try {
@@ -753,6 +958,7 @@ export function Wizard({
       // Scheduled: the draft has left the editor, so its revision memory is dead
       // weight. Dropped here rather than on unmount so a closed tab still clears.
       clearRevisionMemoryAction(draftId).catch(console.error);
+      localStorage.removeItem("vour_carousel_draft");
 
       // Topic Bank trigger: the source topic is now published/scheduled.
       if (topicId) {
@@ -832,6 +1038,7 @@ export function Wizard({
 
       // Saved to stock: same end-of-life as scheduling — no more revisions.
       clearRevisionMemoryAction(draftId).catch(console.error);
+      localStorage.removeItem("vour_carousel_draft");
 
       setPublishState({
         status: "success",
@@ -1105,6 +1312,25 @@ export function Wizard({
     });
   }
 
+  function handleHumanVoicePolish() {
+    if (!brief.trim() || !model) return;
+    addMessage("user", "Jalankan Human Voice Editor (Anti-Agentic Copywriting pass)...");
+    start(async () => {
+      try {
+        addMessage("ai", "Memoles brief dengan Human Voice Editor...");
+        const polished = await humanVoiceEditorAction(brief, model as ModelId);
+        setBrief(polished);
+        setFinalBrief(polished);
+        toast.success("Brief berhasil dipoles dengan Human Voice Editor!");
+        addMessage("ai", "Brief telah diperbarui tanpa pola agentic/AI generik. Silakan periksa hasilnya.");
+      } catch (e) {
+        const msg = e instanceof Error ? e.message : "failed";
+        toast.error(msg);
+        addMessage("ai", `Gagal memoles brief: ${summarizeError(msg)}`);
+      }
+    });
+  }
+
   function handleRevisionSend() {
     if (!revision.trim()) return;
     if (uploadedHtml) {
@@ -1143,11 +1369,7 @@ export function Wizard({
         addMessage("ai", `Revisi gagal: ${summarizeError(msg)}`);
       }
     });
-  }
-  const [modelPopoverOpen, setModelPopoverOpen] = useState(false);
-  const [modelSearch, setModelSearch] = useState("");
 
-  if (models.length === 0) {
     return (
       <p className="text-muted-foreground">
         No AI model configured. Add an API key (e.g. GOOGLE_GENERATIVE_AI_API_KEY) to .env.
@@ -1160,10 +1382,24 @@ export function Wizard({
   }
 
   return (
-    <div className="flex flex-col gap-6 w-full">
+    <div className="flex-1 min-h-0 w-full flex flex-col overflow-hidden gap-2.5 font-sans">
       {/* 1. TOP STEPPER HEADER BAR */}
-      <div className="bg-card border border-hairline rounded-2xl p-3 shadow-xs flex flex-wrap items-center justify-between gap-3 shrink-0">
+      <div className="bg-card border border-hairline rounded-2xl p-2.5 md:p-3 shadow-xs flex flex-wrap items-center justify-between gap-3 shrink-0">
         <div className="flex flex-wrap items-center gap-1.5 md:gap-2">
+          {/* Toggle Sidebar Button */}
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setShowSidebar(!showSidebar)}
+            className="h-8 text-xs gap-1.5 px-3 border-hairline font-medium bg-muted/20 hover:bg-muted/60"
+            title={showSidebar ? "Sembunyikan Sidebar Console" : "Tampilkan Sidebar Console"}
+          >
+            {showSidebar ? <PanelLeftClose className="size-3.5 text-primary" /> : <PanelLeftOpen className="size-3.5 text-primary" />}
+            <span className="font-semibold">{showSidebar ? "Sembunyikan Sidebar" : "Buka Console"}</span>
+          </Button>
+
+          <div className="h-4 w-px bg-border/60 mx-1 hidden sm:block" />
+
           {[
             { id: 1, label: "Concept", icon: Sparkles },
             { id: 2, label: "Brief", icon: FileText },
@@ -1219,126 +1455,83 @@ export function Wizard({
       </div>
 
       {topicTitle && (
-        <div className="w-full max-w-4xl mx-auto -mt-2">
+        <div className="w-full mx-auto shrink-0">
           <span className="inline-flex items-center gap-1.5 text-[11px] font-mono bg-primary/5 border border-primary/20 text-muted-foreground px-2.5 py-1 rounded-xl">
             📌 Topic Bank: <span className="text-foreground font-semibold">{topicTitle}</span>
           </span>
         </div>
       )}
 
-      {/* 2. FOCUSED STEP COMPONENT VIEWS */}
-
-      {/* STEP 1: CONCEPT & AI PROMPTER COMPONENT */}
-      {step === 1 && (
-        <div className="flex flex-col justify-between gap-4 w-full max-w-4xl mx-auto py-1 animate-in fade-in duration-200 min-h-[calc(100vh-220px)] md:min-h-0">
-          {/* Chat Console Feed Container */}
-          <div className={`p-4 bg-canvas-soft border border-hairline rounded-2xl flex flex-col gap-3 shadow-inner ${
-            messages.length <= 1 
-              ? "py-6 md:py-10 justify-center my-auto" 
-              : "min-h-[280px] max-h-[400px] overflow-y-auto"
-          }`}>
-            {messages.length <= 1 && (
-              <div className="text-center flex flex-col items-center gap-2.5">
-                <div className="size-11 rounded-2xl bg-primary/10 border border-primary/20 flex items-center justify-center text-primary">
-                  <Sparkles className="size-5.5 animate-pulse" />
+      {/* 2. MAIN 2-COLUMN WORKSPACE CONTAINER */}
+      <div className="flex-1 min-h-0 w-full flex flex-col lg:flex-row gap-4 overflow-hidden items-stretch">
+        {/* LEFT SIDEBAR CONSOLE (Sticky, Non-scrolling container, inner feed scrollable) */}
+        {showSidebar && (
+          <aside className="w-full lg:w-[360px] xl:w-[380px] shrink-0 h-full flex flex-col overflow-hidden bg-card border border-hairline shadow-xs rounded-2xl z-20 transition-all">
+            {/* Header */}
+            <div className="p-3 bg-muted/40 border-b border-hairline flex items-center justify-between gap-2 shrink-0">
+              <div className="flex items-center gap-2 min-w-0">
+                <div className="size-7 rounded-lg bg-primary/10 border border-primary/20 flex items-center justify-center text-primary shrink-0">
+                  <VourLogoIcon />
                 </div>
-                <h3 className="font-bold text-sm md:text-base">Apa ide atau topik carousel Anda hari ini?</h3>
-                <p className="text-xs text-muted-foreground max-w-md leading-relaxed">
-                  Ketik ide topik di bawah ini atau impor berkas Markdown / HTML untuk langsung menghasilkan slide carousel profesional.
-                </p>
-               
-              </div>
-            )}
-
-            {messages.map((msg, index) => (
-              <div
-                key={index}
-                className={`flex gap-2.5 max-w-[85%] ${msg.sender === "user" ? "self-end flex-row-reverse" : "self-start"}`}
-              >
-                <div className={`size-7 rounded-full shrink-0 flex items-center justify-center text-xs ${msg.sender === "user" ? "bg-muted text-muted-foreground border border-hairline" : "bg-primary/10 text-primary border border-primary/20"}`}>
-                  {msg.sender === "user" ? <User className="size-3.5" /> : <Sparkles className="size-3.5 text-indigo-500 animate-pulse" />}
-                </div>
-                <div className="flex flex-col gap-0.5">
-                  <div className={`p-3.5 rounded-2xl text-xs leading-relaxed shadow-sm ${
-                    msg.sender === "user" 
-                      ? "bg-primary text-primary-foreground rounded-tr-none" 
-                      : "bg-card text-card-foreground rounded-tl-none border border-hairline"
-                  }`}>
-                    {msg.text}
-                  </div>
-                  <span className="text-[9px] text-muted-foreground px-1 self-end">{msg.timestamp}</span>
+                <div className="min-w-0">
+                  <h4 className="text-xs font-bold text-foreground truncate">Console Sesi Carousel</h4>
+                  <p className="text-[10px] text-muted-foreground flex items-center gap-1 font-mono">
+                    <span className="size-1.5 rounded-full bg-emerald-500 animate-ping inline-block" />
+                    Sesi Prompt Aktif
+                  </p>
                 </div>
               </div>
-            ))}
-            {(pending || briefPending) && (
-              <div className="flex items-center gap-2.5 self-start max-w-[85%]">
-                <div className="size-7 rounded-full bg-primary/10 border border-primary/20 flex items-center justify-center animate-pulse">
-                  <Sparkles className="size-3.5 text-indigo-500 animate-spin" />
-                </div>
-                <div className="p-3.5 bg-card border border-hairline rounded-2xl rounded-tl-none text-xs text-muted-foreground flex items-center gap-1.5 animate-pulse">
-                  <div className="size-1.5 rounded-full bg-primary animate-bounce delay-75" />
-                  <div className="size-1.5 rounded-full bg-primary animate-bounce delay-150" />
-                  <div className="size-1.5 rounded-full bg-primary animate-bounce delay-300" />
-                </div>
-              </div>
-            )}
-            <div ref={chatEndRef} />
-          </div>
 
-          {/* FLOATING COMPOSER PILL WITH INTEGRATED MODEL SELECTOR POPOVER */}
-          <div className="relative p-3 bg-card border border-hairline rounded-2xl shadow-lg flex flex-col gap-2.5">
-            {/* Top Toolbar Inside Composer */}
-            <div className="flex items-center justify-between gap-2 border-b pb-2">
-              {/* Model Selector Popover Button */}
-              <div className="relative">
+              {/* Redesigned Model Selector Popover Card */}
+              <div className="relative shrink-0">
                 <button
                   type="button"
                   onClick={() => setModelPopoverOpen(!modelPopoverOpen)}
-                  className="flex items-center gap-2 px-3 py-1.5 rounded-xl border border-hairline bg-muted/30 hover:bg-muted/60 text-xs transition-colors"
+                  className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl border border-hairline bg-card hover:bg-muted/40 text-xs font-medium transition-all shadow-2xs group"
                 >
-                  {model && modelDetails[model]?.icon}
-                  <div className="flex items-center gap-1.5 font-medium">
-                    <span>{model && modelDetails[model]?.label}</span>
-                    <span className="text-[9px] font-mono uppercase bg-muted/80 text-muted-foreground px-1.5 py-0.5 rounded border border-hairline">
-                      {model && modelDetails[model]?.vendor}
-                    </span>
+                  <div className="size-4 shrink-0 flex items-center justify-center">
+                    {modelDetails[model]?.icon}
                   </div>
-                  <ChevronDown className="size-3.5 text-muted-foreground" />
+                  <span className="font-semibold text-foreground truncate max-w-[80px] text-[11px]">
+                    {modelDetails[model]?.label || model}
+                  </span>
+                  <ChevronDown className="size-3 text-muted-foreground group-hover:text-foreground transition-transform" />
                 </button>
 
-                {/* Model Selector Popover Floating Above */}
                 {modelPopoverOpen && (
-                  <div className="absolute left-0 bottom-full mb-2 z-50 w-72 md:w-80 bg-card border border-hairline rounded-2xl shadow-2xl p-3 animate-in fade-in slide-in-from-bottom-2 duration-150">
-                    <div className="flex items-center justify-between border-b pb-2 mb-2">
+                  <div className="absolute right-0 top-full mt-2 z-50 w-72 bg-card border border-hairline rounded-2xl shadow-2xl p-2.5 animate-in fade-in slide-in-from-top-2 duration-150">
+                    <div className="flex items-center justify-between border-b pb-2 mb-2 px-1">
                       <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground font-mono">PILIH MODEL AI</span>
-                      <button type="button" onClick={() => setModelPopoverOpen(false)} className="text-muted-foreground text-xs hover:text-foreground">
+                      <button
+                        type="button"
+                        onClick={() => setModelPopoverOpen(false)}
+                        className="text-muted-foreground text-xs hover:text-foreground p-0.5"
+                      >
                         &times;
                       </button>
                     </div>
 
-                    {/* Search Input */}
                     <div className="relative mb-2">
                       <Search className="absolute left-2.5 top-2.5 size-3.5 text-muted-foreground" />
                       <Input
                         value={modelSearch}
                         onChange={(e) => setModelSearch(e.target.value)}
-                        placeholder="Cari model atau vendor..."
-                        className="pl-8 h-8 text-xs bg-muted/20 border-hairline"
+                        placeholder="Cari model AI..."
+                        className="pl-8 h-8 text-xs bg-muted/20 border-hairline rounded-xl"
                       />
                     </div>
 
-                    {/* Filtered Models List */}
                     <div className="space-y-1 max-h-56 overflow-y-auto pr-0.5">
                       {models
                         .filter((m) => {
-                          const details = modelDetails[m];
-                          if (!details) return true;
-                          const query = modelSearch.toLowerCase();
-                          return details.label.toLowerCase().includes(query) || details.vendor.toLowerCase().includes(query);
+                          const info = modelDetails[m];
+                          const q = modelSearch.toLowerCase();
+                          return (info?.label || m).toLowerCase().includes(q) || (info?.vendor || "").toLowerCase().includes(q);
                         })
                         .map((m) => {
-                          const details = modelDetails[m];
+                          const info = modelDetails[m];
                           const isSelected = model === m;
+
                           return (
                             <button
                               key={m}
@@ -1347,20 +1540,19 @@ export function Wizard({
                                 setModel(m);
                                 setModelPopoverOpen(false);
                               }}
-                              className={`w-full flex items-center justify-between p-2 rounded-xl text-xs text-left transition-colors ${
-                                isSelected ? "bg-primary/10 border border-primary/20" : "hover:bg-muted/40"
+                              className={`w-full flex items-center justify-between p-2 rounded-xl text-xs text-left transition-all ${
+                                isSelected
+                                  ? "bg-primary/10 text-primary font-semibold border border-primary/20"
+                                  : "hover:bg-muted/40 text-foreground"
                               }`}
                             >
                               <div className="flex items-center gap-2.5 min-w-0">
-                                {details?.icon}
+                                <div className="size-5 shrink-0 flex items-center justify-center">
+                                  {info?.icon}
+                                </div>
                                 <div className="min-w-0">
-                                  <div className="flex items-center gap-1.5">
-                                    <span className="font-semibold truncate">{details?.label || m}</span>
-                                    <span className="text-[9px] font-mono uppercase text-muted-foreground bg-muted px-1.5 py-0.5 rounded border border-hairline">
-                                      {details?.vendor || "AI"}
-                                    </span>
-                                  </div>
-                                  <p className="text-[10px] text-muted-foreground truncate">{details?.description}</p>
+                                  <div className="truncate font-medium">{info?.label || m}</div>
+                                  <div className="text-[10px] text-muted-foreground truncate">{info?.vendor}</div>
                                 </div>
                               </div>
                               {isSelected && <Check className="size-4 text-primary shrink-0 ml-1" />}
@@ -1371,138 +1563,189 @@ export function Wizard({
                   </div>
                 )}
               </div>
+            </div>
 
-              {/* Topic Bank dropdown + Import Alternative Files */}
-              <div className="flex items-center gap-1.5 min-w-0">
-                {bankTopics.length > 0 && (
-                  <div className="relative">
-                    <button
-                      type="button"
-                      onClick={() => setTopicPopoverOpen(!topicPopoverOpen)}
-                      disabled={pending || briefPending || !model}
-                      className="flex items-center gap-2 px-3 py-1.5 rounded-xl border border-hairline bg-primary/5 hover:bg-primary/10 text-xs transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                    >
-                      <span className="font-medium text-muted-foreground">📌 Dari Topic Bank…</span>
-                      <ChevronDown className="size-3.5 text-muted-foreground" />
-                    </button>
-
-                    {/* Topic Bank Popover Floating Above */}
-                    {topicPopoverOpen && (
-                      <div className="absolute left-0 bottom-full mb-2 z-50 w-72 md:w-80 bg-card border border-hairline rounded-2xl shadow-2xl p-3 animate-in fade-in slide-in-from-bottom-2 duration-150">
-                        <div className="flex items-center justify-between border-b pb-2 mb-2">
-                          <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground font-mono">PILIH TOPIC</span>
-                          <button type="button" onClick={() => setTopicPopoverOpen(false)} className="text-muted-foreground text-xs hover:text-foreground">
-                            &times;
-                          </button>
-                        </div>
-
-                        {/* Search Input */}
-                        <div className="relative mb-2">
-                          <Search className="absolute left-2.5 top-2.5 size-3.5 text-muted-foreground" />
-                          <Input
-                            value={topicSearch}
-                            onChange={(e) => setTopicSearch(e.target.value)}
-                            placeholder="Cari topic..."
-                            className="pl-8 h-8 text-xs bg-muted/20 border-hairline"
-                          />
-                        </div>
-
-                        {/* Filtered Topics List */}
-                        <div className="space-y-1 max-h-64 overflow-y-auto pr-0.5">
-                          {bankTopics
-                            .filter((t) =>
-                              t.title.toLowerCase().includes(topicSearch.toLowerCase())
-                            )
-                            .map((t) => (
-                              <button
-                                key={t.id}
-                                type="button"
-                                onClick={() => {
-                                  startBriefFromTopic(t);
-                                  setTopicPopoverOpen(false);
-                                }}
-                                className="w-full flex items-center gap-2.5 p-2 rounded-xl text-xs text-left transition-colors hover:bg-muted/40"
-                              >
-                                <span className="font-medium truncate">{t.title}</span>
-                                <span className="text-[9px] font-mono uppercase text-muted-foreground bg-muted px-1.5 py-0.5 rounded border border-hairline">
-                                  {t.status}
-                                </span>
-                              </button>
-                            ))}
-                          {bankTopics.filter((t) => t.title.toLowerCase().includes(topicSearch.toLowerCase())).length === 0 && (
-                            <div className="p-2 text-center text-xs text-muted-foreground">
-                              Tidak ada topic yang cocok
-                            </div>
-                          )}
-                        </div>
-                      </div>
-                    )}
+            {/* Scrollable Chat Feed */}
+            <div className="flex-1 p-3 overflow-y-auto flex flex-col gap-3 font-sans text-xs bg-canvas-soft/30">
+              {messages.map((m, idx) => (
+                <div key={idx} className={`flex flex-col ${m.sender === "user" ? "items-end" : "items-start"}`}>
+                  <div
+                    className={`p-3 rounded-2xl max-w-[90%] leading-relaxed ${
+                      m.sender === "user"
+                        ? "bg-primary text-primary-foreground font-medium rounded-tr-xs shadow-xs"
+                        : "bg-card border border-hairline text-foreground rounded-tl-xs shadow-2xs"
+                    }`}
+                  >
+                    {m.text}
                   </div>
-                )}
-                <Input
-                  type="file"
-                  accept=".md"
-                  ref={fileInputRef}
-                  onChange={handleFileUpload}
-                  className="hidden"
-                  id="md-upload-input"
-                />
-                <Button 
-                  type="button" 
-                  variant="outline" 
-                  size="sm"
-                  className="h-7 text-xs gap-1.5 px-2.5 border-hairline"
-                  onClick={() => fileInputRef.current?.click()}
-                >
-                  <Upload className="size-3" />
-                  .md
-                </Button>
-                <input
-                  type="file"
-                  accept=".html,text/html"
-                  ref={htmlInputRef}
-                  onChange={handleHtmlUpload}
-                  className="hidden"
-                  id="html-upload-input"
+                  <span className="text-[9px] text-muted-foreground mt-1 px-1 font-mono">{m.timestamp}</span>
+                </div>
+              ))}
+              {(pending || briefPending) && (
+                <div className="flex items-center gap-2 text-xs text-muted-foreground italic p-2 bg-muted/20 rounded-xl border border-hairline animate-pulse">
+                  <VourLogoIcon />
+                  <span>AI sedang memproses instruksi &amp; konteks revisi...</span>
+                </div>
+              )}
+              <div ref={chatEndRef} />
+            </div>
+
+            {/* Single Unified Chat Input Form */}
+            <div className="p-3 bg-card border-t border-hairline flex flex-col gap-2 shrink-0 shadow-lg">
+              {topicTitle && (
+                <div className="flex items-center justify-between text-[10px] bg-primary/5 text-primary px-2.5 py-1 rounded-lg border border-primary/20">
+                  <span className="truncate">📌 Topic: <strong>{topicTitle}</strong></span>
+                </div>
+              )}
+              <div className="relative flex items-center">
+                <Textarea
+                  value={chatInput}
+                  onChange={(e) => {
+                    setChatInput(e.target.value);
+                    if (historyIndex !== -1) setHistoryIndex(-1);
+                  }}
+                  placeholder={
+                    step === 1 ? "Ketik ide atau topik (Shift+Enter untuk baris baru)..." :
+                    step === 2 ? "Instruksi revisi outline brief..." :
+                    step === 3 || step === 4 ? "Instruksi revisi slide/visual..." :
+                    "Ketik instruksi..."
+                  }
+                  className="pr-12 min-h-[44px] max-h-32 text-xs rounded-xl border-hairline shadow-inner focus-visible:ring-1 focus-visible:ring-primary py-2.5 resize-none"
+                  disabled={pending || isTyping}
+                  onKeyDown={(e) => handlePromptKeyDown(e, chatInput, setChatInput, () => handleUnifiedSubmit())}
                 />
                 <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  className="h-7 text-xs gap-1.5 px-2.5 border-hairline"
-                  onClick={() => htmlInputRef.current?.click()}
+                  size="icon"
+                  className="absolute right-2 bottom-2 size-8 rounded-lg z-10 font-semibold"
+                  disabled={!model || !chatInput.trim()}
+                  onClick={briefPending ? handleCancelGeneration : () => handleUnifiedSubmit()}
                 >
-                  <FileText className="size-3" />
-                  .html
+                  {briefPending ? <Square className="size-4" /> : <Send className="size-4" />}
                 </Button>
               </div>
+              <div className="flex items-center justify-between px-1 text-[10px] text-muted-foreground font-mono">
+                <span>↵ Kirim • Shift+↵ Baris baru • ↑↓ History</span>
+                <span>Step {step}/5</span>
+              </div>
             </div>
+          </aside>
+        )}
 
-            {/* Input & Send Action Row */}
-            <div className="relative flex items-center">
-              <Input
-                value={idea}
-                onChange={(e) => {
-                  setIdea(e.target.value);
-                  if (historyIndex !== -1) setHistoryIndex(-1);
-                }}
-                placeholder="Ketik ide atau topik konten di sini... (misal: idempotency di API)"
-                className="pr-12 h-11 text-xs rounded-xl border-hairline"
-                disabled={pending}
-                onKeyDown={(e) => handlePromptKeyDown(e, idea, setIdea, handleBriefGeneration)}
-              />
-              <Button 
-                size="icon" 
-                className="absolute right-1 size-9 rounded-lg z-10" 
-                disabled={!model}
-                onClick={briefPending ? handleCancelGeneration : handleBriefGeneration}
-              >
-                {briefPending ? <Square className="size-4" /> : <Send className="size-4" />}
-              </Button>
+        {/* RIGHT MAIN WORKSPACE (Scrollable sub-panel only when needed) */}
+        <main className="flex-1 min-w-0 w-full h-full flex flex-col overflow-y-auto pr-0.5">
+          {/* STEP 1: CONCEPT COMPONENT */}
+          {step === 1 && (
+            <div className="flex flex-col gap-6 w-full max-w-4xl mx-auto py-4 animate-in fade-in duration-200">
+              <Card className="shadow-sm border-hairline overflow-hidden bg-card/90">
+                <CardContent className="p-8 flex flex-col items-center text-center gap-6">
+                  <div className="size-14 rounded-2xl bg-primary/10 border border-primary/20 flex items-center justify-center text-primary shadow-xs">
+                    <VourLogoIcon />
+                  </div>
+                  <div className="space-y-2">
+                    <h2 className="text-xl font-extrabold text-foreground">Apa ide atau topik carousel Anda hari ini?</h2>
+                    <p className="text-xs text-muted-foreground max-w-lg mx-auto leading-relaxed">
+                      Ketik ide topik Anda pada <strong>Console Sesi Carousel</strong> di sebelah kiri agar seluruh konteks percakapan AI terjaga utuh.
+                    </p>
+                  </div>
+
+                  {/* Action Bar for Topic Bank & File Import */}
+                  <div className="flex flex-wrap items-center justify-center gap-3 pt-2">
+                    {bankTopics.length > 0 && (
+                      <div className="relative">
+                        <button
+                          type="button"
+                          onClick={() => setTopicPopoverOpen(!topicPopoverOpen)}
+                          disabled={pending || briefPending || !model}
+                          className="flex items-center gap-2 px-3.5 py-2 rounded-xl border border-hairline bg-primary/5 hover:bg-primary/10 text-xs transition-colors disabled:opacity-50 font-medium"
+                        >
+                          <span>📌 Dari Topic Bank…</span>
+                          <ChevronDown className="size-3.5 text-muted-foreground" />
+                        </button>
+
+                        {topicPopoverOpen && (
+                          <div className="absolute left-1/2 -translate-x-1/2 bottom-full mb-2 z-50 w-72 md:w-80 bg-card border border-hairline rounded-2xl shadow-2xl p-3 animate-in fade-in slide-in-from-bottom-2 duration-150 text-left">
+                            <div className="flex items-center justify-between border-b pb-2 mb-2">
+                              <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground font-mono">PILIH TOPIC</span>
+                              <button type="button" onClick={() => setTopicPopoverOpen(false)} className="text-muted-foreground text-xs hover:text-foreground">
+                                &times;
+                              </button>
+                            </div>
+                            <div className="relative mb-2">
+                              <Search className="absolute left-2.5 top-2.5 size-3.5 text-muted-foreground" />
+                              <Input
+                                value={topicSearch}
+                                onChange={(e) => setTopicSearch(e.target.value)}
+                                placeholder="Cari topic..."
+                                className="pl-8 h-8 text-xs bg-muted/20 border-hairline"
+                              />
+                            </div>
+                            <div className="space-y-1 max-h-64 overflow-y-auto pr-0.5">
+                              {bankTopics
+                                .filter((t) => t.title.toLowerCase().includes(topicSearch.toLowerCase()))
+                                .map((t) => (
+                                  <button
+                                    key={t.id}
+                                    type="button"
+                                    onClick={() => {
+                                      startBriefFromTopic(t);
+                                      setTopicPopoverOpen(false);
+                                    }}
+                                    className="w-full flex items-center gap-2.5 p-2 rounded-xl text-xs text-left transition-colors hover:bg-muted/40"
+                                  >
+                                    <span className="font-medium truncate">{t.title}</span>
+                                    <span className="text-[9px] font-mono uppercase text-muted-foreground bg-muted px-1.5 py-0.5 rounded border border-hairline">
+                                      {t.status}
+                                    </span>
+                                  </button>
+                                ))}
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    )}
+
+                    <Input
+                      type="file"
+                      accept=".md"
+                      ref={fileInputRef}
+                      onChange={handleFileUpload}
+                      className="hidden"
+                      id="md-upload-input"
+                    />
+                    <Button 
+                      type="button" 
+                      variant="outline" 
+                      size="sm"
+                      className="h-9 text-xs gap-1.5 px-3.5 border-hairline font-medium"
+                      onClick={() => fileInputRef.current?.click()}
+                    >
+                      <Upload className="size-3.5" />
+                      Import .md Brief
+                    </Button>
+
+                    <input
+                      type="file"
+                      accept=".html,text/html"
+                      ref={htmlInputRef}
+                      onChange={handleHtmlUpload}
+                      className="hidden"
+                      id="html-upload-input"
+                    />
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      className="h-9 text-xs gap-1.5 px-3.5 border-hairline font-medium"
+                      onClick={() => htmlInputRef.current?.click()}
+                    >
+                      <FileText className="size-3.5" />
+                      Import .html Slide
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
             </div>
-          </div>
-        </div>
-      )}
+          )}
 
       {/* STEP 2: BRIEF OUTLINE EDITOR COMPONENT */}
       {step === 2 && (
@@ -1516,35 +1759,49 @@ export function Wizard({
                   Outline Brief Editor
                 </span>
 
-                {/* View Mode Toggle Buttons */}
-                <div className="flex items-center gap-1 bg-muted/50 p-0.5 rounded-lg border border-hairline">
-                  <button
+                {/* View Mode Toggle Buttons & Anti-AI Polish */}
+                <div className="flex flex-wrap items-center gap-2">
+                  <Button
                     type="button"
-                    onClick={() => setMdMode("split")}
-                    className={`px-3 py-1 text-xs font-medium rounded-md transition-colors ${
-                      mdMode === "split" ? "bg-card text-foreground shadow-xs font-semibold" : "text-muted-foreground hover:text-foreground"
-                    }`}
+                    size="sm"
+                    variant="outline"
+                    disabled={pending || isTyping || !brief.trim() || !model}
+                    onClick={handleHumanVoicePolish}
+                    className="h-7 text-xs gap-1.5 px-3 font-medium border-primary/30 text-primary hover:bg-primary/5 shadow-2xs"
                   >
-                    Split View
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setMdMode("editor")}
-                    className={`px-3 py-1 text-xs font-medium rounded-md transition-colors ${
-                      mdMode === "editor" ? "bg-card text-foreground shadow-xs font-semibold" : "text-muted-foreground hover:text-foreground"
-                    }`}
-                  >
-                    Raw Editor
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setMdMode("preview")}
-                    className={`px-3 py-1 text-xs font-medium rounded-md transition-colors ${
-                      mdMode === "preview" ? "bg-card text-foreground shadow-xs font-semibold" : "text-muted-foreground hover:text-foreground"
-                    }`}
-                  >
-                    Formatted Preview
-                  </button>
+                    <User className="size-3.5 text-primary" />
+                    Human Voice Polish
+                  </Button>
+
+                  <div className="flex items-center gap-1 bg-muted/50 p-0.5 rounded-lg border border-hairline">
+                    <button
+                      type="button"
+                      onClick={() => setMdMode("split")}
+                      className={`px-3 py-1 text-xs font-medium rounded-md transition-colors ${
+                        mdMode === "split" ? "bg-card text-foreground shadow-xs font-semibold" : "text-muted-foreground hover:text-foreground"
+                      }`}
+                    >
+                      Split View
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setMdMode("editor")}
+                      className={`px-3 py-1 text-xs font-medium rounded-md transition-colors ${
+                        mdMode === "editor" ? "bg-card text-foreground shadow-xs font-semibold" : "text-muted-foreground hover:text-foreground"
+                      }`}
+                    >
+                      Raw Editor
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setMdMode("preview")}
+                      className={`px-3 py-1 text-xs font-medium rounded-md transition-colors ${
+                        mdMode === "preview" ? "bg-card text-foreground shadow-xs font-semibold" : "text-muted-foreground hover:text-foreground"
+                      }`}
+                    >
+                      Formatted Preview
+                    </button>
+                  </div>
                 </div>
               </div>
 
@@ -1592,31 +1849,6 @@ export function Wizard({
                     </div>
                   </div>
                 )}
-              </div>
-
-              {/* Bottom AI Revision Row */}
-              <div className="flex items-center gap-2 pt-2 border-t">
-                <Input
-                  value={revision}
-                  onChange={(e) => {
-                    setRevision(e.target.value);
-                    if (historyIndex !== -1) setHistoryIndex(-1);
-                  }}
-                  placeholder="Ketik instruksi revisi outline ke AI..."
-                  className="h-10 text-xs flex-1 rounded-xl border-hairline"
-                  disabled={pending || isTyping}
-                  onKeyDown={(e) => handlePromptKeyDown(e, revision, setRevision, handleRevisionSend)}
-                />
-                <Button
-                  size="sm"
-                  variant="secondary"
-                  disabled={pending || !revision.trim() || isTyping}
-                  onClick={handleRevisionSend}
-                  className="h-10 text-xs px-4 rounded-xl gap-1.5"
-                >
-                  <Send className="size-3.5" />
-                  Revisi Brief
-                </Button>
               </div>
 
               {/* Action Navigation Bar */}
@@ -1688,30 +1920,108 @@ export function Wizard({
                 )}
               </div>
 
-              {/* AI Revision Prompt Input */}
-              <div className="flex items-center gap-2 pt-2 border-t">
-                <Input
-                  value={revision}
-                  onChange={(e) => {
-                    setRevision(e.target.value);
-                    if (historyIndex !== -1) setHistoryIndex(-1);
-                  }}
-                  placeholder="Ketik instruksi revisi slide/desain ke AI..."
-                  className="h-10 text-xs flex-1 rounded-xl"
-                  disabled={pending || isTyping}
-                  onKeyDown={(e) => handlePromptKeyDown(e, revision, setRevision, handleRevisionSend)}
-                />
-                <Button
-                  size="sm"
-                  variant="secondary"
-                  disabled={pending || !revision.trim() || isTyping}
-                  onClick={handleRevisionSend}
-                  className="h-10 text-xs px-4 rounded-xl gap-1.5"
-                >
-                  <Send className="size-3.5" />
-                  Revisi Desain
-                </Button>
-              </div>
+              {/* Evidence Screenshot Upload Panel */}
+              {plan && plan.slides.some((s) => s.role === "point" && s.mockup?.type === "screenshot") && (
+                <div className="flex flex-col gap-3 p-4 bg-muted/20 border border-hairline rounded-2xl">
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs font-bold uppercase tracking-wider text-primary flex items-center gap-2">
+                      <Upload className="size-4 text-primary" />
+                      Bukti Screenshot Asli ({plan.slides.filter((s) => s.role === "point" && s.mockup?.type === "screenshot").length} Slide)
+                    </span>
+                    <span className="text-[11px] text-muted-foreground">
+                      Di-compress &amp; di-embed inline (base64) untuk offline capture aman.
+                    </span>
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                    {plan.slides.map((s, idx) => {
+                      if (s.role !== "point" || s.mockup?.type !== "screenshot") return null;
+                      const m = s.mockup;
+                      const status = m.evidenceStatus || "pending";
+                      const brief = m.screenshotBrief;
+
+                      return (
+                        <div key={idx} className="p-3 bg-card border border-hairline rounded-xl flex flex-col gap-2 shadow-xs">
+                          <div className="flex items-center justify-between">
+                            <span className="text-xs font-bold text-foreground">
+                              Slide {idx + 1} — {s.headline || "Screenshot Evidence"}
+                            </span>
+                            <span className={`text-[10px] font-mono font-bold px-2 py-0.5 rounded ${
+                              status === "captured" ? "bg-emerald-500/10 text-emerald-600 border border-emerald-500/20" :
+                              status === "fallback_used" ? "bg-amber-500/10 text-amber-600 border border-amber-500/20" :
+                              "bg-rose-500/10 text-rose-600 border border-rose-500/20 animate-pulse"
+                            }`}>
+                              {status === "captured" ? "✓ CAPTURED" : status === "fallback_used" ? "FALLBACK TEXT" : "⚠️ PENDING UPLOAD"}
+                            </span>
+                          </div>
+
+                          {brief && (
+                            <div className="text-[11px] text-muted-foreground flex flex-col gap-0.5 bg-muted/40 p-2 rounded-lg font-mono">
+                              <div>📌 <strong>Source:</strong> {brief.source || "App / Tool"}</div>
+                              <div>👁️ <strong>Must Show:</strong> {brief.mustShow || "-"}</div>
+                              <div>🔒 <strong>Must Hide:</strong> {brief.mustHide || "-"}</div>
+                              <div>📐 <strong>Target Ratio:</strong> {brief.cropRatio || "4:5"}</div>
+                            </div>
+                          )}
+
+                          {m.screenshotImage?.dataUrl ? (
+                            <div className="flex items-center gap-3 mt-1">
+                              <img src={m.screenshotImage.dataUrl} alt="Upload preview" className="size-14 object-cover rounded-lg border border-hairline shadow-xs" />
+                              <div className="flex flex-col gap-1">
+                                <span className="text-[10px] text-muted-foreground font-mono">
+                                  Di-upload: {new Date(m.screenshotImage.uploadedAt).toLocaleTimeString()}
+                                </span>
+                                <label className="cursor-pointer text-xs font-semibold text-primary hover:underline">
+                                  Ganti Gambar
+                                  <input
+                                    type="file"
+                                    accept="image/png,image/jpeg,image/webp"
+                                    className="hidden"
+                                    onChange={async (e) => {
+                                      const file = e.target.files?.[0];
+                                      if (file) {
+                                        try {
+                                          const dataUrl = await processUploadedScreenshot(file, brief?.cropRatio || "4:5");
+                                          handleUpdateScreenshot(idx, dataUrl);
+                                          toast.success(`Screenshot slide ${idx + 1} berhasil di-upload!`);
+                                        } catch (err) {
+                                          toast.error("Gagal memproses gambar");
+                                        }
+                                      }
+                                    }}
+                                  />
+                                </label>
+                              </div>
+                            </div>
+                          ) : (
+                            <label className="mt-1 flex items-center justify-center gap-2 p-2.5 border-2 border-dashed border-primary/30 hover:border-primary rounded-xl cursor-pointer bg-primary/5 hover:bg-primary/10 transition-colors text-xs font-medium text-primary">
+                              <Upload className="size-4" />
+                              <span>Upload Screenshot Slide {idx + 1}</span>
+                              <input
+                                type="file"
+                                accept="image/png,image/jpeg,image/webp"
+                                className="hidden"
+                                onChange={async (e) => {
+                                  const file = e.target.files?.[0];
+                                  if (file) {
+                                    try {
+                                      const dataUrl = await processUploadedScreenshot(file, brief?.cropRatio || "4:5");
+                                      handleUpdateScreenshot(idx, dataUrl);
+                                      toast.success(`Screenshot slide ${idx + 1} berhasil di-upload!`);
+                                    } catch (err) {
+                                      toast.error("Gagal memproses gambar");
+                                    }
+                                  }
+                                }}
+                              />
+                            </label>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
 
               {/* Action Navigation Bar */}
               <div className="flex items-center justify-between pt-4 border-t">
@@ -1722,7 +2032,7 @@ export function Wizard({
                 <Button
                   size="sm"
                   disabled={pending || exportPending}
-                  onClick={handleExport}
+                  onClick={() => handleExport()}
                   className="gap-1.5 font-semibold px-5"
                 >
                   <Upload className="size-4" />
@@ -1967,6 +2277,56 @@ export function Wizard({
               <div className="flex items-center justify-between pt-2">
                 <Button variant="outline" size="sm" onClick={() => setStep(4)} className="gap-1.5">
                   <ArrowLeft className="size-3.5" /> Back ke Export
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      )}
+        </main>
+      </div>
+
+      {/* PENDING SCREENSHOT EXPORT GATING MODAL */}
+      {showPendingModal && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-xs z-50 flex items-center justify-center p-4 animate-in fade-in duration-150">
+          <Card className="w-full max-w-md bg-card border-hairline shadow-xl">
+            <CardContent className="p-6 flex flex-col gap-4">
+              <div className="flex items-center gap-3 text-amber-500">
+                <div className="size-10 rounded-xl bg-amber-500/10 border border-amber-500/20 flex items-center justify-center shrink-0">
+                  <AlertCircle className="size-6" />
+                </div>
+                <div>
+                  <h3 className="font-bold text-base text-foreground">Screenshot Masih Pending</h3>
+                  <p className="text-xs text-muted-foreground">
+                    {plan?.slides.filter((s) => s.role === "point" && s.mockup?.type === "screenshot" && s.mockup.evidenceStatus === "pending").length} slide masih butuh screenshot asli sebelum export.
+                  </p>
+                </div>
+              </div>
+
+              <div className="p-3 bg-muted/40 rounded-xl border border-hairline flex flex-col gap-2">
+                {plan?.slides.map((s, idx) => {
+                  if (s.role === "point" && s.mockup?.type === "screenshot" && s.mockup.evidenceStatus === "pending") {
+                    return (
+                      <div key={idx} className="flex items-center justify-between text-xs font-mono">
+                        <span className="font-bold text-foreground">Slide {idx + 1}: {s.headline}</span>
+                        <span className="text-rose-500 font-semibold">Pending</span>
+                      </div>
+                    );
+                  }
+                  return null;
+                })}
+              </div>
+
+              <p className="text-xs text-muted-foreground leading-relaxed">
+                Anda dapat meng-upload screenshot asli di preview slide, atau memilih <strong>&quot;Lanjut tanpa screenshot&quot;</strong> untuk menyembunyikan warning dan merender mode referensi teks.
+              </p>
+
+              <div className="flex items-center justify-end gap-2 pt-2 border-t">
+                <Button variant="outline" size="sm" onClick={() => setShowPendingModal(false)}>
+                  Batal &amp; Upload Manual
+                </Button>
+                <Button size="sm" variant="secondary" onClick={handleContinueWithoutScreenshots}>
+                  Lanjut Tanpa Screenshot
                 </Button>
               </div>
             </CardContent>

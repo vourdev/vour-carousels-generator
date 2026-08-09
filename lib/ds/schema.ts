@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { normalizeIcon } from "@/lib/ds/icons";
+import { normalizeIllustration } from "@/lib/ds/illustrations";
 
 const cardTone = z.enum(["peach", "stone", "mint", "sky", "pink", "amber"]);
 
@@ -204,6 +205,33 @@ const mockupGitBranch = z.object({
   mergeLabel: z.string().max(12).default("merge"),
 });
 
+/** Illustration — unDraw editorial SVG for abstract concepts / analogies */
+const mockupIllustration = z.object({
+  type: z.literal("illustration"),
+  illustrationSlug: z.string().transform(normalizeIllustration),
+  caption: z.string().max(90).optional(),
+});
+
+export const screenshotBriefSchema = z.object({
+  source: z.string().max(120),
+  mustShow: z.string().max(160),
+  mustHide: z.string().max(160),
+  cropRatio: z.string().default("4:5"),
+});
+
+export const screenshotImageSchema = z.object({
+  dataUrl: z.string(),
+  uploadedAt: z.string(),
+});
+
+/** Screenshot evidence — real case study / incident screenshot */
+const mockupScreenshot = z.object({
+  type: z.literal("screenshot"),
+  screenshotBrief: screenshotBriefSchema.optional(),
+  screenshotImage: screenshotImageSchema.optional(),
+  evidenceStatus: z.enum(["pending", "captured", "fallback_used"]).default("pending"),
+});
+
 const mockupCustom = z.object({
   type: z.literal("custom"),
   html: z.string().max(8000),
@@ -231,6 +259,8 @@ export const mockupSchema = z.discriminatedUnion("type", [
   mockupCommandPalette,
   mockupDatabase,
   mockupGitBranch,
+  mockupIllustration,
+  mockupScreenshot,
   mockupCustom,
 ]);
 

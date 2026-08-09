@@ -541,4 +541,20 @@ export const carouselExtraCss = String.raw`
   /* Git branch — fixed 2-branch SVG diagram */
   .git { width: 100%; position: relative; padding: 40px 20px; }
   .git svg { width: 100%; height: 300px; display: block; }
+
+  /* Illustration — unDraw SVG for abstract concepts / analogies */
+  .diag-illustration { width: 100%; display: flex; flex-direction: column;
+    align-items: center; justify-content: center; gap: 20px; }
+  .diag-illustration svg { max-width: 100%; max-height: 420px; height: auto;
+    display: block; width: auto; margin: 0 auto; }
+
+  /* Screenshot evidence — uploaded real evidence image or pending placeholder */
+  .diag-screenshot { width: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center; }
+  .diag-screenshot img { max-width: 100%; max-height: 480px; width: auto; height: auto; border-radius: 16px; border: 1.5px solid rgba(28,10,5,0.18); box-shadow: 0 16px 40px rgba(0,0,0,0.12); object-fit: contain; }
+  .diag-screenshot-placeholder { width: 100%; padding: 36px 32px; border: 2px dashed #EE4B1A; border-radius: 20px; background: rgba(238,75,26,0.04); display: flex; flex-direction: column; gap: 14px; text-align: left; }
+  .diag-screenshot-badge { font-family: 'JetBrains Mono'; font-weight: 700; font-size: 22px; color: #EE4B1A; letter-spacing: 0.08em; text-transform: uppercase; }
+  .diag-screenshot-source { font-size: 26px; line-height: 1.4; color: #1C0A05; font-weight: 600; }
+  .diag-screenshot-source span { color: #EE4B1A; }
+  .diag-screenshot-brief-item { font-size: 22px; line-height: 1.4; color: #524036; }
+  .diag-screenshot-brief-item strong { color: #1C0A05; }
 `;

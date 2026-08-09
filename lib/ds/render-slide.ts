@@ -9,6 +9,7 @@ import { coverDoorTemplate } from "@/lib/ds/templates/cover-door";
 import { sanitizeHookHtml } from "@/lib/ds/sanitize";
 import { scopeCss } from "@/lib/ds/scope-css";
 import { renderIcon } from "@/lib/ds/icons";
+import { renderIllustration } from "@/lib/ds/illustrations";
 import { pointTemplate } from "@/lib/ds/templates/point";
 import { outroTemplate } from "@/lib/ds/templates/outro";
 import { terminalTemplate } from "@/lib/ds/templates/terminal";
@@ -372,6 +373,29 @@ function renderDoorHook(h: Extract<CoverHook, { kind: "door" }>): string {
     .replace("HAND_INJECT", () => handIcon);
 }
 
+function renderIllustrationMockup(m: Extract<Mockup, { type: "illustration" }>): string {
+  const svg = renderIllustration(m.illustrationSlug);
+  const caption = m.caption ? `<div class="catatan mt-20"><div class="catatan-body">${escapeHtml(m.caption)}</div></div>` : "";
+  return `<div class="diag-wrap"><div class="diag-illustration">${svg}${caption}</div></div>`;
+}
+
+function renderScreenshotMockup(m: Extract<Mockup, { type: "screenshot" }>): string {
+  if (m.evidenceStatus === "captured" && m.screenshotImage?.dataUrl) {
+    return `<div class="diag-wrap"><div class="diag-screenshot"><img src="${escapeHtml(m.screenshotImage.dataUrl)}" alt="Evidence Screenshot" /></div></div>`;
+  }
+
+  if (m.evidenceStatus === "fallback_used") {
+    const srcLabel = m.screenshotBrief?.source ? escapeHtml(m.screenshotBrief.source) : "Bukti Studi Kasus";
+    return `<div class="diag-wrap"><div class="catatan mt-20"><div class="catatan-body font-mono text-sm">📌 ${srcLabel} (Mode Referensi Teks)</div></div></div>`;
+  }
+
+  const sourceText = m.screenshotBrief?.source ? escapeHtml(m.screenshotBrief.source) : "screenshot bukti asli";
+  const mustShowText = m.screenshotBrief?.mustShow ? `<div class="diag-screenshot-brief-item"><strong>Harus terlihat:</strong> ${escapeHtml(m.screenshotBrief.mustShow)}</div>` : "";
+  const mustHideText = m.screenshotBrief?.mustHide ? `<div class="diag-screenshot-brief-item"><strong>Harus di-blur/crop:</strong> ${escapeHtml(m.screenshotBrief.mustHide)}</div>` : "";
+
+  return `<div class="diag-wrap"><div class="diag-screenshot-placeholder"><div class="diag-screenshot-badge">⚠️ BUTUH SCREENSHOT ASLI</div><div class="diag-screenshot-source">Target: <span>${sourceText}</span></div>${mustShowText}${mustHideText}</div></div>`;
+}
+
 /** Render any mockup type to an HTML fragment. `scopeId` scopes `custom` CSS. */
 function renderMockup(m: Mockup, scopeId: string): string {
   switch (m.type) {
@@ -413,6 +437,10 @@ function renderMockup(m: Mockup, scopeId: string): string {
       return renderDatabaseMockup(m);
     case "gitbranch":
       return renderGitBranchMockup(m);
+    case "illustration":
+      return renderIllustrationMockup(m);
+    case "screenshot":
+      return renderScreenshotMockup(m);
     case "custom":
       return renderCustomFragment(m.html, m.css, scopeId, "diag-wrap");
     case "card":

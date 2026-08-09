@@ -1,0 +1,43 @@
+{
+  "database": [
+    "server_9eix",
+    "server-cluster_7ugi",
+    "server-down_lxs9",
+    "server-push_1lbi",
+    "file-manager_ivlr"
+  ],
+  "security": [
+    "online-security_1o24",
+    "alert_w756",
+    "safe_0mei",
+    "surveillance_k6wl"
+  ],
+  "collaboration": [
+    "teamwork_zplp",
+    "team-up_qeem",
+    "team_85hs",
+    "team-spirit_18vw",
+    "team-goals_0026",
+    "team-effort_2mrb",
+    "team-collaboration_phnf"
+  ],
+  "problem_solving": [
+    "fixing-bugs_13mt",
+    "code-inspection_z688",
+    "code-review_jdgp",
+    "qa-engineers_kgp8"
+  ],
+  "learning": [
+    "learning_qt7d",
+    "online-learning_tgmv",
+    "continuous-learning_a1ld",
+    "knowledge_0ty5",
+    "education_3vwh"
+  ],
+  "growth": [
+    "growth-chart_4iho",
+    "growth-analytics_vzjz",
+    "growth-curve_kzjb",
+    "social-growth_osro"
+  ]
+}

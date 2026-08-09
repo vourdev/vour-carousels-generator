@@ -1,4 +1,5 @@
 import { ICON_SLUGS } from "@/lib/ds/icons";
+import { ILLUSTRATION_CATEGORIES } from "@/lib/ds/illustrations";
 import { VOICE_SAMPLES, VOICE_PATTERNS, SENTENCE_TEMPLATES } from "./voice-samples";
 
 /* ── Shared fragments (single-sourced across brief / plan / revise) ────── */
@@ -6,6 +7,10 @@ import { VOICE_SAMPLES, VOICE_PATTERNS, SENTENCE_TEMPLATES } from "./voice-sampl
 // The icon vocabulary comes straight from the generated allowlist so the
 // prompts can never drift from what renderIcon() can actually draw.
 const ICON_ALLOWLIST = ICON_SLUGS.join(", ");
+
+const ILLUSTRATION_CATALOG = Object.entries(ILLUSTRATION_CATEGORIES)
+  .map(([cat, slugs]) => `${cat} -> ${slugs.join(" | ")}`)
+  .join("\n  ");
 
 const TONES = `"peach" (neutral) | "stone" (loser/warning) | "mint" (success) | "sky" (tooling) | "pink" (design) | "amber" (highlight)`;
 
@@ -33,6 +38,8 @@ const MOCKUP_BUDGETS = `- Terminal: filename + 4-6 code lines max (≤ 45 chars 
 - CommandPalette: query (≤ 30) + 2-5 rows (icon + label ≤ 40, optional active) — Cmd+K menus, action lists, "everything via one shortcut".
 - Database: EXACTLY 2 tables (name ≤ 20, each 2-4 rows of col ≤ 16 + type ≤ 8) + relation (≤ 12, e.g. "1 ─< ∞") — schema / ERD / foreign-key relations.
 - GitBranch: main 2-6 commit labels (≤ 16) + branch { name ≤ 16, at } + mergeLabel (≤ 12) — branch/merge workflow, feature-branch story.
+- Illustration: illustrationSlug from ILLUSTRATION_CATEGORIES, optional caption (≤ 90 chars) — unDraw SVG for abstract concepts / non-technical analogies. Available categories:
+  ${ILLUSTRATION_CATALOG}
 Array-count rule (HARD): concept/hub/checklist/flow/steps must meet their minimum item count. If you cannot fill the minimum, choose a different mockup type (e.g. card or callout) — do NOT emit a diagram with too few items.
 
 PROPORTION (the caps above are LIMITS, not targets):
@@ -163,6 +170,43 @@ Call-to-Action:
 • Yuk [action]
 
 ═══════════════════════════════════════════════════════════════
+POLA TERLARANG (HINDARI DI HEADLINE MAUPUN BODY):
+═══════════════════════════════════════════════════════════════
+
+1. PEMBUKA GENERIK: "Dalam dunia teknologi yang terus berkembang...", "Penting untuk dipahami bahwa...", "Di era digital ini..."
+   → Ganti: langsung ke poin, atau observasi personal ("Gw sering lihat developer junior...")
+
+2. HEDGING BERLEBIHAN: "bisa dibilang", "pada dasarnya", "secara umum", "cenderung", "kemungkinan besar" dipakai berulang untuk menghindari sikap tegas
+   → Ganti: pernyataan langsung dengan sikap jelas
+
+3. TRANSISI FORMULAIK BERULANG: "Selain itu,", "Di sisi lain,", "Namun demikian,"
+   → Ganti: transisi natural sesuai konteks, atau potong jadi kalimat pendek terpisah
+
+4. OVER-EXPLAINING: menjelaskan hal yang sudah jelas dari mockup/visual, atau mengulang poin yang sama dengan kata berbeda
+   → Ganti: percaya visual untuk menjelaskan, teks fokus ke insight yang TIDAK terlihat dari visual saja
+
+5. PENUTUP KLISE DI OUTRO: "Jadi, kesimpulannya...", "Intinya, ini penting untuk..."
+   → Ganti: ajakan bertindak spesifik, pertanyaan balik ke penonton, atau statement singkat yang nempel di kepala
+
+6. KESEIMBANGAN PALSU: selalu kasih "tapi juga ada sisi positifnya" padahal brief aslinya punya sikap kritik/rekomendasi jelas
+   → Pertahankan sikap tegas dari ide awal, jangan dinetralkan
+
+═══════════════════════════════════════════════════════════════
+FEW-SHOT KALIBRASI (DATAR VS PUNCHY):
+═══════════════════════════════════════════════════════════════
+
+• Datar  : "Model AI-mu gak jelek"
+  Punchy : "Kamu Salah Prompt, Bukan AI-nya yang Bego"
+
+• Datar  : "Base64 bukan enkripsi yang aman"
+  Punchy : "Base64 Itu Encoding, Bukan Encryption — Payload JWT Bisa Dibaca Siapa Aja"
+
+• Datar  : "Database perlu diberi index agar cepat"
+  Punchy : "6 Tanda Database Kamu BUTUH Index SEKARANG"
+
+PRE-OUTPUT SELF-CHECK:
+Sebelum finalisasi output, cek ulang draft brief terhadap 6 pola terlarang di atas secara internal, revisi diam-diam jika ditemukan, baru keluarkan hasil akhir.
+
 WRITE EVERY SENTENCE AS IF MUHAMMAD IS SPEAKING.
 Match his rhythm, word choices, and tone EXACTLY.
 ═══════════════════════════════════════════════════════════════
@@ -185,8 +229,13 @@ CATEGORY → allowed mockup types (choose by the slide's actual content):
 - ERROR_FIX  (wrong→right, bug, anti-pattern)    → datatable · comparison · terminal (diff-style)
 - CODE_DEMO  (real code / command / config)      → terminal · commandlist · commandpalette · promptcard · database
 - EVIDENCE   (a real product / UI you built)     → browser
-- ABSTRACT   (concept / principle / analogy)     → concept · hub · quote · card · custom
+- ABSTRACT   (concept / principle / analogy)     → illustration · concept · hub · quote · card · custom
 - BESPOKE    (a layout none of the above can draw)→ custom (hand-written HTML + CSS)
+
+RULE CONTOH ABSTRACT / ANALOGI:
+- Slide yang menjelaskan KONSEP ABSTRAK atau ANALOGI (bukan menunjukkan kode/terminal/proses teknis langsung) WAJIB memakai mockup: "illustration" dengan illustrationSlug yang sesuai dari ILLUSTRATION_CATEGORIES.
+- Slide yang menunjukkan kode, command, atau proses teknis konkret TETAP memakai mockup teknis yang sudah ada (terminal, flow, database, dll) — illustration BUKAN pengganti semua mockup.
+- Contoh few-shot: "Index itu kayak daftar isi di buku" → mockup: "illustration", illustrationSlug dari kategori "database" atau "learning" (misal: "file-manager_ivlr" atau "knowledge_0ty5").
 
 ANTI-REPETITION (hard rules):
 1. NEVER the same mockup type on two consecutive slides.
@@ -196,8 +245,8 @@ ANTI-REPETITION (hard rules):
    browser — MAX 1 per deck. Reach for them only when code/UI is the point.
 4. Rotate tone colors; never the same card/diagram tone twice running.
 5. Surface rhythm: at most ~1 "ink" (dark) slide per 3, never two in a row.
-6. A good 8-slide deck uses ≥ 5 different mockup types.
-7. custom — MAX ~1 per deck. It is the escape hatch for a layout the 20 typed
+6. A good 8-slide deck uses ≥ 5 different mockup types ("illustration" dihitung sebagai 1 tipe distinct yang valid; slug berbeda dalam tipe illustration tetap dihitung sebagai 1 tipe "illustration").
+7. custom — MAX ~1 per deck. It is the escape hatch for a layout the typed
    mockups genuinely cannot draw, not a shortcut around picking the right type.
    If a typed mockup fits, use the typed mockup.
 
@@ -259,6 +308,27 @@ You MUST follow this EXACT Markdown structure (matching the Vour Dev design syst
 ---
 
 # Slide 1 — Cover
+
+ATURAN KHUSUS COVER (slide pertama):
+Cover BUKAN slide isi — cover adalah pemicu swipe, bukan penjelasan.
+
+1. Pilih SATU trigger angle sesuai isi materi:
+   - MISCONCEPTION: audiens salah paham soal topik ini
+   - URGENCY/RISK: ada risiko/kerugian kalau tidak tahu ini
+   - CURIOSITY_GAP: pertanyaan yang jawabannya sengaja ditahan
+   - NUMBERED_LIST: "N hal yang wajib diketahui soal X"
+   - CONTRARIAN: melawan opini umum di industri
+   - BEFORE_AFTER: transformasi jelas (cara lama vs benar)
+
+2. Headline cover:
+   - Maksimal 8-10 kata
+   - Kata pertama/kedua jadi pengait (angka, "Salah", "Jangan", "Bukan", atau kata tanya)
+   - JANGAN jelaskan solusi di headline — sisakan rasa penasaran
+   - Tetap kredibel untuk audiens teknis, hindari clickbait menyesatkan
+
+3. Visual cover: fokus ke SATU elemen visual utama yang mewakili seluruh carousel. JANGAN pakai kotak highlight kecil bergaya slide isi di cover.
+
+4. Variasi trigger angle: jika brief sebelumnya memakai angle yang sama 2x berturut-turut, WAJIB pilih angle berbeda kali ini.
 
 ## Eyebrow
 <SHORT ALL-CAPS EYEBROW (≤ 3 words)>
@@ -348,7 +418,8 @@ Grouped by VISUAL DIRECTOR category (pick by the slide's content):
 - PromptCard — copy-paste AI prompt / snippet
 - Database — 2 related tables + relation glyph (ERD)
 
-**EVIDENCE** (a real product/UI):
+**EVIDENCE** (real product/UI, incident logs, case study proof):
+- Screenshot — real user-uploaded evidence screenshot (screenshotBrief: source, mustShow, mustHide, cropRatio: "4:5"). MANDATORY for real case studies, incident reports, or real-world proof.
 - Browser — browser chrome + stat cards ("here's what I built", max 1/deck)
 
 **ABSTRACT** (principle / concept / analogy):
@@ -375,6 +446,7 @@ Grouped by VISUAL DIRECTOR category (pick by the slide's content):
 - BigStat: number (≤6), unit (≤20), caption (≤70)
 - Quote: quote (≤180) + optional author (≤40)
 - Browser: url (≤40) + 2-4 cards (label ≤24, value ≤16)
+- Screenshot: screenshotBrief { source ≤80, mustShow ≤120, mustHide ≤120, cropRatio "4:5" }, evidenceStatus "pending"
 - CommandList: 2-6 rows (cmd ≤24, desc ≤48)
 - CommandPalette: query (≤30) + 2-5 rows (icon + label ≤40)
 - Database: 2 tables (name ≤20, 2-4 rows of col ≤16 + type ≤8) + relation
@@ -565,8 +637,11 @@ MOCKUP TYPES — every "point" slide MUST include a "mockup" object with one of 
 20. { type: "timeline", oldLabel: "2015", oldTitle: "...", oldBody: "...", newLabel: "Sekarang", newTitle: "...", newBody: "..." }
    → Two dated cards (dulu/sekarang, then/now). Use for evolution over time.
 
-21. { type: "custom", html: "...", css?: "..." }
-   → Hand-written HTML + CSS. The escape hatch for a layout none of types 1-20 can draw (a bespoke split view, an unusual structural block, a visual metaphor). Write self-contained markup with your OWN class names and put the matching rules in 'css'. The renderer wraps your fragment in the flex slot and SCOPES your CSS to it, so do NOT add a '.diag-wrap' wrapper and do NOT style shared chrome (section, body, h1, .eyebrow, .counter, .geser) — those rules are scoped away and do nothing. Colours MUST come from the surface tokens (var(--ms-fg), --ms-fg-muted, --ms-fg-faint, --ms-panel, --ms-panel-deep, --ms-line, --ms-accent) — a literal hex breaks on the surface you did not picture. See "WRITING A custom MOCKUP" above. Max 3 colors, no backdrop-filter, max ~1 per deck.
+21. { type: "screenshot", screenshotBrief: { source: "AWS CloudWatch Metrics graph", mustShow: "504 Gateway Timeout spike at 14:02", mustHide: "Account ID and Secret Key", cropRatio: "4:5" }, evidenceStatus: "pending" }
+   → Real user upload evidence screenshot. MANDATORY for real case studies, incident reports, or real-world proof. Must specify source (as specific as possible), mustShow, mustHide, cropRatio ("4:5"), and set evidenceStatus: "pending".
+
+22. { type: "custom", html: "...", css?: "..." }
+   → Hand-written HTML + CSS. The escape hatch for a layout none of types 1-21 can draw (a bespoke split view, an unusual structural block, a visual metaphor). Write self-contained markup with your OWN class names and put the matching rules in 'css'. The renderer wraps your fragment in the flex slot and SCOPES your CSS to it, so do NOT add a '.diag-wrap' wrapper and do NOT style shared chrome (section, body, h1, .eyebrow, .counter, .geser) — those rules are scoped away and do nothing. Colours MUST come from the surface tokens (var(--ms-fg), --ms-fg-muted, --ms-fg-faint, --ms-panel, --ms-panel-deep, --ms-line, --ms-accent) — a literal hex breaks on the surface you did not picture. See "WRITING A custom MOCKUP" above. Max 3 colors, no backdrop-filter, max ~1 per deck.
 
 ${MOCKUP_VARIETY_RULE}
 
@@ -654,7 +729,10 @@ STRICT REVISION INSTRUCTIONS
      against the history to resolve what "it" / "that" / "the same" refers to. The latest
      entry is the most likely referent.
    - If the new request genuinely contradicts an earlier one, the NEW request wins — apply
-     it, and treat the earlier entry as superseded rather than trying to satisfy both.`;
+     it, and treat the earlier entry as superseded rather than trying to satisfy both.
+
+7. USER INSTRUCTION PRECEDENCE:
+   - Manual revision requests from the user ALWAYS take highest priority over default guidelines. If the user explicitly requests a specific change (e.g. a longer headline, specific phrasing, or custom mockup), honor the user's manual instruction verbatim.`;
 
 /**
  * Render the accumulated revision log as a prompt block.
@@ -707,4 +785,56 @@ CRITICAL INSTRUCTIONS FOR REVISION:
 3. You MUST include the '# Carousel Content — <Title>', '# Caption', and '# Hashtag' sections in the output. If the revision request doesn't ask to change them, preserve them or update them to reflect the slide changes. Do not output just the slides.
 4. Keep every earlier revision in the history above intact — never undo an accepted change while applying the new one. If the new request contradicts an earlier one, the new request wins.
 5. Output the full Markdown document matching the required structure start-to-finish.`;
+}
+
+/* ── Human Voice Editor · Anti-Agentic Copywriting Pass ───────────────── */
+
+export const humanVoiceEditorSystem = `Kamu adalah Human Voice Editor untuk konten edukasi teknologi @vourdev.
+Kamu menerima draft copy (headline + body tiap slide dalam Markdown brief) dan merevisinya supaya tidak terbaca sebagai output AI generik.
+
+## STEP 1 — Deteksi pola "agentic" yang harus dihapus
+Tandai dan revisi setiap kemunculan pola berikut:
+
+1. PEMBUKA GENERIK
+   Ciri: "Dalam dunia teknologi yang terus berkembang...", "Di era digital ini...", "Penting untuk dipahami bahwa..."
+   Ganti dengan: langsung ke poin, atau mulai dari observasi spesifik/personal ("Gw sering lihat developer junior...")
+
+2. HEDGING BERLEBIHAN
+   Ciri: "bisa dibilang", "pada dasarnya", "secara umum", "cenderung", "kemungkinan besar" dipakai berulang untuk menghindari sikap tegas
+   Ganti dengan: pernyataan langsung dengan sikap jelas, sesekali boleh kontroversial ("X itu overrated" bukan "X bisa dibilang kurang optimal dalam beberapa kasus")
+
+3. TRANSISI FORMULAIK
+   Ciri: "Selain itu,", "Di sisi lain,", "Namun demikian," dipakai di HAMPIR SETIAP slide dengan pola sama
+   Ganti dengan: transisi natural sesuai konteks, atau hilangkan sama sekali (potong jadi kalimat pendek terpisah)
+
+4. PENJELASAN BERLEBIHAN (over-explaining)
+   Ciri: kalimat menjelaskan hal yang sudah jelas dari konteks/visual, atau mengulang poin yang sama dengan kata berbeda
+   Ganti dengan: percaya pada visual untuk menjelaskan, teks cukup memberi konteks/insight tambahan yang TIDAK terlihat dari visual
+
+5. RANGKUMAN PENUTUP KLISE
+   Ciri: "Jadi, kesimpulannya...", "Intinya, ini penting untuk..." di slide terakhir
+   Ganti dengan: penutup yang lebih tajam — ajakan bertindak spesifik, pertanyaan balik ke penonton, atau statement singkat yang nempel di kepala
+
+6. KESEIMBANGAN PALSU (false balance)
+   Ciri: setiap poin selalu dikasih "tapi juga ada sisi positifnya" padahal brief aslinya punya sikap jelas (kritik/rekomendasi)
+   Ganti dengan: pertahankan sikap tegas dari brief, jangan dinetralkan
+
+## STEP 2 — Sesuaikan dengan voice signature @vourdev
+Ciri suara yang harus dipertahankan/diperkuat (berdasarkan gaya existing):
+- Sapaan langsung "lo/kamu", sesekali "gw" untuk pengalaman personal
+- Kalimat pendek, tegas, kadang cuma 3-5 kata untuk penekanan
+- Analogi sehari-hari untuk konsep teknis ("kayak daftar isi di buku")
+- Opini eksplisit sebelum penjelasan ("padahal ini jebakan", "ini yang sering diremehkan")
+- Hindari istilah korporat/formal ("mengimplementasikan", "memfasilitasi", "dalam rangka") — ganti versi kasual ("pakai", "biar", "buat")
+
+## STEP 3 — Variasi ritme antar slide
+- Cek: apakah 3+ slide berturut-turut punya struktur kalimat yang identik (subjek-predikat-objek monoton)? Jika ya, pecah salah satu jadi fragmen/pertanyaan retoris.
+- Cek: apakah kata pembuka kalimat di headline slide berulang pola yang sama ("Kenapa X", "Kenapa Y", "Kenapa Z" tiga kali beruntun)? Variasikan.
+
+CRITICAL INSTRUCTIONS FOR OUTPUT:
+Return the revised Markdown brief directly using the exact same Markdown structure (# Carousel Content, # Slide 1 — Cover, # Slide 2..., # Caption, # Hashtag).
+Ensure every headline and description is sharp, human, opinionated, and 100% free of agentic AI patterns.`;
+
+export function humanVoiceEditorUserPrompt(brief: string): string {
+  return `Draft Markdown Brief to revise:\n\n${brief}\n\nPerform the Human Voice Editor pass now and return the polished Markdown brief.`;
 }

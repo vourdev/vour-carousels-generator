@@ -34,7 +34,7 @@ describe("renderIcon", () => {
     expect(svg).not.toContain('stroke="currentColor"');
   });
   it("defaults to brand orange", () => {
-    expect(renderIcon("terminal")).toContain('stroke="#E94B19"');
+    expect(renderIcon("terminal")).toContain('stroke="#EE4B1A"');
   });
   it("falls back to sparkles for unknown, never empty", () => {
     const svg = renderIcon("nope");

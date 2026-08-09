@@ -15,8 +15,12 @@ describe("diagLines", () => {
     expect((svg.match(/<polygon /g) ?? []).length).toBe(3);
     expect(svg).toContain('viewBox="0 0 920 380"');
   });
-  it("clamps an out-of-range count to 4", () => {
+  it("draws 2 paths for 2 nodes", () => {
     const svg = diagLines(2, { viewH: 400, midY: 220, endY: 320 });
+    expect((svg.match(/<path /g) ?? []).length).toBe(2);
+  });
+  it("clamps an out-of-range count to 4", () => {
+    const svg = diagLines(6, { viewH: 400, midY: 220, endY: 320 });
     expect((svg.match(/<path /g) ?? []).length).toBe(4);
   });
 });

@@ -2,7 +2,7 @@
 
 import { requireSession } from "@/lib/session";
 import { availableModels, resolveModel, type ModelId } from "@/lib/ai/registry";
-import { generateBrief, generateSlidePlan, reviseSlidePlan } from "@/lib/ai/generate";
+import { generateBrief, generateSlidePlan, reviseSlidePlan, polishBriefVoice } from "@/lib/ai/generate";
 import { briefRevisionPrompt } from "@/lib/ai/prompts";
 import { appendRevision, listRevisions, clearRevisions } from "@/lib/memory/repo";
 import { summarizePlanDiff } from "@/lib/memory/diff";
@@ -25,6 +25,11 @@ export async function listModelsAction(): Promise<ModelId[]> {
 export async function briefAction(idea: string, id: ModelId): Promise<string> {
   const model = await guardModel(id);
   return generateBrief(idea, model);
+}
+
+export async function humanVoiceEditorAction(brief: string, id: ModelId): Promise<string> {
+  const model = await guardModel(id);
+  return polishBriefVoice(brief, model);
 }
 
 export async function planAction(brief: string, id: ModelId): Promise<SlidePlan> {
