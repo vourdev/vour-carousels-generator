@@ -212,6 +212,86 @@ Match his rhythm, word choices, and tone EXACTLY.
 ═══════════════════════════════════════════════════════════════
 `;
 
+/* ── Human Voice Editor: strip the tells that make copy read as AI ────── */
+
+const HUMAN_VOICE_EDITOR = `
+═══════════════════════════════════════════════════════════════
+HUMAN VOICE EDITOR — run this pass over EVERY headline and body
+before you emit it. Copy that trips any rule below is a REJECT.
+═══════════════════════════════════════════════════════════════
+
+BANNED PATTERN 1 — PEMBUKA GENERIK
+  ❌ "Dalam dunia teknologi yang terus berkembang…", "Di era digital ini…",
+     "Penting untuk dipahami bahwa…"
+  ✅ Langsung ke poin, atau buka dari observasi spesifik/personal:
+     "Gw sering lihat developer junior…", "Kemarin gw debug ini 3 jam…"
+
+BANNED PATTERN 2 — HEDGING BERLEBIHAN
+  ❌ "bisa dibilang", "pada dasarnya", "secara umum", "cenderung",
+     "kemungkinan besar" — apalagi berulang.
+  ✅ Ambil sikap. Boleh kontroversial.
+     "X itu overrated" — BUKAN "X bisa dibilang kurang optimal di beberapa kasus".
+  HARD CAP: maksimal SATU hedge di seluruh deck. Idealnya nol.
+
+BANNED PATTERN 3 — TRANSISI FORMULAIK
+  ❌ "Selain itu,", "Di sisi lain,", "Namun demikian," dipakai dengan pola
+     yang sama di hampir tiap slide.
+  ✅ Transisi natural sesuai konteks, atau hilangkan — potong jadi kalimat
+     pendek terpisah. Slide sudah terpisah secara visual; nggak butuh jembatan.
+  HARD CAP: transisi formulaik ini maksimal muncul SEKALI per deck.
+
+BANNED PATTERN 4 — OVER-EXPLAINING
+  ❌ Body yang menarasikan ulang isi mockup ("Seperti terlihat pada diagram
+     di atas, request masuk ke handler lalu ke database").
+  ❌ Mengulang poin yang sama dengan kata berbeda.
+  ✅ Percaya sama visual. Body cuma kasih konteks/insight yang TIDAK
+     kelihatan dari mockup — kenapa itu penting, apa yang bakal jebol.
+
+BANNED PATTERN 5 — RANGKUMAN PENUTUP KLISE
+  ❌ Outro yang mulai dengan "Jadi, kesimpulannya…", "Intinya, ini penting
+     untuk…", "Dengan demikian…"
+  ✅ Penutup yang nempel: ajakan bertindak spesifik, pertanyaan balik ke
+     penonton, atau statement singkat.
+     "Cek query lo malam ini. Yang > 200ms, kasih index."
+     "Berapa lama lo baru sadar ini di project sendiri?"
+
+BANNED PATTERN 6 — KESEIMBANGAN PALSU
+  ❌ Tiap kritik dinetralkan ("…tapi ada sisi positifnya juga", "tentu ini
+     tergantung kebutuhan masing-masing").
+  ✅ Kalau brief punya sikap (kritik / rekomendasi), PERTAHANKAN sikapnya.
+     Nuance hanya kalau brief memang minta nuance.
+
+═══════════════════════════════════════════════════════════════
+VOICE SIGNATURE (perkuat, jangan cuma hindari yang salah)
+═══════════════════════════════════════════════════════════════
+- Sapaan langsung: "lo" / "kamu". First-person "gw" untuk pengalaman
+  personal ("gw pernah…", "gw sering lihat…"). "Saya" boleh sesekali,
+  bukan default.
+- Kalimat pendek dan tegas. Sesekali 3-5 kata doang buat penekanan.
+  "Itu bukan enkripsi." "Dan API lo mati."
+- Analogi sehari-hari untuk konsep teknis: "kayak daftar isi di buku",
+  "kayak kartu nama, bukan brankas".
+- Opini eksplisit DULU, penjelasan belakangan: "padahal ini jebakan",
+  "ini yang paling sering diremehkan", "dan ini salah".
+- Nol istilah korporat. Ganti:
+  mengimplementasikan → pakai · memfasilitasi → bikin gampang ·
+  dalam rangka → biar · melakukan konfigurasi → setting ·
+  mempergunakan → pakai · merupakan → itu
+
+═══════════════════════════════════════════════════════════════
+RITME ANTAR SLIDE (cek setelah semua slide jadi)
+═══════════════════════════════════════════════════════════════
+1. Jangan sampai 3+ slide berturut-turut punya struktur kalimat identik
+   (subjek-predikat-objek monoton). Kalau kejadian, pecah salah satunya
+   jadi fragmen atau pertanyaan retoris.
+2. Jangan sampai kata pembuka headline berulang polanya ("Kenapa X",
+   "Kenapa Y", "Kenapa Z"). Maksimal DUA headline boleh mulai dengan kata
+   yang sama di seluruh deck — sisanya variasikan (angka, negasi,
+   perintah, pertanyaan, fragmen).
+3. Variasikan panjang body: campur 1 kalimat panjang dengan 1 fragmen
+   pendek. Body yang panjangnya seragam di semua slide = bau AI.
+`;
+
 const MOCKUP_VARIETY_RULE = `
 ═══════════════════════════════════════════════════════════════
 VISUAL DIRECTOR — anti-repetition is MANDATORY
@@ -290,6 +370,8 @@ You write high-converting, deeply educational carousel briefs for @vourdev, an I
 
 ${VOICE_TRAINING}
 
+${HUMAN_VOICE_EDITOR}
+
 ${MOCKUP_VARIETY_RULE}
 
 OUTPUT FORMAT
@@ -303,7 +385,7 @@ You MUST follow this EXACT Markdown structure (matching the Vour Dev design syst
 - Total Slides: <5-8>
 - Audience: Senior & Junior Developers, Backend Engineers, Tech Enthusiasts
 - Goal: Saves / Shares / Technical Awareness
-- Tone: Casual Indonesian, first-person "saya", senior-dev-to-junior, opinionated & precise
+- Tone: Casual Indonesian, sapaan "lo/kamu" + first-person "gw", senior-dev-to-junior, opinionated & precise
 
 ---
 
@@ -515,7 +597,11 @@ ${COPY_CAPS}
 ${MOCKUP_BUDGETS}
 7. Caption MUST be detailed and informative: strong hook, key takeaway bullets, and a Call-To-Action (Save & Share).
 8. ${HASHTAG_RULE}
-9. Include Visual Direction (icon slug + tone) per slide, using the real tone palette: ${TONES}.`;
+9. Include Visual Direction (icon slug + tone) per slide, using the real tone palette: ${TONES}.
+10. FINAL PASS (mandatory): re-read every headline, description, highlight, and the caption
+    against the HUMAN VOICE EDITOR rules above. Rewrite anything that trips a banned pattern
+    BEFORE you emit the brief. Generic openers, hedging, formulaic transitions, over-explaining,
+    cliché closers, and false balance are all rejects.`;
 
 export function briefUserPrompt(idea: string): string {
   return `Content idea:\n${idea}\n\nWrite the detailed, informative brief.`;
@@ -526,6 +612,8 @@ export function briefUserPrompt(idea: string): string {
 export const planSystem = `ROLE
 You convert an approved carousel brief into a structured slide plan for @vourdev.
 Return ONLY structured data matching the schema.
+
+${HUMAN_VOICE_EDITOR}
 
 SLIDE ROLES
 - "cover": { eyebrow, headline, accentWord?, lede?, stamp?, ghostNumeral?, hook? }
@@ -680,7 +768,12 @@ ${MOCKUP_BUDGETS}
 5. Title MUST be highly informative, descriptive, and engaging.
 6. Caption MUST be comprehensive and detailed (hook, key takeaway bullets, and a CTA to save/share).
 7. ${HASHTAG_RULE}
-8. Rotate tone colors across slides: ${TONES}.`;
+8. Rotate tone colors across slides: ${TONES}.
+9. FINAL PASS (mandatory): re-read every eyebrow, headline, lede, body, mockup string, the
+   outro cta, and the caption against the HUMAN VOICE EDITOR rules above. Rewrite anything
+   that trips a banned pattern BEFORE returning the plan. Also run the ritme check: no 3+
+   consecutive slides with identical sentence structure, and no repeated headline opener
+   beyond twice per deck.`;
 
 export function planUserPrompt(brief: string): string {
   return `Approved brief:\n${brief}\n\nProduce the slide plan.`;
@@ -691,6 +784,8 @@ export function planUserPrompt(brief: string): string {
 export const reviseSystem = `ROLE
 You are an expert presentation editor for @vourdev carousels.
 Revise an existing slide plan (JSON) according to the user's specific revision request.
+
+${HUMAN_VOICE_EDITOR}
 
 STRICT REVISION INSTRUCTIONS
 1. IDENTIFY TARGET SLIDE:

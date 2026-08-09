@@ -87,7 +87,7 @@ const modelDetails: Record<string, { label: string; vendor: string; description:
 
 function summarizeError(msg: string): string {
   const lower = msg.toLowerCase();
-  
+
   if (lower.includes("quota exceeded") || lower.includes("exceeded your current quota") || lower.includes("rate limit") || lower.includes("rate-limits")) {
     return "Batas kuota API Gemini terlampaui (Rate Limit / Quota Exceeded). Silakan coba beberapa saat lagi.";
   }
@@ -100,7 +100,7 @@ function summarizeError(msg: string): string {
   if (lower.includes("no longer available") || lower.includes("not available")) {
     return "Model yang dipilih sudah tidak tersedia atau tidak aktif.";
   }
-  
+
   if (msg.length > 120) {
     const lastErrorIdx = msg.lastIndexOf("Last error: ");
     if (lastErrorIdx !== -1) {
@@ -110,7 +110,7 @@ function summarizeError(msg: string): string {
     }
     return "Terjadi kesalahan pada sistem AI.";
   }
-  
+
   return msg;
 }
 
@@ -135,11 +135,11 @@ function compressImageBlob(blob: Blob, maxWidth = 360): Promise<string> {
         reject(new Error("canvas context not available"));
         return;
       }
-      
+
       const scale = maxWidth / img.width;
       canvas.width = maxWidth;
       canvas.height = img.height * scale;
-      
+
       ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
       const dataUrl = canvas.toDataURL("image/jpeg", 0.7);
       resolve(dataUrl);
@@ -217,10 +217,10 @@ function countSections(html: string): number {
 // Simple React Markdown Renderer
 function renderMarkdown(md: string) {
   if (!md) return <p className="text-muted-foreground italic text-xs">Brief outline kosong...</p>;
-  
+
   const lines = md.split("\n");
   const elements: React.ReactNode[] = [];
-  
+
   lines.forEach((line, idx) => {
     const trimmed = line.trim();
     if (trimmed === "---") {
@@ -253,13 +253,12 @@ function renderMarkdown(md: string) {
       const isVisual = text.toLowerCase().includes("visual");
 
       elements.push(
-        <h2 key={idx} className={`text-xs font-semibold uppercase tracking-wider mt-3 mb-1 font-heading ${
-          isEyebrow ? "text-indigo-400 font-mono" :
-          isHeadline ? "text-amber-400 font-bold" :
-          isHighlight ? "text-emerald-400 font-semibold" :
-          isVisual ? "text-purple-400 font-semibold" :
-          "text-muted-foreground border-b border-hairline pb-0.5"
-        }`}>
+        <h2 key={idx} className={`text-xs font-semibold uppercase tracking-wider mt-3 mb-1 font-heading ${isEyebrow ? "text-indigo-400 font-mono" :
+            isHeadline ? "text-amber-400 font-bold" :
+              isHighlight ? "text-emerald-400 font-semibold" :
+                isVisual ? "text-purple-400 font-semibold" :
+                  "text-muted-foreground border-b border-hairline pb-0.5"
+          }`}>
           {text}
         </h2>
       );
@@ -300,6 +299,145 @@ function renderMarkdown(md: string) {
   return <div className="space-y-0.5">{elements}</div>;
 }
 
+/* ── Per-step loading state ──────────────────────────────────────────────
+ * Every long-running step in the wizard declares a job here. The phases are
+ * indicative (the AI/export calls don't stream progress) so the loader shows a
+ * real elapsed clock next to them and parks on the last phase until the call
+ * actually resolves — it never fakes a completion. */
+const LOADING_JOBS = {
+  brief: {
+    title: "Menyusun brief outline",
+    phases: [
+      "Membaca ide & sudut pandangnya",
+      "Menyusun kerangka slide",
+      "Menulis copy dengan voice @vourdev",
+      "Merapikan caption & hashtag",
+    ],
+  },
+  briefRevise: {
+    title: "Merevisi brief outline",
+    phases: [
+      "Membaca instruksi revisi",
+      "Menyesuaikan bagian yang diminta",
+      "Menjaga voice tetap konsisten",
+    ],
+  },
+  plan: {
+    title: "Merender rancangan slide",
+    phases: [
+      "Membaca brief yang disetujui",
+      "Memilih mockup tiap slide",
+      "Menyusun slide plan",
+      "Validasi budget copy & ikon",
+    ],
+  },
+  planRevise: {
+    title: "Merevisi rancangan slide",
+    phases: [
+      "Mencari slide yang dimaksud",
+      "Menerapkan perubahan",
+      "Merender ulang preview",
+    ],
+  },
+  export: {
+    title: "Mengekspor slide ke JPEG",
+    phases: [
+      "Merender HTML tiap slide",
+      "Memotret canvas 1080×1350",
+      "Menyiapkan berkas gambar",
+    ],
+  },
+} as const;
+
+type LoadingKind = keyof typeof LOADING_JOBS;
+
+/**
+ * Shared loading indicator. "panel" overlays the step's workspace with a phase
+ * checklist; "inline" is the compact form used inside the step-1 chat feed.
+ * Render with key={kind} — a new job remounts it instead of resetting state.
+ */
+function StepLoader({ kind, variant = "panel" }: { kind: LoadingKind; variant?: "panel" | "inline" }) {
+  const { title, phases } = LOADING_JOBS[kind];
+  const [phase, setPhase] = useState(0);
+  const [elapsed, setElapsed] = useState(0);
+
+  useEffect(() => {
+    const clock = setInterval(() => setElapsed((s) => s + 1), 1000);
+    // Hold on the final phase rather than looping — the caller unmounts us when done.
+    const advance = setInterval(
+      () => setPhase((p) => Math.min(p + 1, phases.length - 1)),
+      4000
+    );
+    return () => {
+      clearInterval(clock);
+      clearInterval(advance);
+    };
+  }, [phases.length]);
+
+  if (variant === "inline") {
+    return (
+      <div className="flex items-center gap-2.5 self-start max-w-[85%]">
+        <div className="size-7 rounded-full bg-primary/10 border border-primary/20 flex items-center justify-center shrink-0">
+          <Loader2 className="size-3.5 text-primary animate-spin" />
+        </div>
+        <div className="p-3.5 bg-card border border-hairline rounded-2xl rounded-tl-none flex flex-col gap-1.5 min-w-0">
+          <div className="flex items-center gap-2">
+            <span className="text-xs font-medium text-foreground">{title}</span>
+            <span className="text-[10px] font-mono text-muted-foreground tabular-nums">{elapsed}s</span>
+          </div>
+          <div className="flex items-center gap-1.5 text-[11px] text-muted-foreground">
+            <span className="size-1.5 rounded-full bg-primary animate-pulse shrink-0" />
+            <span className="truncate">{phases[phase]}…</span>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="absolute inset-0 z-20 flex items-center justify-center bg-card/85 backdrop-blur-sm animate-in fade-in duration-200">
+      <div className="w-full max-w-xs flex flex-col gap-3.5 p-5 rounded-2xl border border-hairline bg-card shadow-lg">
+        <div className="flex items-center gap-2.5">
+          <Loader2 className="size-4 text-primary animate-spin shrink-0" />
+          <span className="text-xs font-semibold truncate">{title}</span>
+          <span className="ml-auto text-[10px] font-mono text-muted-foreground tabular-nums shrink-0">
+            {elapsed}s
+          </span>
+        </div>
+        <ul className="flex flex-col gap-2">
+          {phases.map((label, i) => {
+            const done = i < phase;
+            const active = i === phase;
+            return (
+              <li
+                key={label}
+                className={`flex items-center gap-2 text-[11px] leading-snug transition-colors ${active ? "text-foreground font-medium" : done ? "text-muted-foreground" : "text-muted-foreground/50"
+                  }`}
+              >
+                {done ? (
+                  <Check className="size-3 text-emerald-500 shrink-0" />
+                ) : active ? (
+                  <span className="size-3 flex items-center justify-center shrink-0">
+                    <span className="size-1.5 rounded-full bg-primary animate-pulse" />
+                  </span>
+                ) : (
+                  <span className="size-3 flex items-center justify-center shrink-0">
+                    <span className="size-1.5 rounded-full border border-muted-foreground/40" />
+                  </span>
+                )}
+                <span className="truncate">{label}</span>
+              </li>
+            );
+          })}
+        </ul>
+        <p className="text-[10px] text-muted-foreground border-t border-hairline pt-2.5">
+          Jangan tutup tab ini sampai prosesnya selesai.
+        </p>
+      </div>
+    </div>
+  );
+}
+
 export function Wizard({
   models,
   initialTopic,
@@ -326,7 +464,7 @@ export function Wizard({
       timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
     }
   ]);
-  
+
   const [pending, start] = useTransition();
   const typewriterIntervalRef = useRef<NodeJS.Timeout | null>(null);
   const chatEndRef = useRef<HTMLDivElement | null>(null);
@@ -379,6 +517,9 @@ export function Wizard({
   const [briefPending, setBriefPending] = useState(false);
   const genRunRef = useRef(0);
   const abortRef = useRef<AbortController | null>(null);
+
+  // Which long-running job is in flight, so each step can show its own loader.
+  const [loadingJob, setLoadingJob] = useState<LoadingKind | null>(null);
 
   // Prompt history state (terminal-style ArrowUp / ArrowDown navigation)
   const [promptHistory, setPromptHistory] = useState<string[]>([]);
@@ -681,7 +822,7 @@ export function Wizard({
   // Auto-scroll chat feed to bottom
   useEffect(() => {
     chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [messages, pending, isTyping]);
+  }, [messages, pending, isTyping, loadingJob]);
 
   // Cleanup typewriter interval on unmount
   useEffect(() => {
@@ -724,7 +865,7 @@ export function Wizard({
     if (!mounted || step !== 1) return;
     listTopicsAction({ limit: 50 })
       .then((all) => setBankTopics(all.filter((t) => t.status === "idea" || t.status === "queued")))
-      .catch(() => {});
+      .catch(() => { });
   }, [mounted, step]);
 
   // Arriving via /create?topic=… — auto-start the brief from that topic.
@@ -814,14 +955,15 @@ export function Wizard({
     }
 
     setExportPending(true);
+    setLoadingJob("export");
     addMessage("ai", "Mengekspor slide rancangan menjadi gambar PNG...");
     try {
       const generatedBlobs = await captureCarousel(html);
       setBlobs(generatedBlobs);
-      
+
       // Revoke any existing object URLs to avoid memory leaks
       exportedImages.forEach((url) => URL.revokeObjectURL(url));
-      
+
       const urls = generatedBlobs.map((b) => URL.createObjectURL(b));
       setExportedImages(urls);
 
@@ -863,6 +1005,7 @@ export function Wizard({
       addMessage("ai", `Gagal memproses ekspor gambar: ${msg}`);
     } finally {
       setExportPending(false);
+      setLoadingJob(null);
     }
   };
 
@@ -920,7 +1063,7 @@ export function Wizard({
         setUploadedImageUrls(urls);
         // Also save to database and promote thumbnail to Cloudinary URL
         if (carouselId) {
-          await markCarouselStatusAction(carouselId, { 
+          await markCarouselStatusAction(carouselId, {
             imageUrls: urls,
             thumbnail: urls[0] || null,
           });
@@ -928,14 +1071,14 @@ export function Wizard({
       }
 
       setPublishState({ status: "publishing", progressMsg: "Mengirim ke Buffer API..." });
-      
+
       const editedPlan: SlidePlan = {
         ...plan!,
         title: editableTitle,
         caption: editableCaption,
         hashtags: [],
       };
-      
+
       const results = await publishAction(urls, editedPlan, scheduleDate.toISOString());
 
       setPublishState({
@@ -967,8 +1110,7 @@ export function Wizard({
 
       addMessage(
         "ai",
-        `Sukses! Carousel berhasil dijadwalkan di Buffer pada ${scheduleDate.toLocaleString("id-ID")}.${
-          results.igPostId ? `\n- Instagram Post ID: ${results.igPostId}` : ""
+        `Sukses! Carousel berhasil dijadwalkan di Buffer pada ${scheduleDate.toLocaleString("id-ID")}.${results.igPostId ? `\n- Instagram Post ID: ${results.igPostId}` : ""
         }${results.ttPostId ? `\n- TikTok Post ID: ${results.ttPostId}` : ""}`
       );
       toast.success("Berhasil dijadwalkan di Buffer!");
@@ -981,7 +1123,7 @@ export function Wizard({
       });
       addMessage("ai", `Gagal mempublikasikan: ${msg}`);
       toast.error(`Publish error: ${msg}`);
-      if (carouselId) markCarouselStatusAction(carouselId, { status: "failed" }).catch(() => {});
+      if (carouselId) markCarouselStatusAction(carouselId, { status: "failed" }).catch(() => { });
     }
   };
 
@@ -1024,7 +1166,7 @@ export function Wizard({
       }
 
       setPublishState({ status: "publishing", progressMsg: "Menyimpan ke database..." });
-      
+
       if (carouselId) {
         await markCarouselStatusAction(carouselId, {
           status: "exported",
@@ -1090,6 +1232,7 @@ export function Wizard({
     setEditableCaption("");
     setIsTyping(false);
     setBriefPending(false);
+    setLoadingJob(null);
     setActiveTab("brief");
     setMdMode("split");
     setBlobs([]);
@@ -1221,6 +1364,7 @@ export function Wizard({
     abortRef.current = controller;
     const runId = ++genRunRef.current;
     setBriefPending(true);
+    setLoadingJob("brief");
 
     fetchFn(controller.signal)
       .then((brief) => {
@@ -1235,7 +1379,9 @@ export function Wizard({
         addMessage("ai", `${errorLabel}: ${summarizeError(msg)}`);
       })
       .finally(() => {
-        if (genRunRef.current === runId) setBriefPending(false);
+        if (genRunRef.current !== runId) return;
+        setBriefPending(false);
+        setLoadingJob(null);
       });
   }
 
@@ -1267,11 +1413,12 @@ export function Wizard({
     return (await r.json()).brief;
   }
 
-/** Stop button (step 1): abandon the in-flight brief generation. */
+  /** Stop button (step 1): abandon the in-flight brief generation. */
   function handleCancelGeneration() {
     abortRef.current?.abort();
     genRunRef.current++;
     setBriefPending(false);
+    setLoadingJob(null);
     if (typewriterIntervalRef.current) clearInterval(typewriterIntervalRef.current);
     setIsTyping(false);
     addMessage("ai", "Generasi dibatalkan. Silakan ketik ide baru atau pilih topic lain.");
@@ -1295,6 +1442,7 @@ export function Wizard({
   function handlePlanGeneration() {
     if (!brief) return;
     addMessage("user", "Approve brief outline & generate Slide design.");
+    setLoadingJob("plan");
     start(async () => {
       try {
         const generatedPlan = await planAction(brief, model as ModelId);
@@ -1308,6 +1456,27 @@ export function Wizard({
         const msg = e instanceof Error ? e.message : "failed";
         toast.error(msg);
         addMessage("ai", `Gagal merender slide: ${summarizeError(msg)}`);
+      } finally {
+        setLoadingJob(null);
+      }
+    });
+  }
+
+  function handleHumanVoicePolish() {
+    if (!brief.trim() || !model) return;
+    addMessage("user", "Jalankan Human Voice Editor (Anti-Agentic Copywriting pass)...");
+    start(async () => {
+      try {
+        addMessage("ai", "Memoles brief dengan Human Voice Editor...");
+        const polished = await humanVoiceEditorAction(brief, model as ModelId);
+        setBrief(polished);
+        setFinalBrief(polished);
+        toast.success("Brief berhasil dipoles dengan Human Voice Editor!");
+        addMessage("ai", "Brief telah diperbarui tanpa pola agentic/AI generik. Silakan periksa hasilnya.");
+      } catch (e) {
+        const msg = e instanceof Error ? e.message : "failed";
+        toast.error(msg);
+        addMessage("ai", `Gagal memoles brief: ${summarizeError(msg)}`);
       }
     });
   }
@@ -1341,7 +1510,8 @@ export function Wizard({
     pushPromptToHistory(currentRevision);
     addMessage("user", currentRevision);
     setRevision("");
-    
+    setLoadingJob(step === 2 ? "briefRevise" : "planRevise");
+
     start(async () => {
       try {
         if (step === 2) {
@@ -1367,6 +1537,8 @@ export function Wizard({
         const msg = e instanceof Error ? e.message : "failed";
         toast.error(msg);
         addMessage("ai", `Revisi gagal: ${summarizeError(msg)}`);
+      } finally {
+        setLoadingJob(null);
       }
     });
 
@@ -1422,18 +1594,16 @@ export function Wizard({
                       if (s.id === 3) setActiveTab("preview");
                     }
                   }}
-                  className={`flex items-center gap-2 px-3 py-1.5 rounded-xl text-xs font-medium transition-all ${
-                    isActive
+                  className={`flex items-center gap-2 px-3 py-1.5 rounded-xl text-xs font-medium transition-all ${isActive
                       ? "bg-primary text-primary-foreground shadow-sm font-semibold"
                       : isCompleted
-                      ? "bg-muted/40 text-foreground hover:bg-muted/70 cursor-pointer border border-hairline"
-                      : "text-muted-foreground/50 cursor-not-allowed opacity-60"
-                  }`}
+                        ? "bg-muted/40 text-foreground hover:bg-muted/70 cursor-pointer border border-hairline"
+                        : "text-muted-foreground/50 cursor-not-allowed opacity-60"
+                    }`}
                 >
-                  <span className={`size-5 rounded-full flex items-center justify-center text-[10px] font-bold ${
-                    isActive ? "bg-primary-foreground text-primary" : "bg-muted text-muted-foreground"
-                  }`}>
-                    {s.id}
+                  <span className={`size-5 rounded-full flex items-center justify-center text-[10px] font-bold ${isActive ? "bg-primary-foreground text-primary" : "bg-muted text-muted-foreground"
+                    }`}>
+                    {isActive && loadingJob ? <Loader2 className="size-3 animate-spin" /> : s.id}
                   </span>
                   <span>{s.label}</span>
                 </button>
@@ -1540,11 +1710,10 @@ export function Wizard({
                                 setModel(m);
                                 setModelPopoverOpen(false);
                               }}
-                              className={`w-full flex items-center justify-between p-2 rounded-xl text-xs text-left transition-all ${
-                                isSelected
+                              className={`w-full flex items-center justify-between p-2 rounded-xl text-xs text-left transition-all ${isSelected
                                   ? "bg-primary/10 text-primary font-semibold border border-primary/20"
                                   : "hover:bg-muted/40 text-foreground"
-                              }`}
+                                }`}
                             >
                               <div className="flex items-center gap-2.5 min-w-0">
                                 <div className="size-5 shrink-0 flex items-center justify-center">
@@ -1570,11 +1739,10 @@ export function Wizard({
               {messages.map((m, idx) => (
                 <div key={idx} className={`flex flex-col ${m.sender === "user" ? "items-end" : "items-start"}`}>
                   <div
-                    className={`p-3 rounded-2xl max-w-[90%] leading-relaxed ${
-                      m.sender === "user"
+                    className={`p-3 rounded-2xl max-w-[90%] leading-relaxed ${m.sender === "user"
                         ? "bg-primary text-primary-foreground font-medium rounded-tr-xs shadow-xs"
                         : "bg-card border border-hairline text-foreground rounded-tl-xs shadow-2xs"
-                    }`}
+                      }`}
                   >
                     {m.text}
                   </div>
@@ -1606,9 +1774,9 @@ export function Wizard({
                   }}
                   placeholder={
                     step === 1 ? "Ketik ide atau topik (Shift+Enter untuk baris baru)..." :
-                    step === 2 ? "Instruksi revisi outline brief..." :
-                    step === 3 || step === 4 ? "Instruksi revisi slide/visual..." :
-                    "Ketik instruksi..."
+                      step === 2 ? "Instruksi revisi outline brief..." :
+                        step === 3 || step === 4 ? "Instruksi revisi slide/visual..." :
+                          "Ketik instruksi..."
                   }
                   className="pr-12 min-h-[44px] max-h-32 text-xs rounded-xl border-hairline shadow-inner focus-visible:ring-1 focus-visible:ring-primary py-2.5 resize-none"
                   disabled={pending || isTyping}
@@ -1712,9 +1880,9 @@ export function Wizard({
                       className="hidden"
                       id="md-upload-input"
                     />
-                    <Button 
-                      type="button" 
-                      variant="outline" 
+                    <Button
+                      type="button"
+                      variant="outline"
                       size="sm"
                       className="h-9 text-xs gap-1.5 px-3.5 border-hairline font-medium"
                       onClick={() => fileInputRef.current?.click()}
@@ -1747,232 +1915,265 @@ export function Wizard({
             </div>
           )}
 
-      {/* STEP 2: BRIEF OUTLINE EDITOR COMPONENT */}
-      {step === 2 && (
-        <div className="flex flex-col gap-6 w-full max-w-6xl mx-auto py-2 animate-in fade-in duration-200">
-          <Card className="shadow-sm border-hairline overflow-hidden">
-            <CardContent className="p-6 flex flex-col gap-4">
-              {/* Header with Mode Toggles */}
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b pb-3">
-                <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground flex items-center gap-2">
-                  <FileText className="size-4 text-primary" />
-                  Outline Brief Editor
-                </span>
+          {/* STEP 2: BRIEF OUTLINE EDITOR COMPONENT */}
+          {step === 2 && (
+            <div className="flex flex-col gap-6 w-full max-w-6xl mx-auto py-2 animate-in fade-in duration-200">
+              <Card className="shadow-sm border-hairline overflow-hidden">
+                <CardContent className="p-6 flex flex-col gap-4">
+                  {/* Header with Mode Toggles */}
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b pb-3">
+                    <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground flex items-center gap-2">
+                      <FileText className="size-4 text-primary" />
+                      Outline Brief Editor
+                    </span>
 
-                {/* View Mode Toggle Buttons & Anti-AI Polish */}
-                <div className="flex flex-wrap items-center gap-2">
-                  <Button
-                    type="button"
-                    size="sm"
-                    variant="outline"
-                    disabled={pending || isTyping || !brief.trim() || !model}
-                    onClick={handleHumanVoicePolish}
-                    className="h-7 text-xs gap-1.5 px-3 font-medium border-primary/30 text-primary hover:bg-primary/5 shadow-2xs"
-                  >
-                    <User className="size-3.5 text-primary" />
-                    Human Voice Polish
-                  </Button>
+                    {/* View Mode Toggle Buttons & Anti-AI Polish */}
+                    <div className="flex flex-wrap items-center gap-2">
+                      <Button
+                        type="button"
+                        size="sm"
+                        variant="outline"
+                        disabled={pending || isTyping || !brief.trim() || !model}
+                        onClick={handleHumanVoicePolish}
+                        className="h-7 text-xs gap-1.5 px-3 font-medium border-primary/30 text-primary hover:bg-primary/5 shadow-2xs"
+                      >
+                        <User className="size-3.5 text-primary" />
+                        Human Voice Polish
+                      </Button>
 
-                  <div className="flex items-center gap-1 bg-muted/50 p-0.5 rounded-lg border border-hairline">
-                    <button
-                      type="button"
-                      onClick={() => setMdMode("split")}
-                      className={`px-3 py-1 text-xs font-medium rounded-md transition-colors ${
-                        mdMode === "split" ? "bg-card text-foreground shadow-xs font-semibold" : "text-muted-foreground hover:text-foreground"
-                      }`}
-                    >
-                      Split View
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => setMdMode("editor")}
-                      className={`px-3 py-1 text-xs font-medium rounded-md transition-colors ${
-                        mdMode === "editor" ? "bg-card text-foreground shadow-xs font-semibold" : "text-muted-foreground hover:text-foreground"
-                      }`}
-                    >
-                      Raw Editor
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => setMdMode("preview")}
-                      className={`px-3 py-1 text-xs font-medium rounded-md transition-colors ${
-                        mdMode === "preview" ? "bg-card text-foreground shadow-xs font-semibold" : "text-muted-foreground hover:text-foreground"
-                      }`}
-                    >
-                      Formatted Preview
-                    </button>
-                  </div>
-                </div>
-              </div>
-
-              {/* Main Content Area Based on mdMode */}
-              <div className="h-[520px] w-full rounded-2xl border border-hairline overflow-hidden bg-canvas-soft shadow-inner relative">
-                {mdMode === "editor" && (
-                  <Textarea
-                    value={brief}
-                    onChange={(e) => setBrief(e.target.value)}
-                    disabled={pending || isTyping}
-                    placeholder="# Judul Carousel..."
-                    className="font-mono text-xs h-full w-full p-4 bg-transparent border-none resize-none focus-visible:ring-0 leading-relaxed overflow-y-auto"
-                  />
-                )}
-
-                {mdMode === "preview" && (
-                  <div className="h-full w-full p-6 overflow-y-auto bg-card">
-                    {brief ? (
-                      briefPreview
-                    ) : (
-                      <div className="h-full flex items-center justify-center text-xs text-muted-foreground font-mono">
-                        Brief outline kosong. Ketik ide di langkah 1 untuk membuat brief.
+                      <div className="flex items-center gap-1 bg-muted/50 p-0.5 rounded-lg border border-hairline">
+                        <button
+                          type="button"
+                          onClick={() => setMdMode("split")}
+                          className={`px-3 py-1 text-xs font-medium rounded-md transition-colors ${mdMode === "split" ? "bg-card text-foreground shadow-xs font-semibold" : "text-muted-foreground hover:text-foreground"
+                            }`}
+                        >
+                          Split View
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setMdMode("editor")}
+                          className={`px-3 py-1 text-xs font-medium rounded-md transition-colors ${mdMode === "editor" ? "bg-card text-foreground shadow-xs font-semibold" : "text-muted-foreground hover:text-foreground"
+                            }`}
+                        >
+                          Raw Editor
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setMdMode("preview")}
+                          className={`px-3 py-1 text-xs font-medium rounded-md transition-colors ${mdMode === "preview" ? "bg-card text-foreground shadow-xs font-semibold" : "text-muted-foreground hover:text-foreground"
+                            }`}
+                        >
+                          Formatted Preview
+                        </button>
                       </div>
-                    )}
-                  </div>
-                )}
-
-                {mdMode === "split" && (
-                  <div className="grid grid-cols-1 md:grid-cols-2 h-full divide-y md:divide-y-0 md:divide-x divide-hairline overflow-hidden">
-                    <Textarea
-                      value={brief}
-                      onChange={(e) => setBrief(e.target.value)}
-                      disabled={pending || isTyping}
-                      placeholder="# Judul Carousel..."
-                      className="font-mono text-xs h-full w-full p-4 bg-transparent border-none resize-none focus-visible:ring-0 leading-relaxed overflow-y-auto"
-                    />
-                    <div className="h-full w-full p-6 overflow-y-auto bg-card/60">
-                      {brief ? (
-                        briefPreview
-                      ) : (
-                        <div className="h-full flex items-center justify-center text-xs text-muted-foreground font-mono">
-                          Live pratinjau markdown akan muncul di sini.
-                        </div>
-                      )}
                     </div>
                   </div>
-                )}
-              </div>
 
-              {/* Action Navigation Bar */}
-              <div className="flex items-center justify-between pt-4 border-t">
-                <Button variant="outline" size="sm" onClick={() => setStep(1)} className="gap-1.5">
-                  <ArrowLeft className="size-3.5" /> Back ke Concept
-                </Button>
+                  {/* Main Content Area Based on mdMode */}
+                  <div className="h-[520px] w-full rounded-2xl border border-hairline overflow-hidden bg-canvas-soft shadow-inner relative">
+                    {mdMode === "editor" && (
+                      <Textarea
+                        value={brief}
+                        onChange={(e) => setBrief(e.target.value)}
+                        disabled={pending || isTyping}
+                        placeholder="# Judul Carousel..."
+                        className="font-mono text-xs h-full w-full p-4 bg-transparent border-none resize-none focus-visible:ring-0 leading-relaxed overflow-y-auto"
+                      />
+                    )}
 
-                <Button
-                  size="sm"
-                  disabled={pending || isTyping || !brief.trim()}
-                  onClick={handlePlanGeneration}
-                  className="gap-1.5 font-semibold px-5"
-                >
-                  <Check className="size-4" />
-                  Approve &amp; Render Slide
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-      )}
-
-      {/* STEP 3: LIVE DESIGN CANVAS COMPONENT */}
-      {step === 3 && plan && (
-        <div className="flex flex-col gap-6 w-full max-w-6xl mx-auto py-2 animate-in fade-in duration-200">
-          <Card className="shadow-sm border-hairline overflow-hidden">
-            <CardContent className="p-6 flex flex-col gap-6">
-              {/* Workspace Header Tabs & Controls */}
-              <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b pb-4">
-                <div className="flex items-center gap-2">
-                  <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground flex items-center gap-2">
-                    <LayoutGrid className="size-4 text-primary" />
-                    Live Design Canvas
-                  </span>
-                  <span className="text-xs font-mono text-muted-foreground bg-muted/40 px-2 py-0.5 rounded border border-hairline">
-                    {plan.slides.length} Slides
-                  </span>
-                </div>
-
-                <div className="flex items-center gap-2">
-                  <div className="inline-flex p-0.5 bg-muted/50 rounded-lg border border-hairline">
-                    <button
-                      onClick={() => setActiveTab("brief")}
-                      className={`px-3 py-1 rounded-md text-xs font-medium transition-colors ${activeTab === "brief" ? "bg-card text-foreground shadow-xs" : "text-muted-foreground"}`}
-                    >
-                      Outline Brief
-                    </button>
-                    <button
-                      onClick={() => setActiveTab("preview")}
-                      className={`px-3 py-1 rounded-md text-xs font-medium transition-colors ${activeTab === "preview" ? "bg-card text-foreground shadow-xs" : "text-muted-foreground"}`}
-                    >
-                      Live Preview
-                    </button>
-                  </div>
-                </div>
-              </div>
-
-              {/* Main Preview Frame */}
-              <div className="w-full flex justify-center py-4 bg-canvas-soft border border-hairline rounded-2xl min-h-[460px] shadow-inner">
-                {activeTab === "preview" ? (
-                  <PreviewFrame html={html} slideCount={slideCount} />
-                ) : (
-                  <Textarea
-                    value={brief}
-                    onChange={(e) => setBrief(e.target.value)}
-                    className="font-mono text-xs h-96 w-full p-4 bg-transparent border-none resize-none"
-                  />
-                )}
-              </div>
-
-              {/* Evidence Screenshot Upload Panel */}
-              {plan && plan.slides.some((s) => s.role === "point" && s.mockup?.type === "screenshot") && (
-                <div className="flex flex-col gap-3 p-4 bg-muted/20 border border-hairline rounded-2xl">
-                  <div className="flex items-center justify-between">
-                    <span className="text-xs font-bold uppercase tracking-wider text-primary flex items-center gap-2">
-                      <Upload className="size-4 text-primary" />
-                      Bukti Screenshot Asli ({plan.slides.filter((s) => s.role === "point" && s.mockup?.type === "screenshot").length} Slide)
-                    </span>
-                    <span className="text-[11px] text-muted-foreground">
-                      Di-compress &amp; di-embed inline (base64) untuk offline capture aman.
-                    </span>
-                  </div>
-
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                    {plan.slides.map((s, idx) => {
-                      if (s.role !== "point" || s.mockup?.type !== "screenshot") return null;
-                      const m = s.mockup;
-                      const status = m.evidenceStatus || "pending";
-                      const brief = m.screenshotBrief;
-
-                      return (
-                        <div key={idx} className="p-3 bg-card border border-hairline rounded-xl flex flex-col gap-2 shadow-xs">
-                          <div className="flex items-center justify-between">
-                            <span className="text-xs font-bold text-foreground">
-                              Slide {idx + 1} — {s.headline || "Screenshot Evidence"}
-                            </span>
-                            <span className={`text-[10px] font-mono font-bold px-2 py-0.5 rounded ${
-                              status === "captured" ? "bg-emerald-500/10 text-emerald-600 border border-emerald-500/20" :
-                              status === "fallback_used" ? "bg-amber-500/10 text-amber-600 border border-amber-500/20" :
-                              "bg-rose-500/10 text-rose-600 border border-rose-500/20 animate-pulse"
-                            }`}>
-                              {status === "captured" ? "✓ CAPTURED" : status === "fallback_used" ? "FALLBACK TEXT" : "⚠️ PENDING UPLOAD"}
-                            </span>
+                    {mdMode === "preview" && (
+                      <div className="h-full w-full p-6 overflow-y-auto bg-card">
+                        {brief ? (
+                          briefPreview
+                        ) : (
+                          <div className="h-full flex items-center justify-center text-xs text-muted-foreground font-mono">
+                            Brief outline kosong. Ketik ide di langkah 1 untuk membuat brief.
                           </div>
+                        )}
+                      </div>
+                    )}
 
-                          {brief && (
-                            <div className="text-[11px] text-muted-foreground flex flex-col gap-0.5 bg-muted/40 p-2 rounded-lg font-mono">
-                              <div>📌 <strong>Source:</strong> {brief.source || "App / Tool"}</div>
-                              <div>👁️ <strong>Must Show:</strong> {brief.mustShow || "-"}</div>
-                              <div>🔒 <strong>Must Hide:</strong> {brief.mustHide || "-"}</div>
-                              <div>📐 <strong>Target Ratio:</strong> {brief.cropRatio || "4:5"}</div>
+                    {mdMode === "split" && (
+                      <div className="grid grid-cols-1 md:grid-cols-2 h-full divide-y md:divide-y-0 md:divide-x divide-hairline overflow-hidden">
+                        <Textarea
+                          value={brief}
+                          onChange={(e) => setBrief(e.target.value)}
+                          disabled={pending || isTyping}
+                          placeholder="# Judul Carousel..."
+                          className="font-mono text-xs h-full w-full p-4 bg-transparent border-none resize-none focus-visible:ring-0 leading-relaxed overflow-y-auto"
+                        />
+                        <div className="h-full w-full p-6 overflow-y-auto bg-card/60">
+                          {brief ? (
+                            briefPreview
+                          ) : (
+                            <div className="h-full flex items-center justify-center text-xs text-muted-foreground font-mono">
+                              Live pratinjau markdown akan muncul di sini.
                             </div>
                           )}
+                        </div>
+                      </div>
+                    )}
 
-                          {m.screenshotImage?.dataUrl ? (
-                            <div className="flex items-center gap-3 mt-1">
-                              <img src={m.screenshotImage.dataUrl} alt="Upload preview" className="size-14 object-cover rounded-lg border border-hairline shadow-xs" />
-                              <div className="flex flex-col gap-1">
-                                <span className="text-[10px] text-muted-foreground font-mono">
-                                  Di-upload: {new Date(m.screenshotImage.uploadedAt).toLocaleTimeString()}
+                    {loadingJob && <StepLoader key={loadingJob} kind={loadingJob} />}
+                  </div>
+
+                  {/* Action Navigation Bar */}
+                  <div className="flex items-center justify-between pt-4 border-t">
+                    <Button variant="outline" size="sm" onClick={() => setStep(1)} className="gap-1.5">
+                      <ArrowLeft className="size-3.5" /> Back ke Concept
+                    </Button>
+
+                    <Button
+                      size="sm"
+                      disabled={pending || isTyping || !brief.trim()}
+                      onClick={handlePlanGeneration}
+                      className="gap-1.5 font-semibold px-5"
+                    >
+                      {loadingJob === "plan" ? (
+                        <>
+                          <Loader2 className="size-4 animate-spin" />
+                          Merender Slide…
+                        </>
+                      ) : (
+                        <>
+                          <Check className="size-4" />
+                          Approve &amp; Render Slide
+                        </>
+                      )}
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+          )}
+
+          {/* STEP 3: LIVE DESIGN CANVAS COMPONENT */}
+          {step === 3 && plan && (
+            <div className="flex flex-col gap-6 w-full max-w-6xl mx-auto py-2 animate-in fade-in duration-200">
+              <Card className="shadow-sm border-hairline overflow-hidden">
+                <CardContent className="p-6 flex flex-col gap-6">
+                  {/* Workspace Header Tabs & Controls */}
+                  <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b pb-4">
+                    <div className="flex items-center gap-2">
+                      <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground flex items-center gap-2">
+                        <LayoutGrid className="size-4 text-primary" />
+                        Live Design Canvas
+                      </span>
+                      <span className="text-xs font-mono text-muted-foreground bg-muted/40 px-2 py-0.5 rounded border border-hairline">
+                        {plan.slides.length} Slides
+                      </span>
+                    </div>
+
+                    <div className="flex items-center gap-2">
+                      <div className="inline-flex p-0.5 bg-muted/50 rounded-lg border border-hairline">
+                        <button
+                          onClick={() => setActiveTab("brief")}
+                          className={`px-3 py-1 rounded-md text-xs font-medium transition-colors ${activeTab === "brief" ? "bg-card text-foreground shadow-xs" : "text-muted-foreground"}`}
+                        >
+                          Outline Brief
+                        </button>
+                        <button
+                          onClick={() => setActiveTab("preview")}
+                          className={`px-3 py-1 rounded-md text-xs font-medium transition-colors ${activeTab === "preview" ? "bg-card text-foreground shadow-xs" : "text-muted-foreground"}`}
+                        >
+                          Live Preview
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Main Preview Frame */}
+                  <div className="relative w-full flex justify-center py-4 bg-canvas-soft border border-hairline rounded-2xl min-h-[460px] shadow-inner overflow-hidden">
+                    {activeTab === "preview" ? (
+                      <PreviewFrame html={html} slideCount={slideCount} />
+                    ) : (
+                      <Textarea
+                        value={brief}
+                        onChange={(e) => setBrief(e.target.value)}
+                        className="font-mono text-xs h-96 w-full p-4 bg-transparent border-none resize-none"
+                      />
+                    )}
+
+                    {loadingJob && <StepLoader key={loadingJob} kind={loadingJob} />}
+                  </div>
+
+                  {/* Evidence Screenshot Upload Panel */}
+                  {plan && plan.slides.some((s) => s.role === "point" && s.mockup?.type === "screenshot") && (
+                    <div className="flex flex-col gap-3 p-4 bg-muted/20 border border-hairline rounded-2xl">
+                      <div className="flex items-center justify-between">
+                        <span className="text-xs font-bold uppercase tracking-wider text-primary flex items-center gap-2">
+                          <Upload className="size-4 text-primary" />
+                          Bukti Screenshot Asli ({plan.slides.filter((s) => s.role === "point" && s.mockup?.type === "screenshot").length} Slide)
+                        </span>
+                        <span className="text-[11px] text-muted-foreground">
+                          Di-compress &amp; di-embed inline (base64) untuk offline capture aman.
+                        </span>
+                      </div>
+
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                        {plan.slides.map((s, idx) => {
+                          if (s.role !== "point" || s.mockup?.type !== "screenshot") return null;
+                          const m = s.mockup;
+                          const status = m.evidenceStatus || "pending";
+                          const brief = m.screenshotBrief;
+
+                          return (
+                            <div key={idx} className="p-3 bg-card border border-hairline rounded-xl flex flex-col gap-2 shadow-xs">
+                              <div className="flex items-center justify-between">
+                                <span className="text-xs font-bold text-foreground">
+                                  Slide {idx + 1} — {s.headline || "Screenshot Evidence"}
                                 </span>
-                                <label className="cursor-pointer text-xs font-semibold text-primary hover:underline">
-                                  Ganti Gambar
+                                <span className={`text-[10px] font-mono font-bold px-2 py-0.5 rounded ${status === "captured" ? "bg-emerald-500/10 text-emerald-600 border border-emerald-500/20" :
+                                    status === "fallback_used" ? "bg-amber-500/10 text-amber-600 border border-amber-500/20" :
+                                      "bg-rose-500/10 text-rose-600 border border-rose-500/20 animate-pulse"
+                                  }`}>
+                                  {status === "captured" ? "✓ CAPTURED" : status === "fallback_used" ? "FALLBACK TEXT" : "⚠️ PENDING UPLOAD"}
+                                </span>
+                              </div>
+
+                              {brief && (
+                                <div className="text-[11px] text-muted-foreground flex flex-col gap-0.5 bg-muted/40 p-2 rounded-lg font-mono">
+                                  <div>📌 <strong>Source:</strong> {brief.source || "App / Tool"}</div>
+                                  <div>👁️ <strong>Must Show:</strong> {brief.mustShow || "-"}</div>
+                                  <div>🔒 <strong>Must Hide:</strong> {brief.mustHide || "-"}</div>
+                                  <div>📐 <strong>Target Ratio:</strong> {brief.cropRatio || "4:5"}</div>
+                                </div>
+                              )}
+
+                              {m.screenshotImage?.dataUrl ? (
+                                <div className="flex items-center gap-3 mt-1">
+                                  <img src={m.screenshotImage.dataUrl} alt="Upload preview" className="size-14 object-cover rounded-lg border border-hairline shadow-xs" />
+                                  <div className="flex flex-col gap-1">
+                                    <span className="text-[10px] text-muted-foreground font-mono">
+                                      Di-upload: {new Date(m.screenshotImage.uploadedAt).toLocaleTimeString()}
+                                    </span>
+                                    <label className="cursor-pointer text-xs font-semibold text-primary hover:underline">
+                                      Ganti Gambar
+                                      <input
+                                        type="file"
+                                        accept="image/png,image/jpeg,image/webp"
+                                        className="hidden"
+                                        onChange={async (e) => {
+                                          const file = e.target.files?.[0];
+                                          if (file) {
+                                            try {
+                                              const dataUrl = await processUploadedScreenshot(file, brief?.cropRatio || "4:5");
+                                              handleUpdateScreenshot(idx, dataUrl);
+                                              toast.success(`Screenshot slide ${idx + 1} berhasil di-upload!`);
+                                            } catch (err) {
+                                              toast.error("Gagal memproses gambar");
+                                            }
+                                          }
+                                        }}
+                                      />
+                                    </label>
+                                  </div>
+                                </div>
+                              ) : (
+                                <label className="mt-1 flex items-center justify-center gap-2 p-2.5 border-2 border-dashed border-primary/30 hover:border-primary rounded-xl cursor-pointer bg-primary/5 hover:bg-primary/10 transition-colors text-xs font-medium text-primary">
+                                  <Upload className="size-4" />
+                                  <span>Upload Screenshot Slide {idx + 1}</span>
                                   <input
                                     type="file"
                                     accept="image/png,image/jpeg,image/webp"
@@ -1991,298 +2192,303 @@ export function Wizard({
                                     }}
                                   />
                                 </label>
-                              </div>
+                              )}
                             </div>
-                          ) : (
-                            <label className="mt-1 flex items-center justify-center gap-2 p-2.5 border-2 border-dashed border-primary/30 hover:border-primary rounded-xl cursor-pointer bg-primary/5 hover:bg-primary/10 transition-colors text-xs font-medium text-primary">
-                              <Upload className="size-4" />
-                              <span>Upload Screenshot Slide {idx + 1}</span>
-                              <input
-                                type="file"
-                                accept="image/png,image/jpeg,image/webp"
-                                className="hidden"
-                                onChange={async (e) => {
-                                  const file = e.target.files?.[0];
-                                  if (file) {
-                                    try {
-                                      const dataUrl = await processUploadedScreenshot(file, brief?.cropRatio || "4:5");
-                                      handleUpdateScreenshot(idx, dataUrl);
-                                      toast.success(`Screenshot slide ${idx + 1} berhasil di-upload!`);
-                                    } catch (err) {
-                                      toast.error("Gagal memproses gambar");
-                                    }
-                                  }
-                                }}
-                              />
-                            </label>
-                          )}
-                        </div>
-                      );
-                    })}
-                  </div>
-                </div>
-              )}
-
-              {/* Action Navigation Bar */}
-              <div className="flex items-center justify-between pt-4 border-t">
-                <Button variant="outline" size="sm" onClick={() => setStep(2)} className="gap-1.5">
-                  <ArrowLeft className="size-3.5" /> Back ke Brief
-                </Button>
-
-                <Button
-                  size="sm"
-                  disabled={pending || exportPending}
-                  onClick={() => handleExport()}
-                  className="gap-1.5 font-semibold px-5"
-                >
-                  <Upload className="size-4" />
-                  {exportPending ? "Exporting..." : "Approve & Export JPEGs"}
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-      )}
-
-      {/* STEP 4: JPEG EXPORT COMPONENT */}
-      {step === 4 && (
-        <div className="flex flex-col gap-6 w-full max-w-5xl mx-auto py-2 animate-in fade-in duration-200">
-          <Card className="shadow-sm border-hairline">
-            <CardContent className="p-6 flex flex-col gap-6">
-              <div className="flex items-center justify-between border-b pb-4">
-                <div>
-                  <h3 className="font-bold text-base flex items-center gap-2">
-                    <CheckCircle2 className="size-5 text-emerald-500" />
-                    JPEG Assets Ready
-                  </h3>
-                  <p className="text-xs text-muted-foreground mt-0.5">
-                    {exportedImages.length} slide berhasil di-export ke format gambar JPEG resolusi tinggi.
-                  </p>
-                </div>
-                <Button size="sm" variant="outline" onClick={handleDownloadAll} className="gap-1.5 font-mono text-xs">
-                  <Upload className="size-3.5" /> Download All ZIP
-                </Button>
-              </div>
-
-              {/* Exported JPEGs Grid */}
-              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4 py-2">
-                {exportedImages.map((src, i) => (
-                  <div key={i} className="flex flex-col gap-2 group">
-                    <div className="aspect-[4/5] rounded-xl border border-hairline overflow-hidden bg-muted relative shadow-sm group-hover:shadow-md transition-shadow">
-                      <img src={src} alt={`Slide ${i + 1}`} className="size-full object-cover" />
-                      <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                        <a
-                          href={src}
-                          download={`slide-${i + 1}.jpg`}
-                          className="text-[10px] font-mono bg-card text-foreground px-2.5 py-1 rounded-md border border-hairline shadow-xs font-semibold hover:bg-muted"
-                        >
-                          Download
-                        </a>
+                          );
+                        })}
                       </div>
                     </div>
-                    <span className="text-[10px] font-mono text-center text-muted-foreground font-medium">Slide {i + 1}</span>
-                  </div>
-                ))}
-              </div>
+                  )}
 
-              {/* Action Navigation Bar */}
-              <div className="flex items-center justify-between pt-4 border-t">
-                <Button variant="outline" size="sm" onClick={() => setStep(3)} className="gap-1.5">
-                  <ArrowLeft className="size-3.5" /> Back ke Design
-                </Button>
-
-                <Button size="sm" onClick={() => setStep(5)} className="gap-1.5 font-semibold px-5">
-                  Lanjut ke Penjadwalan <span className="text-xs">→</span>
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-      )}
-
-      {/* STEP 5: SCHEDULE & PUBLISH COMPONENT */}
-      {step === 5 && (
-        <div className="flex flex-col gap-6 w-full max-w-4xl mx-auto py-2 animate-in fade-in duration-200">
-          <Card className="shadow-sm border-hairline">
-            <CardContent className="p-6 flex flex-col gap-6">
-              <div className="border-b pb-4">
-                <h3 className="font-bold text-base flex items-center gap-2">
-                  <Calendar className="size-5 text-primary" />
-                  Schedule &amp; Publish Content
-                </h3>
-                <p className="text-xs text-muted-foreground mt-0.5">
-                  Atur waktu publish ke Buffer atau simpan sebagai Stock Content lokal.
-                </p>
-              </div>
-
-              {/* Destination Platforms Status */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="bg-card border border-hairline rounded-xl p-4 shadow-xs">
-                  <div className="flex items-center justify-between">
-                    <span className="text-xs font-semibold text-muted-foreground uppercase">Instagram</span>
-                    {pubConfig?.hasIg ? (
-                      <span className="text-[10px] font-semibold text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200">
-                        Active
-                      </span>
-                    ) : (
-                      <span className="text-[10px] font-semibold text-muted-foreground bg-muted px-2 py-0.5 rounded border border-border">
-                        Not Set
-                      </span>
-                    )}
-                  </div>
-                  <p className="text-[11px] text-muted-foreground mt-1.5">
-                    {pubConfig?.hasIg
-                      ? "Carousel JPEG dan caption akan dikirim ke Instagram."
-                      : "Set BUFFER_IG_CHANNEL_ID di .env untuk mengaktifkan."}
-                  </p>
-                </div>
-                
-                <div className="bg-card border border-hairline rounded-xl p-4 shadow-xs">
-                  <div className="flex items-center justify-between">
-                    <span className="text-xs font-semibold text-muted-foreground uppercase">TikTok</span>
-                    {pubConfig?.hasTt ? (
-                      <span className="text-[10px] font-semibold text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200">
-                        Active
-                      </span>
-                    ) : (
-                      <span className="text-[10px] font-semibold text-muted-foreground bg-muted px-2 py-0.5 rounded border border-border">
-                        Not Set
-                      </span>
-                    )}
-                  </div>
-                  <p className="text-[11px] text-muted-foreground mt-1.5">
-                    {pubConfig?.hasTt
-                      ? "Carousel JPEG, judul, dan caption akan dikirim ke TikTok."
-                      : "Set BUFFER_TIKTOK_CHANNEL_ID di .env untuk mengaktifkan."}
-                  </p>
-                </div>
-              </div>
-
-              {/* Date & Time Picker */}
-              <div className="bg-card border border-hairline rounded-xl p-4 shadow-xs space-y-3">
-                <label className="text-xs font-semibold text-muted-foreground uppercase flex items-center gap-1.5">
-                  <Clock className="size-3.5 text-primary" />
-                  Waktu Posting (dueAt)
-                </label>
-                <Input
-                  type="datetime-local"
-                  value={dueAt}
-                  onChange={(e) => setDueAt(e.target.value)}
-                  disabled={publishState.status === "uploading" || publishState.status === "publishing"}
-                  className="text-xs"
-                />
-                <p className="text-[10px] text-muted-foreground">
-                  Pilih waktu kapan Buffer akan menjadwalkan notifikasi posting ini.
-                </p>
-              </div>
-
-              {/* Caption & Metadata Preview */}
-              <div className="bg-card border border-hairline rounded-xl p-4 shadow-xs space-y-3">
-                <span className="text-xs font-semibold text-muted-foreground uppercase block">
-                  Instagram Caption &amp; TikTok Title
-                </span>
-                <div className="space-y-3">
-                  <div>
-                    <span className="text-[10px] font-medium text-muted-foreground uppercase block">TikTok Title</span>
-                    <Input
-                      type="text"
-                      value={editableTitle}
-                      onChange={(e) => setEditableTitle(e.target.value)}
-                      onBlur={handleSaveEdits}
-                      disabled={publishState.status === "uploading" || publishState.status === "publishing"}
-                      placeholder="Judul postingan TikTok..."
-                      className="text-xs font-mono mt-1 w-full bg-muted/20 focus-visible:ring-1 focus-visible:ring-primary border-hairline"
-                    />
-                  </div>
-                  <div>
-                    <span className="text-[10px] font-medium text-muted-foreground uppercase block">Caption (Instagram / TikTok)</span>
-                    <Textarea
-                      value={editableCaption}
-                      onChange={(e) => setEditableCaption(e.target.value)}
-                      onBlur={handleSaveEdits}
-                      disabled={publishState.status === "uploading" || publishState.status === "publishing"}
-                      placeholder="Tulis caption Anda di sini..."
-                      className="text-xs font-mono mt-1 w-full h-32 bg-muted/20 focus-visible:ring-1 focus-visible:ring-primary border-hairline resize-none"
-                    />
-                  </div>
-                </div>
-              </div>
-
-              {/* Action or Progress Panel */}
-              <div className="bg-card border border-hairline rounded-xl p-6 shadow-xs text-center space-y-4">
-                {publishState.status === "idle" ? (
-                  <div className="flex flex-col sm:flex-row gap-3">
-                    <Button
-                      onClick={handlePublish}
-                      className="flex-1 font-semibold"
-                      disabled={!pubConfig?.hasIg && !pubConfig?.hasTt}
-                    >
-                      Schedule to Buffer
+                  {/* Action Navigation Bar */}
+                  <div className="flex items-center justify-between pt-4 border-t">
+                    <Button variant="outline" size="sm" onClick={() => setStep(2)} className="gap-1.5">
+                      <ArrowLeft className="size-3.5" /> Back ke Brief
                     </Button>
+
                     <Button
-                      onClick={handleSaveToStock}
+                      size="sm"
+                      disabled={pending || exportPending}
+                      onClick={() => handleExport()}
+                      className="gap-1.5 font-semibold px-5"
+                    >
+                      {exportPending ? (
+                        <Loader2 className="size-4 animate-spin" />
+                      ) : (
+                        <Upload className="size-4" />
+                      )}
+                      {exportPending ? "Mengekspor…" : "Approve & Export JPEGs"}
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+          )}
+
+          {/* STEP 4: JPEG EXPORT COMPONENT */}
+          {step === 4 && (
+            <div className="flex flex-col gap-6 w-full max-w-5xl mx-auto py-2 animate-in fade-in duration-200">
+              <Card className="shadow-sm border-hairline">
+                <CardContent className="p-6 flex flex-col gap-6">
+                  <div className="flex items-center justify-between border-b pb-4">
+                    <div>
+                      <h3 className="font-bold text-base flex items-center gap-2">
+                        {exportPending ? (
+                          <Loader2 className="size-5 text-primary animate-spin" />
+                        ) : (
+                          <CheckCircle2 className="size-5 text-emerald-500" />
+                        )}
+                        {exportPending ? "Menyiapkan JPEG Assets" : "JPEG Assets Ready"}
+                      </h3>
+                      <p className="text-xs text-muted-foreground mt-0.5">
+                        {exportPending
+                          ? `Merender ${slideCount || "…"} slide ke gambar resolusi tinggi.`
+                          : `${exportedImages.length} slide berhasil di-export ke format gambar JPEG resolusi tinggi.`}
+                      </p>
+                    </div>
+                    <Button
+                      size="sm"
                       variant="outline"
-                      className="flex-1 font-semibold border-primary/40 text-primary hover:bg-primary/5"
+                      onClick={handleDownloadAll}
+                      disabled={exportPending || blobs.length === 0}
+                      className="gap-1.5 font-mono text-xs"
                     >
-                      Save to Stock Content
+                      <Upload className="size-3.5" /> Download All ZIP
                     </Button>
                   </div>
-                ) : null}
 
-                {publishState.status === "uploading" || publishState.status === "publishing" ? (
-                  <div className="space-y-3">
-                    <div className="size-8 rounded-full border-2 border-primary border-t-transparent animate-spin mx-auto" />
-                    <p className="text-xs font-medium text-foreground">{publishState.progressMsg}</p>
+                  {/* Exported JPEGs Grid */}
+                  <div className="relative grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4 py-2 min-h-[240px]">
+                    {exportPending &&
+                      Array.from({ length: Math.max(slideCount, 4) }).map((_, i) => (
+                        <div
+                          key={`skeleton-${i}`}
+                          className="aspect-[4/5] rounded-xl border border-hairline bg-muted/50 animate-pulse"
+                        />
+                      ))}
+                    {exportPending && loadingJob && <StepLoader key={loadingJob} kind={loadingJob} />}
+                    {!exportPending && exportedImages.map((src, i) => (
+                      <div key={i} className="flex flex-col gap-2 group">
+                        <div className="aspect-[4/5] rounded-xl border border-hairline overflow-hidden bg-muted relative shadow-sm group-hover:shadow-md transition-shadow">
+                          <img src={src} alt={`Slide ${i + 1}`} className="size-full object-cover" />
+                          <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                            <a
+                              href={src}
+                              download={`slide-${i + 1}.jpg`}
+                              className="text-[10px] font-mono bg-card text-foreground px-2.5 py-1 rounded-md border border-hairline shadow-xs font-semibold hover:bg-muted"
+                            >
+                              Download
+                            </a>
+                          </div>
+                        </div>
+                        <span className="text-[10px] font-mono text-center text-muted-foreground font-medium">Slide {i + 1}</span>
+                      </div>
+                    ))}
                   </div>
-                ) : null}
 
-                {publishState.status === "success" ? (
-                  <div className="space-y-3">
-                    <CheckCircle2 className="size-8 text-emerald-500 mx-auto" />
-                    <p className="text-xs font-medium text-emerald-600">{publishState.progressMsg || "Berhasil!"}</p>
-                    {publishState.igPostId || publishState.ttPostId ? (
-                      <div className="text-left text-[11px] font-mono border border-emerald-100 bg-emerald-50/50 rounded p-3 space-y-1">
-                        {publishState.igPostId ? (
-                          <div>Instagram Post ID: <span className="text-foreground font-semibold">{publishState.igPostId}</span></div>
-                        ) : null}
-                        {publishState.ttPostId ? (
-                          <div>TikTok Post ID: <span className="text-foreground font-semibold">{publishState.ttPostId}</span></div>
-                        ) : null}
+                  {/* Action Navigation Bar */}
+                  <div className="flex items-center justify-between pt-4 border-t">
+                    <Button variant="outline" size="sm" onClick={() => setStep(3)} className="gap-1.5">
+                      <ArrowLeft className="size-3.5" /> Back ke Design
+                    </Button>
+
+                    <Button
+                      size="sm"
+                      onClick={() => setStep(5)}
+                      disabled={exportPending || exportedImages.length === 0}
+                      className="gap-1.5 font-semibold px-5"
+                    >
+                      Lanjut ke Penjadwalan <span className="text-xs">→</span>
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+          )}
+
+          {/* STEP 5: SCHEDULE & PUBLISH COMPONENT */}
+          {step === 5 && (
+            <div className="flex flex-col gap-6 w-full max-w-4xl mx-auto py-2 animate-in fade-in duration-200">
+              <Card className="shadow-sm border-hairline">
+                <CardContent className="p-6 flex flex-col gap-6">
+                  <div className="border-b pb-4">
+                    <h3 className="font-bold text-base flex items-center gap-2">
+                      <Calendar className="size-5 text-primary" />
+                      Schedule &amp; Publish Content
+                    </h3>
+                    <p className="text-xs text-muted-foreground mt-0.5">
+                      Atur waktu publish ke Buffer atau simpan sebagai Stock Content lokal.
+                    </p>
+                  </div>
+
+                  {/* Destination Platforms Status */}
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="bg-card border border-hairline rounded-xl p-4 shadow-xs">
+                      <div className="flex items-center justify-between">
+                        <span className="text-xs font-semibold text-muted-foreground uppercase">Instagram</span>
+                        {pubConfig?.hasIg ? (
+                          <span className="text-[10px] font-semibold text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200">
+                            Active
+                          </span>
+                        ) : (
+                          <span className="text-[10px] font-semibold text-muted-foreground bg-muted px-2 py-0.5 rounded border border-border">
+                            Not Set
+                          </span>
+                        )}
+                      </div>
+                      <p className="text-[11px] text-muted-foreground mt-1.5">
+                        {pubConfig?.hasIg
+                          ? "Carousel JPEG dan caption akan dikirim ke Instagram."
+                          : "Set BUFFER_IG_CHANNEL_ID di .env untuk mengaktifkan."}
+                      </p>
+                    </div>
+
+                    <div className="bg-card border border-hairline rounded-xl p-4 shadow-xs">
+                      <div className="flex items-center justify-between">
+                        <span className="text-xs font-semibold text-muted-foreground uppercase">TikTok</span>
+                        {pubConfig?.hasTt ? (
+                          <span className="text-[10px] font-semibold text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200">
+                            Active
+                          </span>
+                        ) : (
+                          <span className="text-[10px] font-semibold text-muted-foreground bg-muted px-2 py-0.5 rounded border border-border">
+                            Not Set
+                          </span>
+                        )}
+                      </div>
+                      <p className="text-[11px] text-muted-foreground mt-1.5">
+                        {pubConfig?.hasTt
+                          ? "Carousel JPEG, judul, dan caption akan dikirim ke TikTok."
+                          : "Set BUFFER_TIKTOK_CHANNEL_ID di .env untuk mengaktifkan."}
+                      </p>
+                    </div>
+                  </div>
+
+                  {/* Date & Time Picker */}
+                  <div className="bg-card border border-hairline rounded-xl p-4 shadow-xs space-y-3">
+                    <label className="text-xs font-semibold text-muted-foreground uppercase flex items-center gap-1.5">
+                      <Clock className="size-3.5 text-primary" />
+                      Waktu Posting (dueAt)
+                    </label>
+                    <Input
+                      type="datetime-local"
+                      value={dueAt}
+                      onChange={(e) => setDueAt(e.target.value)}
+                      disabled={publishState.status === "uploading" || publishState.status === "publishing"}
+                      className="text-xs"
+                    />
+                    <p className="text-[10px] text-muted-foreground">
+                      Pilih waktu kapan Buffer akan menjadwalkan notifikasi posting ini.
+                    </p>
+                  </div>
+
+                  {/* Caption & Metadata Preview */}
+                  <div className="bg-card border border-hairline rounded-xl p-4 shadow-xs space-y-3">
+                    <span className="text-xs font-semibold text-muted-foreground uppercase block">
+                      Instagram Caption &amp; TikTok Title
+                    </span>
+                    <div className="space-y-3">
+                      <div>
+                        <span className="text-[10px] font-medium text-muted-foreground uppercase block">TikTok Title</span>
+                        <Input
+                          type="text"
+                          value={editableTitle}
+                          onChange={(e) => setEditableTitle(e.target.value)}
+                          onBlur={handleSaveEdits}
+                          disabled={publishState.status === "uploading" || publishState.status === "publishing"}
+                          placeholder="Judul postingan TikTok..."
+                          className="text-xs font-mono mt-1 w-full bg-muted/20 focus-visible:ring-1 focus-visible:ring-primary border-hairline"
+                        />
+                      </div>
+                      <div>
+                        <span className="text-[10px] font-medium text-muted-foreground uppercase block">Caption (Instagram / TikTok)</span>
+                        <Textarea
+                          value={editableCaption}
+                          onChange={(e) => setEditableCaption(e.target.value)}
+                          onBlur={handleSaveEdits}
+                          disabled={publishState.status === "uploading" || publishState.status === "publishing"}
+                          placeholder="Tulis caption Anda di sini..."
+                          className="text-xs font-mono mt-1 w-full h-32 bg-muted/20 focus-visible:ring-1 focus-visible:ring-primary border-hairline resize-none"
+                        />
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Action or Progress Panel */}
+                  <div className="bg-card border border-hairline rounded-xl p-6 shadow-xs text-center space-y-4">
+                    {publishState.status === "idle" ? (
+                      <div className="flex flex-col sm:flex-row gap-3">
+                        <Button
+                          onClick={handlePublish}
+                          className="flex-1 font-semibold"
+                          disabled={!pubConfig?.hasIg && !pubConfig?.hasTt}
+                        >
+                          Schedule to Buffer
+                        </Button>
+                        <Button
+                          onClick={handleSaveToStock}
+                          variant="outline"
+                          className="flex-1 font-semibold border-primary/40 text-primary hover:bg-primary/5"
+                        >
+                          Save to Stock Content
+                        </Button>
                       </div>
                     ) : null}
-                    <Button
-                      onClick={handleReset}
-                      className="w-full mt-2 font-semibold bg-emerald-600 hover:bg-emerald-700 text-white"
-                    >
-                      Buat Konten Baru
+
+                    {publishState.status === "uploading" || publishState.status === "publishing" ? (
+                      <div className="space-y-3">
+                        <div className="size-8 rounded-full border-2 border-primary border-t-transparent animate-spin mx-auto" />
+                        <p className="text-xs font-medium text-foreground">{publishState.progressMsg}</p>
+                      </div>
+                    ) : null}
+
+                    {publishState.status === "success" ? (
+                      <div className="space-y-3">
+                        <CheckCircle2 className="size-8 text-emerald-500 mx-auto" />
+                        <p className="text-xs font-medium text-emerald-600">{publishState.progressMsg || "Berhasil!"}</p>
+                        {publishState.igPostId || publishState.ttPostId ? (
+                          <div className="text-left text-[11px] font-mono border border-emerald-100 bg-emerald-50/50 rounded p-3 space-y-1">
+                            {publishState.igPostId ? (
+                              <div>Instagram Post ID: <span className="text-foreground font-semibold">{publishState.igPostId}</span></div>
+                            ) : null}
+                            {publishState.ttPostId ? (
+                              <div>TikTok Post ID: <span className="text-foreground font-semibold">{publishState.ttPostId}</span></div>
+                            ) : null}
+                          </div>
+                        ) : null}
+                        <Button
+                          onClick={handleReset}
+                          className="w-full mt-2 font-semibold bg-emerald-600 hover:bg-emerald-700 text-white"
+                        >
+                          Buat Konten Baru
+                        </Button>
+                      </div>
+                    ) : null}
+
+                    {publishState.status === "error" ? (
+                      <div className="space-y-3">
+                        <XCircle className="size-8 text-destructive mx-auto" />
+                        <p className="text-xs font-medium text-destructive">Gagal Mempublikasikan</p>
+                        <p className="text-[11px] text-muted-foreground border border-destructive/20 bg-destructive/5 rounded p-3 font-mono text-left max-h-32 overflow-y-auto">
+                          {publishState.errorMsg}
+                        </p>
+                        <Button onClick={handlePublish} variant="outline" className="w-full">
+                          Coba Lagi
+                        </Button>
+                      </div>
+                    ) : null}
+                  </div>
+
+                  {/* Bottom Navigation */}
+                  <div className="flex items-center justify-between pt-2">
+                    <Button variant="outline" size="sm" onClick={() => setStep(4)} className="gap-1.5">
+                      <ArrowLeft className="size-3.5" /> Back ke Export
                     </Button>
                   </div>
-                ) : null}
-
-                {publishState.status === "error" ? (
-                  <div className="space-y-3">
-                    <XCircle className="size-8 text-destructive mx-auto" />
-                    <p className="text-xs font-medium text-destructive">Gagal Mempublikasikan</p>
-                    <p className="text-[11px] text-muted-foreground border border-destructive/20 bg-destructive/5 rounded p-3 font-mono text-left max-h-32 overflow-y-auto">
-                      {publishState.errorMsg}
-                    </p>
-                    <Button onClick={handlePublish} variant="outline" className="w-full">
-                      Coba Lagi
-                    </Button>
-                  </div>
-                ) : null}
-              </div>
-
-              {/* Bottom Navigation */}
-              <div className="flex items-center justify-between pt-2">
-                <Button variant="outline" size="sm" onClick={() => setStep(4)} className="gap-1.5">
-                  <ArrowLeft className="size-3.5" /> Back ke Export
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-      )}
+                </CardContent>
+              </Card>
+            </div>
+          )}
         </main>
       </div>
 
