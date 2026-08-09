@@ -209,6 +209,8 @@ const mockupGitBranch = z.object({
 const mockupIllustration = z.object({
   type: z.literal("illustration"),
   illustrationSlug: z.string().transform(normalizeIllustration),
+  /** Optional second slug for a side-by-side pair layout (180×180px each, 24px gap). */
+  illustrationSlug2: z.string().transform(normalizeIllustration).optional(),
   caption: z.string().max(90).optional(),
 });
 

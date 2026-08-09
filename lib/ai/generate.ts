@@ -1,6 +1,7 @@
 import { generateText, generateObject, type LanguageModel } from "ai";
 import { slidePlanSchema, type SlidePlan } from "@/lib/ds/schema";
 import { repairSlidePlan } from "@/lib/ds/repair";
+import { normalizeIllustration } from "@/lib/ds/illustrations";
 import {
   briefSystem,
   briefUserPrompt,
@@ -65,6 +66,43 @@ export async function generateBrief(idea: string, model: LanguageModel): Promise
   });
 }
 
+/**
+ * Analogy keywords that trigger the illustration safety net.
+ * If a point slide's body contains any of these words but the model chose
+ * a non-illustration mockup, we override it here — no re-generation needed.
+ */
+const ANALOGY_KEYWORDS = ["kayak", "ibarat", "mirip", "bayangkan", "seperti"];
+
+/** Fallback slug used when the safety net overrides a mockup to illustration. */
+const ILLUSTRATION_FALLBACK_SLUG = "online-learning_tgmv";
+
+/**
+ * Post-processing pass: enforce illustration mockup for any point slide
+ * whose body text signals an analogy/metaphor but the model picked something
+ * else. This is a code-level safety net that does not rely on model compliance.
+ */
+function enforceIllustrationForAnalogySlides(plan: SlidePlan): SlidePlan {
+  const slides = plan.slides.map((slide) => {
+    if (slide.role !== "point") return slide;
+    const body = (slide.body ?? "").toLowerCase();
+    const hasAnalogy = ANALOGY_KEYWORDS.some((kw) => body.includes(kw));
+    if (!hasAnalogy) return slide;
+    if (slide.mockup?.type === "illustration") return slide;
+    // Override: the slide uses analogy language but got a technical mockup
+    console.warn(
+      `[illustration-safety-net] Slide "${slide.eyebrow}" has analogy keywords but mockup="${slide.mockup?.type ?? "none"}". Overriding to illustration.`
+    );
+    return {
+      ...slide,
+      mockup: {
+        type: "illustration" as const,
+        illustrationSlug: normalizeIllustration(ILLUSTRATION_FALLBACK_SLUG),
+      },
+    };
+  });
+  return { ...plan, slides };
+}
+
 export async function generateSlidePlan(brief: string, model: LanguageModel): Promise<SlidePlan> {
   return withRetry(async () => {
     try {
@@ -74,7 +112,7 @@ export async function generateSlidePlan(brief: string, model: LanguageModel): Pr
         system: planSystem,
         prompt: planUserPrompt(brief),
       });
-      return object;
+      return enforceIllustrationForAnalogySlides(object);
     } catch (err: any) {
       console.warn("generateObject failed, trying generateText + JSON parse fallback:", err?.message || err);
       const { text } = await generateText({
@@ -83,7 +121,8 @@ export async function generateSlidePlan(brief: string, model: LanguageModel): Pr
         prompt: planUserPrompt(brief),
       });
       const parsed = extractAndParseJson(text);
-      return repairSlidePlan(parsed);
+      const repaired = repairSlidePlan(parsed);
+      return enforceIllustrationForAnalogySlides(repaired);
     }
   });
 }

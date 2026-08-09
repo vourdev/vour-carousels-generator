@@ -374,8 +374,17 @@ function renderDoorHook(h: Extract<CoverHook, { kind: "door" }>): string {
 }
 
 function renderIllustrationMockup(m: Extract<Mockup, { type: "illustration" }>): string {
-  const svg = renderIllustration(m.illustrationSlug);
   const caption = m.caption ? `<div class="catatan mt-20"><div class="catatan-body">${escapeHtml(m.caption)}</div></div>` : "";
+
+  if (m.illustrationSlug2) {
+    // Pair layout: two SVGs side-by-side at fixed 180×180px each (via CSS)
+    const svg1 = renderIllustration(m.illustrationSlug);
+    const svg2 = renderIllustration(m.illustrationSlug2);
+    return `<div class="diag-wrap"><div class="diag-illustration-pair"><div class="illus-item">${svg1}</div><div class="illus-item">${svg2}</div></div>${caption}</div>`;
+  }
+
+  // Single illustration: fixed 240×240px via CSS
+  const svg = renderIllustration(m.illustrationSlug);
   return `<div class="diag-wrap"><div class="diag-illustration">${svg}${caption}</div></div>`;
 }
 

@@ -38,7 +38,7 @@ const MOCKUP_BUDGETS = `- Terminal: filename + 4-6 code lines max (≤ 45 chars 
 - CommandPalette: query (≤ 30) + 2-5 rows (icon + label ≤ 40, optional active) — Cmd+K menus, action lists, "everything via one shortcut".
 - Database: EXACTLY 2 tables (name ≤ 20, each 2-4 rows of col ≤ 16 + type ≤ 8) + relation (≤ 12, e.g. "1 ─< ∞") — schema / ERD / foreign-key relations.
 - GitBranch: main 2-6 commit labels (≤ 16) + branch { name ≤ 16, at } + mergeLabel (≤ 12) — branch/merge workflow, feature-branch story.
-- Illustration: illustrationSlug from ILLUSTRATION_CATEGORIES, optional caption (≤ 90 chars) — unDraw SVG for abstract concepts / non-technical analogies. Available categories:
+- Illustration: illustrationSlug (required) + illustrationSlug2 (optional, for pair layout) from ILLUSTRATION_CATEGORIES, optional caption (≤ 90 chars) — unDraw SVG for abstract concepts / non-technical analogies. Renderer fixes sizes: single=240×240px, pair=180×180px each with 24px gap — AI must NOT specify width/height/gap. Available categories:
   ${ILLUSTRATION_CATALOG}
 Array-count rule (HARD): concept/hub/checklist/flow/steps must meet their minimum item count. If you cannot fill the minimum, choose a different mockup type (e.g. card or callout) — do NOT emit a diagram with too few items.
 
@@ -312,10 +312,30 @@ CATEGORY → allowed mockup types (choose by the slide's actual content):
 - ABSTRACT   (concept / principle / analogy)     → illustration · concept · hub · quote · card · custom
 - BESPOKE    (a layout none of the above can draw)→ custom (hand-written HTML + CSS)
 
-RULE CONTOH ABSTRACT / ANALOGI:
-- Slide yang menjelaskan KONSEP ABSTRAK atau ANALOGI (bukan menunjukkan kode/terminal/proses teknis langsung) WAJIB memakai mockup: "illustration" dengan illustrationSlug yang sesuai dari ILLUSTRATION_CATEGORIES.
-- Slide yang menunjukkan kode, command, atau proses teknis konkret TETAP memakai mockup teknis yang sudah ada (terminal, flow, database, dll) — illustration BUKAN pengganti semua mockup.
-- Contoh few-shot: "Index itu kayak daftar isi di buku" → mockup: "illustration", illustrationSlug dari kategori "database" atau "learning" (misal: "file-manager_ivlr" atau "knowledge_0ty5").
+KRITERIA WAJIB mockup: "illustration" — cek berurutan, begitu SALAH SATU match WAJIB illustration:
+1. Slide TIDAK menampilkan kode/command/terminal output secara langsung, DAN
+   Slide TIDAK membandingkan 2+ hal secara eksplisit (itu masuk comparison), DAN
+   Slide menggunakan ANALOGI atau METAFORA — ada kata "kayak", "ibarat", "mirip",
+   "bayangkan", "seperti", atau frasa analogi serupa di body text.
+2. Slide membahas konsep PSIKOLOGIS atau SOSIAL yang tidak punya representasi
+   visual teknis alami: burnout developer, growth mindset, impostor syndrome,
+   komunikasi tim, work-life balance, motivasi belajar, dsb.
+3. Slide berisi prinsip / pelajaran abstrak yang paling pas direpresentasikan
+   sebagai gambar editorial daripada diagram teknis.
+
+JIKA SALAH SATU dari 3 kriteria di atas terpenuhi:
+→ mockup WAJIB "illustration" — JANGAN pilih concept/hub/card/quote meski terasa "lebih aman"
+→ Pilih illustrationSlug dari ILLUSTRATION_CATEGORIES yang paling relevan secara semantik
+→ OPSIONAL: illustrationSlug2 untuk slide dengan 2 konsep visual berpasangan (pair layout)
+→ Slide dengan 1 slug: ukuran 240×240px. Slide dengan 2 slug: masing-masing 180×180px, gap 24px — sizing ini FIXED di renderer, bukan dari AI
+
+Contoh few-shot wajib illustration:
+- "Index itu kayak daftar isi di buku" → mockup: "illustration", illustrationSlug: "file-manager_ivlr"
+- "Kenapa developer burnout?" → mockup: "illustration", illustrationSlug: "feeling-blue_4b7q"
+- "Bayangkan API lo kayak pintu restoran" → mockup: "illustration", illustrationSlug: "server-down_s4lk"
+
+Slide yang TIDAK masuk kriteria di atas (kode konkret, proses teknis, comparison, stats):
+→ TETAP pakai mockup teknis yang sesuai — illustration BUKAN pengganti semua mockup
 
 ANTI-REPETITION (hard rules):
 1. NEVER the same mockup type on two consecutive slides.
@@ -505,7 +525,8 @@ Grouped by VISUAL DIRECTOR category (pick by the slide's content):
 - Browser — browser chrome + stat cards ("here's what I built", max 1/deck)
 
 **ABSTRACT** (principle / concept / analogy):
-- Concept / Hub — as above
+- Illustration — WAJIB untuk slide analogi/metafora (kata "kayak/ibarat/mirip/bayangkan") atau topik abstrak/psikologis. Gunakan illustrationSlug dari ILLUSTRATION_CATEGORIES; opsional illustrationSlug2 untuk pair layout.
+- Concept / Hub — untuk breakdown konsep teknis ke sub-komponen
 - Quote — editorial pull-quote (principle, expert claim, testimonial)
 - Card — general info card with icon, title, body
 
@@ -536,6 +557,7 @@ Grouped by VISUAL DIRECTOR category (pick by the slide's content):
 - Card: icon slug, title (≤40), body (≤100), tone
 - Callout: icon slug + takeaway (≤90)
 - Checklist: 3-6 items (≤48 each)
+- Illustration: illustrationSlug (required) + illustrationSlug2 (optional, pair layout) from ILLUSTRATION_CATEGORIES, caption (≤90 optional). Renderer fixes sizes automatically — do NOT add width/height.
 
 **IMPORTANT**: Follow the VISUAL DIRECTOR anti-repetition rules — never the same
 mockup type (or category-visual) on consecutive slides; dark code mockups
@@ -730,6 +752,11 @@ MOCKUP TYPES — every "point" slide MUST include a "mockup" object with one of 
 
 22. { type: "custom", html: "...", css?: "..." }
    → Hand-written HTML + CSS. The escape hatch for a layout none of types 1-21 can draw (a bespoke split view, an unusual structural block, a visual metaphor). Write self-contained markup with your OWN class names and put the matching rules in 'css'. The renderer wraps your fragment in the flex slot and SCOPES your CSS to it, so do NOT add a '.diag-wrap' wrapper and do NOT style shared chrome (section, body, h1, .eyebrow, .counter, .geser) — those rules are scoped away and do nothing. Colours MUST come from the surface tokens (var(--ms-fg), --ms-fg-muted, --ms-fg-faint, --ms-panel, --ms-panel-deep, --ms-line, --ms-accent) — a literal hex breaks on the surface you did not picture. See "WRITING A custom MOCKUP" above. Max 3 colors, no backdrop-filter, max ~1 per deck.
+
+23. { type: "illustration", illustrationSlug: "online-learning_tgmv", illustrationSlug2?: "feeling-blue_4b7q", caption?: "..." }
+   → unDraw editorial SVG — the MANDATORY choice for analogy/metaphor slides and abstract concepts with no natural technical visual. Pick a slug from ILLUSTRATION_CATEGORIES.
+   RENDERER SIZES THESE AUTOMATICALLY — do NOT specify width/height/gap. Single slug renders at 240×240px; two slugs (pair) renders side-by-side at 180×180px each with 24px gap.
+   WAJIB untuk: slide dengan kata "kayak/ibarat/mirip/bayangkan", topik psikologis (burnout, mindset), atau konsep abstrak yang lebih baik sebagai gambar editorial daripada diagram teknis.
 
 ${MOCKUP_VARIETY_RULE}
 

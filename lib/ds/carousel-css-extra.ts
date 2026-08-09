@@ -543,10 +543,19 @@ export const carouselExtraCss = String.raw`
   .git svg { width: 100%; height: 300px; display: block; }
 
   /* Illustration — unDraw SVG for abstract concepts / analogies */
+  /* Single illustration: fixed 240×240px — not flexible so small SVGs don't render tiny */
   .diag-illustration { width: 100%; display: flex; flex-direction: column;
-    align-items: center; justify-content: center; gap: 20px; }
-  .diag-illustration svg { max-width: 100%; max-height: 420px; height: auto;
-    display: block; width: auto; margin: 0 auto; }
+    align-items: center; justify-content: center; gap: 16px; padding: 16px 0; }
+  .diag-illustration > svg { width: 240px; height: 240px;
+    display: block; flex-shrink: 0; }
+  /* Pair illustration: 2 SVGs side-by-side at 180×180px, gap 24px */
+  /* justify-content:center (NOT space-between) so 2 items stay close together */
+  .diag-illustration-pair { width: 100%; display: flex; flex-direction: row;
+    align-items: center; justify-content: center; gap: 24px; padding: 16px 0; flex-wrap: nowrap; }
+  .diag-illustration-pair .illus-item { display: flex; flex-direction: column;
+    align-items: center; gap: 10px; }
+  .diag-illustration-pair .illus-item svg { width: 180px; height: 180px;
+    display: block; flex-shrink: 0; }
 
   /* Screenshot evidence — uploaded real evidence image or pending placeholder */
   .diag-screenshot { width: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center; }
