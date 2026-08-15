@@ -378,6 +378,35 @@ export const carouselExtraCss = String.raw`
   .diag-wrap > .cm > *,
   .anchor-wrap > .cm > * { max-width: 100%; }
 
+  /* Readable defaults for a sanitized custom fragment.
+
+     sanitizeCustomHtml strips every style= attribute, every <style> block and every
+     non-whitelisted class, so a fragment arrives with no appearance of its own. Without
+     these rules it would render as browser-default black Times on the Ink canvas —
+     invisible, and the reason "just strip the styling" needs a floor under it. Everything
+     here reads surface tokens, so it is correct on Ink and Paper with no per-surface rule. */
+  .cm-base { flex-direction: column; gap: 16px; text-align: left;
+    font-family: 'Inter', system-ui, sans-serif; color: var(--ms-fg);
+    font-size: 30px; line-height: 1.45; }
+  .cm-base p, .cm-base li, .cm-base td, .cm-base th, .cm-base div, .cm-base span {
+    color: var(--ms-fg); font-size: inherit; line-height: inherit; }
+  .cm-base h1, .cm-base h2, .cm-base h3, .cm-base h4, .cm-base h5, .cm-base h6 {
+    color: var(--ms-fg); font-weight: 700; font-size: 38px; line-height: 1.2; margin: 0; }
+  .cm-base strong, .cm-base b { color: var(--ms-accent); font-weight: 700; }
+  .cm-base code, .cm-base pre, .cm-base kbd {
+    font-family: 'JetBrains Mono', monospace; font-size: 26px;
+    background: var(--ms-panel-deep); color: var(--ms-fg);
+    border: 1px solid var(--ms-line); border-radius: 8px; padding: 2px 8px; }
+  .cm-base pre { padding: 16px 20px; overflow: hidden; white-space: pre-wrap; }
+  .cm-base ul, .cm-base ol { margin: 0; padding-left: 32px; display: flex;
+    flex-direction: column; gap: 10px; }
+  .cm-base table { width: 100%; border-collapse: collapse; }
+  .cm-base th, .cm-base td { border: 1px solid var(--ms-line); padding: 12px 16px;
+    text-align: left; }
+  .cm-base th { font-weight: 700; background: var(--ms-panel-deep); }
+  .cm-base img, .cm-base svg { max-width: 100%; height: auto; }
+  .cm-base hr { border: 0; border-top: 1px solid var(--ms-line); width: 100%; }
+
   /* Cover CTA follows the cover-slides.html prototype: the last FLOW child, not an
      absolutely-positioned overlay. carousel-css.ts (DO-NOT-EDIT) pins .geser with
      position:absolute, which takes it out of the column — .anchor-wrap{flex:1} then
@@ -542,20 +571,52 @@ export const carouselExtraCss = String.raw`
   .git { width: 100%; position: relative; padding: 40px 20px; }
   .git svg { width: 100%; height: 300px; display: block; }
 
-  /* Illustration — unDraw SVG for abstract concepts / analogies */
-  /* Single illustration: fixed 240×240px — not flexible so small SVGs don't render tiny */
-  .diag-illustration { width: 100%; display: flex; flex-direction: column;
+  /* Illustration — unDraw SVG for abstract concepts / analogies.
+
+     Sized by HEIGHT, not by a square box. 123 of the 145 allowlisted illustrations are
+     landscape (median viewBox ratio 1.29, up to 2.86), so a fixed
+     width:500px + height:500px letterboxed them: a 2.86-ratio drawing became 240×84 floating
+     in a 240×240 slot, which reads as "the illustration came out tiny". Pinning the
+     height and letting width follow the viewBox gives every slug the same visual weight.
+
+     The height is a CEILING, not a fixed value. align-self:stretch hands
+     .diag-illustration the full height of .diag-wrap, which flex has already made
+     definite; the group then takes what the caption leaves and max-height:100% clamps
+     the drawing to it. A fixed height cannot work here because the space a point slide
+     leaves swings with the headline: measured on the real 1080×1350 canvas, .diag-wrap
+     is 920×733 under a two-line headline but only 920×459 under a four-line one. The
+     previous fixed 440px looked right in the roomy case and, in the tight one, pushed a
+     626px block out of a 459px well — overlapping the body text above and running 4px
+     off the bottom of the canvas. */
+  .diag-illustration { width: 100%; align-self: stretch; min-height: 0;
+    display: flex; flex-direction: column;
     align-items: center; justify-content: center; gap: 16px; padding: 16px 0; }
-  .diag-illustration > svg { width: 240px; height: 240px;
-    display: block; flex-shrink: 0; }
-  /* Pair illustration: 2 SVGs side-by-side at 180×180px, gap 24px */
-  /* justify-content:center (NOT space-between) so 2 items stay close together */
-  .diag-illustration-pair { width: 100%; display: flex; flex-direction: row;
-    align-items: center; justify-content: center; gap: 24px; padding: 16px 0; flex-wrap: nowrap; }
-  .diag-illustration-pair .illus-item { display: flex; flex-direction: column;
-    align-items: center; gap: 10px; }
-  .diag-illustration-pair .illus-item svg { width: 180px; height: 180px;
-    display: block; flex-shrink: 0; }
+  /* The caption keeps its natural height; the illustration is what gives way. */
+  .diag-illustration > .catatan { flex: none; width: 100%; }
+
+  /* One layout for 1 and 2 illustrations — the count only changes the size class, so
+     the single and pair cases cannot drift apart. justify-content:center (NOT
+     space-between) keeps a pair together instead of shoving each to an edge. */
+  .illustration-group { display: flex; flex-direction: row;
+    align-items: center; justify-content: center; gap: 28px; flex-wrap: nowrap;
+    width: 100%; flex: 1 1 auto; min-height: 0; }
+  .illustration-group .illus-item { display: flex; flex-direction: column;
+    align-items: center; justify-content: center; gap: 10px;
+    flex-shrink: 0; min-width: 0; height: 100%; min-height: 0; }
+  .illustration-group .illus-item svg { display: block; flex-shrink: 0;
+    width: auto; max-height: 100%; }
+  /* max-width caps the panoramas (up to 2.86:1) so they cannot run past the 920px
+     content column (1080 canvas − 80px padding per side).
+
+     Single: 500px tall, capped at 900px wide so even a 2.86:1 panorama keeps a 20px
+     margin inside the column.
+
+     Pair: the width cap binds first — two items plus the 28px gap must fit 920px, so
+     446px each. 420px of height is what a portrait slug can use before that cap takes
+     over; a 1.29:1 slug wants 542px at that height and letterboxes down to ~346px
+     inside its box. Equal boxes across the pair are worth the letterboxing. */
+  .illustration-group.is-single .illus-item svg { height: 500px; max-width: 900px; }
+  .illustration-group.is-pair   .illus-item svg { height: 420px; max-width: 446px; }
 
   /* Screenshot evidence — uploaded real evidence image or pending placeholder */
   .diag-screenshot { width: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center; }

@@ -1,0 +1,82 @@
+"use client";
+
+import { Download, Loader2 } from "lucide-react";
+import { Button } from "@/components/ui/button";
+
+/** The exported JPEGs, shown once there is at least one. */
+export function ExportPanel({
+  images,
+  pending,
+  expectedCount,
+  canDownload,
+  onDownloadAll,
+}: {
+  images: string[];
+  pending: boolean;
+  expectedCount: number;
+  canDownload: boolean;
+  onDownloadAll: () => void;
+}) {
+  return (
+    <div className="flex flex-col h-full min-h-0">
+      <div className="flex items-center justify-between gap-2 px-3 py-2 border-b border-hairline shrink-0">
+        <span className="text-xs text-muted-foreground truncate">
+          {pending
+            ? `Merender ${expectedCount || "…"} slide jadi gambar…`
+            : `${images.length} gambar siap diunduh`}
+        </span>
+        <Button
+          size="sm"
+          variant="outline"
+          onClick={onDownloadAll}
+          disabled={!canDownload}
+          className="h-7 text-[11px] gap-1.5 px-2.5 shrink-0"
+        >
+          <Download className="size-3.5" />
+          Unduh semua
+        </Button>
+      </div>
+
+      <div className="flex-1 min-h-0 overflow-y-auto p-3">
+        <div className="grid grid-cols-2 lg:grid-cols-3 gap-3">
+          {pending &&
+            Array.from({ length: Math.max(expectedCount, 4) }).map((_, i) => (
+              <div key={`sk-${i}`} className="aspect-[4/5] rounded-lg border border-hairline bg-muted/50 animate-pulse" />
+            ))}
+
+          {!pending &&
+            images.map((src, i) => (
+              <figure key={i} className="flex flex-col gap-1.5 group">
+                <div className="aspect-[4/5] rounded-lg border border-hairline overflow-hidden bg-muted relative">
+                  <img src={src} alt={`Slide ${i + 1}`} className="size-full object-cover" />
+                  <a
+                    href={src}
+                    download={`slide-${i + 1}.jpg`}
+                    className="absolute inset-0 flex items-center justify-center bg-black/45 text-white text-[11px] font-medium opacity-0 group-hover:opacity-100 transition-opacity"
+                  >
+                    Unduh
+                  </a>
+                </div>
+                <figcaption className="text-[10px] font-mono text-center text-muted-foreground">
+                  Slide {i + 1}
+                </figcaption>
+              </figure>
+            ))}
+        </div>
+
+        {!pending && images.length === 0 && (
+          <div className="h-full flex items-center justify-center text-xs text-muted-foreground text-center px-6 py-10">
+            Belum ada gambar. Render slide dulu, lalu ekspor.
+          </div>
+        )}
+
+        {pending && (
+          <p className="flex items-center justify-center gap-2 text-[11px] text-muted-foreground pt-4">
+            <Loader2 className="size-3.5 animate-spin" />
+            Boleh pindah tab, proses tetap jalan.
+          </p>
+        )}
+      </div>
+    </div>
+  );
+}

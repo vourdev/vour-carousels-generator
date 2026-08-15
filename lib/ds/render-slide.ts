@@ -6,10 +6,9 @@ import { coverCompactTemplate } from "@/lib/ds/templates/cover-compact";
 import { coverBadgeTemplate } from "@/lib/ds/templates/cover-badge";
 import { coverNocGridTemplate } from "@/lib/ds/templates/cover-nocgrid";
 import { coverDoorTemplate } from "@/lib/ds/templates/cover-door";
-import { sanitizeHookHtml } from "@/lib/ds/sanitize";
-import { scopeCss } from "@/lib/ds/scope-css";
+import { sanitizeCustomHtml } from "@/lib/ds/sanitize";
 import { renderIcon } from "@/lib/ds/icons";
-import { renderIllustration } from "@/lib/ds/illustrations";
+import { renderIllustration, type IllustrationVariant } from "@/lib/ds/illustrations.server";
 import { pointTemplate } from "@/lib/ds/templates/point";
 import { outroTemplate } from "@/lib/ds/templates/outro";
 import { terminalTemplate } from "@/lib/ds/templates/terminal";
@@ -74,16 +73,17 @@ function injectSentinels(template: string, map: Record<string, string>): string 
  */
 function renderCustomFragment(
   html: string,
-  css: string | undefined,
   scopeId: string,
   wrapper: "diag-wrap" | "anchor-wrap"
-): string {
+): string | null {
+  const safe = sanitizeCustomHtml(html);
+  if (!safe) return null;
   const cls = `cm-${scopeId}`;
-  const styleBlock = css ? `<style>${scopeCss(css, `.${cls}`)}</style>` : "";
   // The `.cm` class makes the scope div transparent to layout (see
   // carousel-css-extra.ts) — without it the div shrink-wraps as a flex item and
   // a `width:100%` inside the fragment resolves against its own content.
-  return `${styleBlock}<div class="${wrapper}"><div class="cm ${cls}">${sanitizeHookHtml(html)}</div></div>`;
+  // `.cm-base` supplies the readable defaults the fragment no longer carries itself.
+  return `<div class="${wrapper}"><div class="cm cm-base ${cls}">${safe}</div></div>`;
 }
 
 /* ── Mockup renderers ─────────────────────────────────────────── */
@@ -373,19 +373,18 @@ function renderDoorHook(h: Extract<CoverHook, { kind: "door" }>): string {
     .replace("HAND_INJECT", () => handIcon);
 }
 
-function renderIllustrationMockup(m: Extract<Mockup, { type: "illustration" }>): string {
+function renderIllustrationMockup(
+  m: Extract<Mockup, { type: "illustration" }>,
+  variant: IllustrationVariant
+): string {
   const caption = m.caption ? `<div class="catatan mt-20"><div class="catatan-body">${escapeHtml(m.caption)}</div></div>` : "";
-
-  if (m.illustrationSlug2) {
-    // Pair layout: two SVGs side-by-side at fixed 180×180px each (via CSS)
-    const svg1 = renderIllustration(m.illustrationSlug);
-    const svg2 = renderIllustration(m.illustrationSlug2);
-    return `<div class="diag-wrap"><div class="diag-illustration-pair"><div class="illus-item">${svg1}</div><div class="illus-item">${svg2}</div></div>${caption}</div>`;
-  }
-
-  // Single illustration: fixed 240×240px via CSS
-  const svg = renderIllustration(m.illustrationSlug);
-  return `<div class="diag-wrap"><div class="diag-illustration">${svg}${caption}</div></div>`;
+  // One markup shape for 1 and 2 illustrations. The count only picks a size class, so
+  // there is no layout branch that can drift between the two cases.
+  const sizeClass = m.illustrationSlugs.length > 1 ? "is-pair" : "is-single";
+  const items = m.illustrationSlugs
+    .map((slug) => `<div class="illus-item">${renderIllustration(slug, variant)}</div>`)
+    .join("");
+  return `<div class="diag-wrap"><div class="diag-illustration"><div class="illustration-group ${sizeClass}">${items}</div>${caption}</div></div>`;
 }
 
 function renderScreenshotMockup(m: Extract<Mockup, { type: "screenshot" }>): string {
@@ -406,7 +405,7 @@ function renderScreenshotMockup(m: Extract<Mockup, { type: "screenshot" }>): str
 }
 
 /** Render any mockup type to an HTML fragment. `scopeId` scopes `custom` CSS. */
-function renderMockup(m: Mockup, scopeId: string): string {
+function renderMockup(m: Mockup, scopeId: string, variant: IllustrationVariant): string {
   switch (m.type) {
     case "terminal":
       return renderTerminalMockup(m);
@@ -447,11 +446,13 @@ function renderMockup(m: Mockup, scopeId: string): string {
     case "gitbranch":
       return renderGitBranchMockup(m);
     case "illustration":
-      return renderIllustrationMockup(m);
+      return renderIllustrationMockup(m, variant);
     case "screenshot":
       return renderScreenshotMockup(m);
     case "custom":
-      return renderCustomFragment(m.html, m.css, scopeId, "diag-wrap");
+      // resolveMockup already rejected fragments that sanitize to nothing, so a null
+      // here would mean the mockup bypassed it; render nothing rather than a broken hull.
+      return renderCustomFragment(m.html, scopeId, "diag-wrap") ?? "";
     case "card":
       // Card is rendered inline via the point template's {{#card}} block, not here.
       return "";
@@ -463,7 +464,12 @@ function renderMockup(m: Mockup, scopeId: string): string {
  * Priority: slide.mockup > slide.card (wrapped as card type) > auto-fallback.
  */
 function resolveMockup(slide: Extract<Slide, { role: "point" }>): Mockup {
-  if (slide.mockup) return slide.mockup;
+  // A custom fragment whose entire body was styling leaves nothing to render once
+  // sanitizeCustomHtml has run. Fall through to the auto-card rather than emit an
+  // empty diagram well — the slide still says something either way.
+  const customIsEmpty =
+    slide.mockup?.type === "custom" && sanitizeCustomHtml(slide.mockup.html) === null;
+  if (slide.mockup && !customIsEmpty) return slide.mockup;
   if (slide.card) return { type: "card" as const, ...slide.card };
   // Auto-fallback: generate a card from slide data so no slide is ever flat
   return {
@@ -503,7 +509,9 @@ export function renderSlide(slide: Slide, slideIndex = 0): string {
       let fragment = "";
       if (h.kind === "device") fragment = renderDeviceHook(h);
       else if (h.kind === "custom")
-        fragment = renderCustomFragment(h.html, h.css, scopeId, "anchor-wrap");
+        // A cover hook that sanitizes away leaves the cover with no anchor, which the
+        // template already handles as an empty fragment.
+        fragment = renderCustomFragment(h.html, scopeId, "anchor-wrap") ?? "";
       else if (h.kind === "image") fragment = renderImageHook(h);
       else if (h.kind === "badge") fragment = renderBadgeHook(h);
       else if (h.kind === "nocgrid") fragment = renderNocGridHook(h);
@@ -547,7 +555,7 @@ export function renderSlide(slide: Slide, slideIndex = 0): string {
       }
 
       // For non-card mockups, render the mockup fragment and inject it after the body
-      const mockupHtml = renderMockup(mockup, scopeId);
+      const mockupHtml = renderMockup(mockup, scopeId, surfaceClass === "paper" ? "onLight" : "onDark");
       const base = fillTemplate(pointTemplate, {
         brand,
         surfaceClass,

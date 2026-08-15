@@ -2,441 +2,38 @@
 
 import { useMemo, useState, useTransition, useEffect, useRef } from "react";
 import { Button } from "@/components/ui/button";
-import { Textarea } from "@/components/ui/textarea";
-import { Input } from "@/components/ui/input";
 import { Card, CardContent } from "@/components/ui/card";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import { assembleCarousel } from "@/lib/ds/assemble";
 import { PreviewFrame } from "@/components/preview-frame";
-import { namedBlobs, downloadNamedBlobs } from "@/lib/export/download";
-import { captureCarousel } from "@/lib/export/capture";
 import type { ModelId } from "@/lib/ai/registry";
 import type { SlidePlan } from "@/lib/ds/schema";
-import { planAction, reviseAction, reviseBriefAction, humanVoiceEditorAction, clearRevisionMemoryAction, uploadSingleImageAction, publishAction, getPublishingConfigAction } from "./actions";
+import { planAction, reviseAction, reviseBriefAction, humanVoiceEditorAction, clearRevisionMemoryAction, uploadSingleImageAction, publishAction, getPublishingConfigAction, assembleAction } from "./actions";
 import { saveExportedCarouselAction, markCarouselStatusAction, deleteCarouselAction } from "@/app/history/actions";
 import {
-  expandTopicBriefAction,
   linkTopicCarouselAction,
   listTopicsAction,
   markTopicPublishedAction,
 } from "@/app/topics/actions";
 import type { Topic } from "@/lib/topics/bank";
-import { Sparkles, Brain, Zap, RotateCcw, Check, Send, Eye, FileText, LayoutGrid, User, Upload, Clock, CheckCircle2, XCircle, AlertCircle, Calendar, Globe, ArrowLeft, Search, ChevronDown, SlidersHorizontal, Square, MessageSquare, PanelRightClose, PanelRightOpen, PanelLeftClose, PanelLeftOpen, PanelLeft, Loader2 } from "lucide-react";
+import { AlertCircle, ArrowRight, Images, LayoutGrid, PanelRightOpen, RotateCcw, Sparkles } from "lucide-react";
 import { toast } from "sonner";
 
-interface Message {
-  sender: "user" | "ai";
-  text: string;
-  timestamp: string;
-}
+import { compressImageBlob, countSections, parseMeta, revealedLength, summarizeError } from "./_components/utils";
+import { LOADING_JOBS, type LoadingKind } from "./_components/step-loader";
+import { ChatFeed, type ArtifactCard, type Message } from "./_components/chat-feed";
+import { Composer } from "./_components/composer";
+import { ArtifactPanel, type ArtifactTab, type ArtifactTabDef } from "./_components/artifact-panel";
+import { BriefEditor, type MdMode } from "./_components/brief-editor";
+import { ExportPanel } from "./_components/export-panel";
+import { PublishPanel, type PublishState } from "./_components/publish-panel";
+import { ScreenshotUploads } from "./_components/screenshot-uploads";
+import { ModelPicker } from "./_components/model-picker";
+import { ProgressStrip } from "./_components/progress-strip";
 
-const VourLogoIcon = () => (
-  <img src="/vourdev-logo.jpeg" alt="Vour" className="size-4 rounded-full object-cover shrink-0 border border-hairline" />
-);
-
-const modelDetails: Record<string, { label: string; vendor: string; description: string; icon: React.ReactNode }> = {
-  gemini: {
-    label: "Gemini Flash",
-    vendor: "Google AI",
-    description: "Model cepat & cerdas dari Google (Gratis)",
-    icon: <VourLogoIcon />,
-  },
-  deepseek: {
-    label: "DeepSeek Chat",
-    vendor: "DeepSeek AI",
-    description: "Reasoning & content model dari DeepSeek",
-    icon: <VourLogoIcon />,
-  },
-  mimo: {
-    label: "MIMO",
-    vendor: "Xiaomi AI",
-    description: "OpenAI-compatible inference engine",
-    icon: <VourLogoIcon />,
-  },
-  openrouter: {
-    label: "OpenRouter",
-    vendor: "OpenRouter",
-    description: "Multi-vendor AI model gateway",
-    icon: <VourLogoIcon />,
-  },
-  "vour-high": {
-    label: "Vour High",
-    vendor: "Vour Model",
-    description: "High-quality model - Best results",
-    icon: <VourLogoIcon />,
-  },
-  "vour-lite": {
-    label: "Vour Lite",
-    vendor: "Vour Model",
-    description: "Fast learning model - Quick generation",
-    icon: <VourLogoIcon />,
-  },
-  omniroute: {
-    label: "Vour Model",
-    vendor: "VourDev",
-    description: "Model AI resmi @vourdev",
-    icon: <VourLogoIcon />,
-  },
-};
-
-function summarizeError(msg: string): string {
-  const lower = msg.toLowerCase();
-
-  if (lower.includes("quota exceeded") || lower.includes("exceeded your current quota") || lower.includes("rate limit") || lower.includes("rate-limits")) {
-    return "Batas kuota API Gemini terlampaui (Rate Limit / Quota Exceeded). Silakan coba beberapa saat lagi.";
-  }
-  if (lower.includes("high demand") || lower.includes("experiencing high demand")) {
-    return "Server model sedang sibuk karena permintaan tinggi (High Demand). Silakan coba lagi nanti.";
-  }
-  if (lower.includes("invalid api key") || lower.includes("api key not valid") || lower.includes("api_key")) {
-    return "Konfigurasi API Key tidak valid. Silakan periksa kembali berkas .env Anda.";
-  }
-  if (lower.includes("no longer available") || lower.includes("not available")) {
-    return "Model yang dipilih sudah tidak tersedia atau tidak aktif.";
-  }
-
-  if (msg.length > 120) {
-    const lastErrorIdx = msg.lastIndexOf("Last error: ");
-    if (lastErrorIdx !== -1) {
-      const sub = msg.substring(lastErrorIdx + "Last error: ".length);
-      const firstSentence = sub.split(".")[0] || sub;
-      return firstSentence.replace(/^AI_APICallError:\s*/i, "").trim();
-    }
-    return "Terjadi kesalahan pada sistem AI.";
-  }
-
-  return msg;
-}
-
-function blobToDataUrl(blob: Blob): Promise<string> {
-  return new Promise((res, rej) => {
-    const reader = new FileReader();
-    reader.onloadend = () => res(reader.result as string);
-    reader.onerror = rej;
-    reader.readAsDataURL(blob);
-  });
-}
-
-function compressImageBlob(blob: Blob, maxWidth = 360): Promise<string> {
-  return new Promise((resolve, reject) => {
-    const img = new Image();
-    img.src = URL.createObjectURL(blob);
-    img.onload = () => {
-      URL.revokeObjectURL(img.src);
-      const canvas = document.createElement("canvas");
-      const ctx = canvas.getContext("2d");
-      if (!ctx) {
-        reject(new Error("canvas context not available"));
-        return;
-      }
-
-      const scale = maxWidth / img.width;
-      canvas.width = maxWidth;
-      canvas.height = img.height * scale;
-
-      ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-      const dataUrl = canvas.toDataURL("image/jpeg", 0.7);
-      resolve(dataUrl);
-    };
-    img.onerror = (e) => reject(e);
-  });
-}
-
-function processUploadedScreenshot(file: File, cropRatio = "4:5"): Promise<string> {
-  return new Promise((resolve, reject) => {
-    const img = new Image();
-    img.src = URL.createObjectURL(file);
-    img.onload = () => {
-      URL.revokeObjectURL(img.src);
-      const canvas = document.createElement("canvas");
-      const ctx = canvas.getContext("2d");
-      if (!ctx) {
-        reject(new Error("canvas context not available"));
-        return;
-      }
-
-      let targetRatio = 4 / 5;
-      if (cropRatio === "1:1") targetRatio = 1;
-      else if (cropRatio === "16:9") targetRatio = 16 / 9;
-
-      let srcWidth = img.width;
-      let srcHeight = img.height;
-      let srcX = 0;
-      let srcY = 0;
-
-      const currentRatio = srcWidth / srcHeight;
-      if (currentRatio > targetRatio) {
-        srcWidth = srcHeight * targetRatio;
-        srcX = (img.width - srcWidth) / 2;
-      } else {
-        srcHeight = srcWidth / targetRatio;
-        srcY = (img.height - srcHeight) / 2;
-      }
-
-      const outWidth = 1080;
-      const outHeight = Math.round(outWidth / targetRatio);
-      canvas.width = outWidth;
-      canvas.height = outHeight;
-
-      ctx.drawImage(img, srcX, srcY, srcWidth, srcHeight, 0, 0, outWidth, outHeight);
-      const dataUrl = canvas.toDataURL("image/jpeg", 0.8);
-      resolve(dataUrl);
-    };
-    img.onerror = (e) => reject(e);
-  });
-}
-
-/** Read the vourdev-meta block (title/caption/hashtags) from an uploaded HTML carousel. */
-function parseMeta(html: string): { title: string; caption: string; hashtags: string[] } {
-  const m = html.match(/<script[^>]*id="vourdev-meta"[^>]*>([\s\S]*?)<\/script>/);
-  if (m) {
-    try {
-      const j = JSON.parse(m[1]);
-      return {
-        title: typeof j.title === "string" ? j.title : "Untitled",
-        caption: typeof j.caption === "string" ? j.caption : "",
-        hashtags: Array.isArray(j.hashtags) ? j.hashtags : [],
-      };
-    } catch {
-      // fall through
-    }
-  }
-  return { title: "Untitled", caption: "", hashtags: [] };
-}
-
-function countSections(html: string): number {
-  return (html.match(/<section[\s>]/g) ?? []).length;
-}
-
-// Simple React Markdown Renderer
-function renderMarkdown(md: string) {
-  if (!md) return <p className="text-muted-foreground italic text-xs">Brief outline kosong...</p>;
-
-  const lines = md.split("\n");
-  const elements: React.ReactNode[] = [];
-
-  lines.forEach((line, idx) => {
-    const trimmed = line.trim();
-    if (trimmed === "---") {
-      elements.push(<hr key={idx} className="my-4 border-hairline" />);
-      return;
-    }
-
-    if (trimmed.startsWith("# ")) {
-      const title = trimmed.substring(2);
-      const isSlideHeader = title.toLowerCase().includes("slide");
-      if (isSlideHeader) {
-        elements.push(
-          <div key={idx} className="mt-5 mb-3 flex items-center gap-2 p-2.5 px-3.5 rounded-xl bg-primary/10 border border-primary/20 text-primary font-bold text-xs shadow-xs">
-            <Sparkles className="size-4 shrink-0" />
-            <span>{title}</span>
-          </div>
-        );
-      } else {
-        elements.push(
-          <h1 key={idx} className="text-base font-bold tracking-tight text-foreground border-b pb-2 mt-4 mb-3 first:mt-0 font-heading">
-            {title}
-          </h1>
-        );
-      }
-    } else if (trimmed.startsWith("## ")) {
-      const text = trimmed.substring(3);
-      const isEyebrow = text.toLowerCase() === "eyebrow";
-      const isHeadline = text.toLowerCase() === "headline";
-      const isHighlight = text.toLowerCase().includes("highlight");
-      const isVisual = text.toLowerCase().includes("visual");
-
-      elements.push(
-        <h2 key={idx} className={`text-xs font-semibold uppercase tracking-wider mt-3 mb-1 font-heading ${isEyebrow ? "text-indigo-400 font-mono" :
-            isHeadline ? "text-amber-400 font-bold" :
-              isHighlight ? "text-emerald-400 font-semibold" :
-                isVisual ? "text-purple-400 font-semibold" :
-                  "text-muted-foreground border-b border-hairline pb-0.5"
-          }`}>
-          {text}
-        </h2>
-      );
-    } else if (trimmed.startsWith("### ")) {
-      elements.push(
-        <h3 key={idx} className="text-xs font-semibold text-muted-foreground mt-2 mb-1">
-          {trimmed.substring(4)}
-        </h3>
-      );
-    } else if (trimmed.startsWith("- ") || trimmed.startsWith("* ")) {
-      const text = trimmed.substring(2);
-      let content: React.ReactNode = text;
-      if (text.includes("**")) {
-        const parts = text.split("**");
-        content = parts.map((part, i) => i % 2 === 1 ? <strong key={i} className="font-bold text-primary px-1 py-0.5 rounded bg-primary/10">{part}</strong> : part);
-      }
-      elements.push(
-        <li key={idx} className="text-xs list-disc ml-4 my-1 text-muted-foreground leading-relaxed">
-          {content}
-        </li>
-      );
-    } else if (trimmed === "") {
-      elements.push(<div key={idx} className="h-1" />);
-    } else {
-      let content: React.ReactNode = trimmed;
-      if (trimmed.includes("**")) {
-        const parts = trimmed.split("**");
-        content = parts.map((part, i) => i % 2 === 1 ? <strong key={i} className="font-bold text-primary underline decoration-primary/50 underline-offset-2">{part}</strong> : part);
-      }
-      elements.push(
-        <p key={idx} className="text-xs text-muted-foreground leading-relaxed my-1">
-          {content}
-        </p>
-      );
-    }
-  });
-
-  return <div className="space-y-0.5">{elements}</div>;
-}
-
-/* ── Per-step loading state ──────────────────────────────────────────────
- * Every long-running step in the wizard declares a job here. The phases are
- * indicative (the AI/export calls don't stream progress) so the loader shows a
- * real elapsed clock next to them and parks on the last phase until the call
- * actually resolves — it never fakes a completion. */
-const LOADING_JOBS = {
-  brief: {
-    title: "Menyusun brief outline",
-    phases: [
-      "Membaca ide & sudut pandangnya",
-      "Menyusun kerangka slide",
-      "Menulis copy dengan voice @vourdev",
-      "Merapikan caption & hashtag",
-    ],
-  },
-  briefRevise: {
-    title: "Merevisi brief outline",
-    phases: [
-      "Membaca instruksi revisi",
-      "Menyesuaikan bagian yang diminta",
-      "Menjaga voice tetap konsisten",
-    ],
-  },
-  plan: {
-    title: "Merender rancangan slide",
-    phases: [
-      "Membaca brief yang disetujui",
-      "Memilih mockup tiap slide",
-      "Menyusun slide plan",
-      "Validasi budget copy & ikon",
-    ],
-  },
-  planRevise: {
-    title: "Merevisi rancangan slide",
-    phases: [
-      "Mencari slide yang dimaksud",
-      "Menerapkan perubahan",
-      "Merender ulang preview",
-    ],
-  },
-  export: {
-    title: "Mengekspor slide ke JPEG",
-    phases: [
-      "Merender HTML tiap slide",
-      "Memotret canvas 1080×1350",
-      "Menyiapkan berkas gambar",
-    ],
-  },
-} as const;
-
-type LoadingKind = keyof typeof LOADING_JOBS;
-
-/**
- * Shared loading indicator. "panel" overlays the step's workspace with a phase
- * checklist; "inline" is the compact form used inside the step-1 chat feed.
- * Render with key={kind} — a new job remounts it instead of resetting state.
- */
-function StepLoader({ kind, variant = "panel" }: { kind: LoadingKind; variant?: "panel" | "inline" }) {
-  const { title, phases } = LOADING_JOBS[kind];
-  const [phase, setPhase] = useState(0);
-  const [elapsed, setElapsed] = useState(0);
-
-  useEffect(() => {
-    const clock = setInterval(() => setElapsed((s) => s + 1), 1000);
-    // Hold on the final phase rather than looping — the caller unmounts us when done.
-    const advance = setInterval(
-      () => setPhase((p) => Math.min(p + 1, phases.length - 1)),
-      4000
-    );
-    return () => {
-      clearInterval(clock);
-      clearInterval(advance);
-    };
-  }, [phases.length]);
-
-  if (variant === "inline") {
-    return (
-      <div className="flex items-center gap-2.5 self-start max-w-[85%]">
-        <div className="size-7 rounded-full bg-primary/10 border border-primary/20 flex items-center justify-center shrink-0">
-          <Loader2 className="size-3.5 text-primary animate-spin" />
-        </div>
-        <div className="p-3.5 bg-card border border-hairline rounded-2xl rounded-tl-none flex flex-col gap-1.5 min-w-0">
-          <div className="flex items-center gap-2">
-            <span className="text-xs font-medium text-foreground">{title}</span>
-            <span className="text-[10px] font-mono text-muted-foreground tabular-nums">{elapsed}s</span>
-          </div>
-          <div className="flex items-center gap-1.5 text-[11px] text-muted-foreground">
-            <span className="size-1.5 rounded-full bg-primary animate-pulse shrink-0" />
-            <span className="truncate">{phases[phase]}…</span>
-          </div>
-        </div>
-      </div>
-    );
-  }
-
-  return (
-    <div className="absolute inset-0 z-20 flex items-center justify-center bg-card/85 backdrop-blur-sm animate-in fade-in duration-200">
-      <div className="w-full max-w-xs flex flex-col gap-3.5 p-5 rounded-2xl border border-hairline bg-card shadow-lg">
-        <div className="flex items-center gap-2.5">
-          <Loader2 className="size-4 text-primary animate-spin shrink-0" />
-          <span className="text-xs font-semibold truncate">{title}</span>
-          <span className="ml-auto text-[10px] font-mono text-muted-foreground tabular-nums shrink-0">
-            {elapsed}s
-          </span>
-        </div>
-        <ul className="flex flex-col gap-2">
-          {phases.map((label, i) => {
-            const done = i < phase;
-            const active = i === phase;
-            return (
-              <li
-                key={label}
-                className={`flex items-center gap-2 text-[11px] leading-snug transition-colors ${active ? "text-foreground font-medium" : done ? "text-muted-foreground" : "text-muted-foreground/50"
-                  }`}
-              >
-                {done ? (
-                  <Check className="size-3 text-emerald-500 shrink-0" />
-                ) : active ? (
-                  <span className="size-3 flex items-center justify-center shrink-0">
-                    <span className="size-1.5 rounded-full bg-primary animate-pulse" />
-                  </span>
-                ) : (
-                  <span className="size-3 flex items-center justify-center shrink-0">
-                    <span className="size-1.5 rounded-full border border-muted-foreground/40" />
-                  </span>
-                )}
-                <span className="truncate">{label}</span>
-              </li>
-            );
-          })}
-        </ul>
-        <p className="text-[10px] text-muted-foreground border-t border-hairline pt-2.5">
-          Jangan tutup tab ini sampai prosesnya selesai.
-        </p>
-      </div>
-    </div>
-  );
-}
+const STARTERS = [
+  "Kenapa index database nggak selalu bikin query cepat",
+  "5 kesalahan pakai Prisma yang bikin server lemot",
+  "JWT itu bukan enkripsi",
+];
 
 export function Wizard({
   models,
@@ -453,9 +50,12 @@ export function Wizard({
   const [finalBrief, setFinalBrief] = useState<string>("");
   const [plan, setPlan] = useState<SlidePlan | null>(null);
   const [approved, setApproved] = useState(false);
-  const [revision, setRevision] = useState("");
   const [isTyping, setIsTyping] = useState(false);
-  const [activeTab, setActiveTab] = useState<"brief" | "preview">("brief");
+  // The artifact tab doubles as the draft's saved view, so it keeps its old name.
+  const [activeTab, setActiveTab] = useState<ArtifactTab>("brief");
+  // The canvas is a panel now, not a permanent column: it opens when there is
+  // something to look at and closes when the user wants the conversation back.
+  const [panelOpen, setPanelOpen] = useState(false);
   const [mdMode, setMdMode] = useState<"split" | "editor" | "preview">("split");
   const [messages, setMessages] = useState<Message[]>([
     {
@@ -467,8 +67,9 @@ export function Wizard({
 
   const [pending, start] = useTransition();
   const typewriterIntervalRef = useRef<NodeJS.Timeout | null>(null);
+  /** Completes the in-flight brief reveal immediately; set while a reveal is running. */
+  const revealFinishRef = useRef<(() => void) | null>(null);
   const chatEndRef = useRef<HTMLDivElement | null>(null);
-  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const [blobs, setBlobs] = useState<Blob[]>([]);
   const [exportedImages, setExportedImages] = useState<string[]>([]);
@@ -492,7 +93,6 @@ export function Wizard({
    */
   const [draftId, setDraftId] = useState<string>(() => crypto.randomUUID());
   const [uploadedHtml, setUploadedHtml] = useState<string | null>(null);
-  const htmlInputRef = useRef<HTMLInputElement>(null);
   // Mobile shows one panel at a time (desktop keeps the 2-col layout).
   const [mobilePanel, setMobilePanel] = useState<"chat" | "canvas">("chat");
 
@@ -503,12 +103,7 @@ export function Wizard({
   const [topicId, setTopicId] = useState<string | null>(null);
   const [topicTitle, setTopicTitle] = useState<string | null>(null);
   const [bankTopics, setBankTopics] = useState<Topic[]>([]);
-  const [topicPopoverOpen, setTopicPopoverOpen] = useState(false);
-  const [topicSearch, setTopicSearch] = useState("");
-  const [modelPopoverOpen, setModelPopoverOpen] = useState(false);
-  const [modelSearch, setModelSearch] = useState("");
   const [showPendingModal, setShowPendingModal] = useState(false);
-  const [showSidebar, setShowSidebar] = useState<boolean>(true);
   const [chatInput, setChatInput] = useState<string>("");
   const initialTopicApplied = useRef(false);
 
@@ -545,48 +140,6 @@ export function Wizard({
       localStorage.setItem("vour_carousel_prompt_history", JSON.stringify(promptHistory.slice(-50)));
     }
   }, [promptHistory]);
-
-  // Load saved session draft from local storage
-  useEffect(() => {
-    const savedDraft = localStorage.getItem("vour_carousel_draft");
-    if (savedDraft) {
-      try {
-        const parsed = JSON.parse(savedDraft);
-        if (parsed.step) setStep(parsed.step);
-        if (parsed.brief) setBrief(parsed.brief);
-        if (parsed.finalBrief) setFinalBrief(parsed.finalBrief);
-        if (parsed.plan) setPlan(parsed.plan);
-        if (parsed.approved !== undefined) setApproved(parsed.approved);
-        if (parsed.draftId) setDraftId(parsed.draftId);
-        if (parsed.messages && Array.isArray(parsed.messages)) setMessages(parsed.messages);
-        if (parsed.editableTitle) setEditableTitle(parsed.editableTitle);
-        if (parsed.editableCaption) setEditableCaption(parsed.editableCaption);
-        if (parsed.topicId) setTopicId(parsed.topicId);
-        if (parsed.topicTitle) setTopicTitle(parsed.topicTitle);
-      } catch (e) {
-        console.error("Failed to parse saved carousel draft", e);
-      }
-    }
-  }, []);
-
-  // Save current session draft to local storage
-  useEffect(() => {
-    if (!brief && !plan && messages.length <= 1) return;
-    const draftPayload = {
-      step,
-      brief,
-      finalBrief,
-      plan,
-      approved,
-      draftId,
-      messages,
-      editableTitle,
-      editableCaption,
-      topicId,
-      topicTitle,
-    };
-    localStorage.setItem("vour_carousel_draft", JSON.stringify(draftPayload));
-  }, [step, brief, finalBrief, plan, approved, draftId, messages, editableTitle, editableCaption, topicId, topicTitle]);
 
   function pushPromptToHistory(text: string) {
     const trimmed = text.trim();
@@ -706,19 +259,72 @@ export function Wizard({
     }
   }
 
-  const html = useMemo(
-    () => uploadedHtml ?? (plan ? assembleCarousel(plan) : ""),
-    [uploadedHtml, plan]
-  );
+  // The deck HTML is assembled on the server: render-slide reads ~1.5 MB of unDraw SVGs
+  // off disk, and importing it here shipped all of that to the browser. Only the finished
+  // HTML for the current plan crosses the wire now, so this is async instead of a useMemo.
+  // Keyed by the plan it was built from, so a result that arrives after the plan moved on
+  // is ignored rather than briefly shown as the current deck.
+  const [assembled, setAssembled] = useState<{ plan: SlidePlan; html: string } | null>(null);
+
+  useEffect(() => {
+    if (uploadedHtml || !plan) return;
+    let cancelled = false;
+    assembleAction(plan)
+      .then((out) => {
+        if (!cancelled) setAssembled({ plan, html: out });
+      })
+      .catch((err) => {
+        if (cancelled) return;
+        const msg = err instanceof Error ? err.message : "failed";
+        toast.error(`Gagal menyusun preview: ${summarizeError(msg)}`);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [uploadedHtml, plan]);
+
+  const html = uploadedHtml ?? (assembled?.plan === plan ? assembled.html : "");
+
+  /** Any long-running job is in flight. Drives the composer, title and unload guard. */
+  const busy = pending || briefPending || exportPending;
+
+  /* ── Staying correct while the tab is in the background ──────────────────────
+   * The generation request itself is unaffected: fetch is not throttled in a hidden
+   * tab, only timers are. What needed fixing was everything driven by a timer, plus
+   * telling the user what is happening when they are not looking at the page. */
+
+  // Snap the reveal to complete the moment the tab is hidden. Nobody is watching the
+  // animation, and this guarantees a finished brief the instant they come back.
+  useEffect(() => {
+    const onHide = () => {
+      if (document.visibilityState === "hidden") revealFinishRef.current?.();
+    };
+    document.addEventListener("visibilitychange", onHide);
+    return () => document.removeEventListener("visibilitychange", onHide);
+  }, []);
+
+  // Surface progress in the tab title, which is the only part of the page a
+  // backgrounded user can still see.
+  useEffect(() => {
+    const base = "Create carousel · Vour";
+    document.title = busy ? `◐ ${LOADING_JOBS[loadingJob ?? "brief"].title}… · Vour` : base;
+    return () => {
+      document.title = base;
+    };
+  }, [busy, loadingJob]);
+
+  // Closing the tab DOES abort the request — unlike backgrounding it. Say so rather
+  // than letting the work vanish silently.
+  useEffect(() => {
+    if (!busy) return;
+    const warn = (e: BeforeUnloadEvent) => e.preventDefault();
+    window.addEventListener("beforeunload", warn);
+    return () => window.removeEventListener("beforeunload", warn);
+  }, [busy]);
   const slideCount = useMemo(
     () => (uploadedHtml ? countSections(uploadedHtml) : plan?.slides.length ?? 0),
     [uploadedHtml, plan]
   );
-
-  // Memoize the markdown render tree — renderMarkdown parses the whole brief
-  // line-by-line, and it's shown in both split and preview modes. Without this
-  // it re-parses on every render (every keystroke and every 15ms typewriter tick).
-  const briefPreview = useMemo(() => renderMarkdown(brief), [brief]);
 
   // Sync editable Title & Caption when plan changes
   useEffect(() => {
@@ -743,10 +349,9 @@ export function Wizard({
         if (parsed.step) setStep(parsed.step);
         if (parsed.idea) setIdea(parsed.idea);
         if (parsed.model) setModel(parsed.model);
-        if (parsed.brief) {
-          setBrief(parsed.brief);
-          setFinalBrief(parsed.brief);
-        }
+        if (parsed.brief) setBrief(parsed.brief);
+        // finalBrief is the last AI-authored version, distinct from the user's edits.
+        if (parsed.finalBrief ?? parsed.brief) setFinalBrief(parsed.finalBrief ?? parsed.brief);
         if (parsed.plan) setPlan(parsed.plan);
         if (parsed.approved) setApproved(parsed.approved);
         if (parsed.activeTab) setActiveTab(parsed.activeTab);
@@ -776,6 +381,7 @@ export function Wizard({
       idea,
       model,
       brief,
+      finalBrief,
       plan,
       approved,
       activeTab,
@@ -794,7 +400,14 @@ export function Wizard({
     // Debounced: coalesce rapid changes (keystrokes, 15ms typewriter ticks) into
     // one write instead of serializing the full draft on every state change.
     const t = setTimeout(() => {
-      localStorage.setItem("vour_carousel_draft", JSON.stringify(draft));
+      try {
+        localStorage.setItem("vour_carousel_draft", JSON.stringify(draft));
+      } catch {
+        // An imported .html carousel is around a megabyte on its own, and the draft also
+        // carries the plan and the whole transcript, so a long session can pass the ~5 MB
+        // origin quota. Losing autosave is survivable; throwing out of this effect and
+        // taking the editor down with it is not.
+      }
     }, 400);
     return () => clearTimeout(t);
   }, [
@@ -802,6 +415,7 @@ export function Wizard({
     idea,
     model,
     brief,
+    finalBrief,
     plan,
     approved,
     activeTab,
@@ -878,8 +492,10 @@ export function Wizard({
       );
       return;
     }
+    // Hoisted function declaration, defined further down with the other generation
+    // handlers; grouping it here instead would split them up for no benefit.
+    // eslint-disable-next-line react-hooks/exhaustive-deps, react-hooks/immutability
     startBriefFromTopic(initialTopic);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [mounted, initialTopic, step, brief]);
 
   // Clean up object URLs on unmount/re-export
@@ -958,6 +574,10 @@ export function Wizard({
     setLoadingJob("export");
     addMessage("ai", "Mengekspor slide rancangan menjadi gambar PNG...");
     try {
+      // Loaded on demand: lib/export/capture pulls in html-to-image plus the ~940 KB
+      // inlined font faces, which was a 1.05 MB client chunk on every visit to /create
+      // even though export only happens at the end of the flow.
+      const { captureCarousel } = await import("@/lib/export/capture");
       const generatedBlobs = await captureCarousel(html);
       setBlobs(generatedBlobs);
 
@@ -1009,8 +629,9 @@ export function Wizard({
     }
   };
 
-  const handleDownloadAll = () => {
+  const handleDownloadAll = async () => {
     if (blobs.length > 0) {
+      const { namedBlobs, downloadNamedBlobs } = await import("@/lib/export/download");
       downloadNamedBlobs(namedBlobs(blobs));
       toast.success("Downloaded JPEGs locally!");
     } else {
@@ -1227,7 +848,6 @@ export function Wizard({
     setFinalBrief("");
     setPlan(null);
     setApproved(false);
-    setRevision("");
     setEditableTitle("");
     setEditableCaption("");
     setIsTyping(false);
@@ -1319,39 +939,37 @@ export function Wizard({
     setUploadedHtml(null);
     setStep(2);
     setActiveTab("brief");
+    setPanelOpen(true);
     addMessage("ai", "Brief outline berhasil dibuat! Silakan tinjau draf markdown di panel kanan. Anda bisa langsung mengedit teksnya atau ketik revisi di kolom chat.");
 
     if (typewriterIntervalRef.current) {
       clearInterval(typewriterIntervalRef.current);
     }
 
-    let currentText = "";
-    let i = 0;
-    typewriterIntervalRef.current = setInterval(() => {
-      if (i < res.length) {
-        currentText += res.substring(i, i + 4);
-        setBrief(currentText);
-        i += 4;
-      } else {
-        setBrief(res);
-        setIsTyping(false);
-        if (typewriterIntervalRef.current) {
-          clearInterval(typewriterIntervalRef.current);
-        }
+    // Reveal position comes from the wall clock, not from counting ticks. A hidden tab
+    // has its timers clamped to >=1s and then frozen, so the old "advance 4 chars per
+    // 15ms tick" turned an 11-second reveal into 12+ minutes if you switched tabs.
+    // Deriving the offset from elapsed time makes a late tick harmless — it lands where
+    // the reveal should already be. See revealedLength() and its tests.
+    // eslint-disable-next-line react-hooks/purity -- only called from a settled fetch, never during render
+    const startedAt = Date.now();
+    const finish = () => {
+      setBrief(res);
+      setIsTyping(false);
+      if (typewriterIntervalRef.current) {
+        clearInterval(typewriterIntervalRef.current);
+        typewriterIntervalRef.current = null;
       }
+    };
+    revealFinishRef.current = finish;
+
+    typewriterIntervalRef.current = setInterval(() => {
+      const n = revealedLength(startedAt, Date.now(), res.length);
+      if (n >= res.length) finish();
+      else setBrief(res.slice(0, n));
     }, 15);
   }
 
-  function handleBriefGeneration() {
-    if (!idea.trim() || !model) return;
-    const currentIdea = idea;
-    addMessage("user", currentIdea);
-    setIdea("");
-    runBriefGeneration(
-      (signal) => fetchBrief(currentIdea, signal),
-      "Gagal memproses",
-    );
-  }
 
   /** Cancellable brief run: result is discarded if the user hit Stop meanwhile. */
   function runBriefGeneration(
@@ -1447,6 +1065,7 @@ export function Wizard({
       try {
         const generatedPlan = await planAction(brief, model as ModelId);
         setPlan(generatedPlan);
+        setPanelOpen(true);
         setApproved(false);
         setUploadedHtml(null);
         setStep(3);
@@ -1481,1039 +1100,305 @@ export function Wizard({
     });
   }
 
-  function handleRevisionSend() {
-    if (!revision.trim()) return;
-    if (uploadedHtml) {
-      toast.error("Revisi AI tidak tersedia untuk HTML upload — langsung export.");
-      return;
-    }
-    const currentRevision = revision;
-    pushPromptToHistory(currentRevision);
-    addMessage("user", currentRevision);
-    setRevision("");
-    setLoadingJob(step === 2 ? "briefRevise" : "planRevise");
-
-    start(async () => {
-      try {
-        if (step === 2) {
-          addMessage("ai", "Merevisi brief outline berdasarkan instruksi Anda...");
-          // draftId lets the server replay this draft's earlier revisions so a
-          // follow-up ("shorten it again") resolves against what already changed.
-          const res = await reviseBriefAction(brief, currentRevision, model as ModelId, draftId);
-          setFinalBrief(res);
-          setBrief(res);
-          addMessage("ai", "Brief outline berhasil diperbarui.");
-        } else if ((step === 3 || step === 4) && plan) {
-          addMessage("ai", "Merevisi rancangan slide berdasarkan instruksi Anda...");
-          if (step === 4) {
-            setStep(3);
-            setActiveTab("preview");
-          }
-          const updatedPlan = await reviseAction(plan, currentRevision, model as ModelId, draftId);
-          setPlan(updatedPlan);
-          setApproved(false);
-          addMessage("ai", "Rancangan slide berhasil disesuaikan. Silakan cek preview terbaru.");
-        }
-      } catch (e) {
-        const msg = e instanceof Error ? e.message : "failed";
-        toast.error(msg);
-        addMessage("ai", `Revisi gagal: ${summarizeError(msg)}`);
-      } finally {
-        setLoadingJob(null);
-      }
-    });
-
-    return (
-      <p className="text-muted-foreground">
-        No AI model configured. Add an API key (e.g. GOOGLE_GENERATIVE_AI_API_KEY) to .env.
-      </p>
-    );
-  }
 
   if (!mounted) {
     return <div className="min-h-[400px] flex items-center justify-center text-sm text-muted-foreground animate-pulse">Loading draft workspace...</div>;
   }
 
+  /* ── Derived view state ───────────────────────────────────────────────────────
+   * Which tabs exist is a pure function of what has been produced. A tab appearing is
+   * how the user learns the stage moved on, so there is no separate stepper to read. */
+  const tabs: ArtifactTabDef[] = [
+    ...(brief ? [{ id: "brief" as const, label: "Brief" }] : []),
+    ...(plan ? [{ id: "preview" as const, label: "Slide" }] : []),
+    ...(exportedImages.length > 0 || exportPending ? [{ id: "images" as const, label: "Gambar" }] : []),
+    ...(exportedImages.length > 0 ? [{ id: "publish" as const, label: "Jadwal" }] : []),
+  ];
+  const hasArtifact = tabs.length > 0;
+  const activeArtifactTab: ArtifactTab = tabs.some((t) => t.id === activeTab)
+    ? activeTab
+    : (tabs[tabs.length - 1]?.id ?? "brief");
+
+  const artifactCards: ArtifactCard[] = [
+    ...(brief ? [{ kind: "brief" as const, title: "Brief carousel", subtitle: "Kerangka isi tiap slide" }] : []),
+    ...(plan ? [{ kind: "slides" as const, title: `Rancangan ${slideCount} slide`, subtitle: "Pratinjau desain" }] : []),
+    ...(exportedImages.length > 0
+      ? [{ kind: "images" as const, title: `${exportedImages.length} gambar siap`, subtitle: "JPEG 1080x1350" }]
+      : []),
+  ];
+
+  function openArtifact(tab: ArtifactTab) {
+    setActiveTab(tab);
+    setPanelOpen(true);
+    setMobilePanel("canvas");
+  }
+
+  const composerPlaceholder =
+    step === 1
+      ? "Ceritakan ide carousel kamu..."
+      : step === 2
+        ? "Minta perubahan pada brief..."
+        : step === 3 || step === 4
+          ? "Minta perubahan pada slide..."
+          : "Ketik instruksi...";
+
+  /* Contextual next step. Only the one action that makes sense right now is offered,
+   * which is what replaced the always-visible row of stage buttons. */
+  const nextAction =
+    step === 2 && brief ? (
+      <Button size="sm" onClick={handlePlanGeneration} disabled={busy || isTyping} className="gap-1.5">
+        <LayoutGrid className="size-4" />
+        Buat rancangan slide
+      </Button>
+    ) : step === 3 && plan ? (
+      <Button size="sm" onClick={() => handleExport()} disabled={busy} className="gap-1.5">
+        <Images className="size-4" />
+        Jadikan gambar
+      </Button>
+    ) : step === 4 && exportedImages.length > 0 ? (
+      <Button size="sm" onClick={() => { setStep(5); openArtifact("publish"); }} className="gap-1.5">
+        Atur jadwal posting
+        <ArrowRight className="size-4" />
+      </Button>
+    ) : null;
+
   return (
-    <div className="flex-1 min-h-0 w-full flex flex-col overflow-hidden gap-2.5 font-sans">
-      {/* 1. TOP STEPPER HEADER BAR */}
-      <div className="bg-card border border-hairline rounded-2xl p-2.5 md:p-3 shadow-xs flex flex-wrap items-center justify-between gap-3 shrink-0">
-        <div className="flex flex-wrap items-center gap-1.5 md:gap-2">
-          {/* Toggle Sidebar Button */}
+    <div className="flex-1 min-h-0 w-full flex flex-col overflow-hidden font-sans">
+      <div className="shrink-0 flex items-center justify-between gap-3 pb-2">
+        <ProgressStrip step={step} />
+
+        <div className="flex items-center gap-0.5 shrink-0">
+          <ModelPicker models={models} model={model} onChange={setModel} disabled={busy} />
+
+          {hasArtifact && !panelOpen && (
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => openArtifact(activeArtifactTab)}
+              className="h-8 gap-1.5 px-2.5 text-xs text-muted-foreground hover:text-foreground"
+            >
+              <PanelRightOpen className="size-4" />
+              <span className="hidden sm:inline">Buka hasil</span>
+            </Button>
+          )}
+
           <Button
-            variant="outline"
-            size="sm"
-            onClick={() => setShowSidebar(!showSidebar)}
-            className="h-8 text-xs gap-1.5 px-3 border-hairline font-medium bg-muted/20 hover:bg-muted/60"
-            title={showSidebar ? "Sembunyikan Sidebar Console" : "Tampilkan Sidebar Console"}
+            variant="ghost"
+            size="icon"
+            onClick={handleReset}
+            title="Mulai sesi baru"
+            aria-label="Mulai sesi baru"
+            className="size-8 text-muted-foreground hover:text-foreground active:scale-95 transition-transform"
           >
-            {showSidebar ? <PanelLeftClose className="size-3.5 text-primary" /> : <PanelLeftOpen className="size-3.5 text-primary" />}
-            <span className="font-semibold">{showSidebar ? "Sembunyikan Sidebar" : "Buka Console"}</span>
+            <RotateCcw className="size-4" />
           </Button>
-
-          <div className="h-4 w-px bg-border/60 mx-1 hidden sm:block" />
-
-          {[
-            { id: 1, label: "Concept", icon: Sparkles },
-            { id: 2, label: "Brief", icon: FileText },
-            { id: 3, label: "Design", icon: LayoutGrid },
-            { id: 4, label: "Export", icon: Upload },
-            { id: 5, label: "Publish", icon: Calendar },
-          ].map((s, idx, arr) => {
-            const isCompleted = step > s.id || (s.id === 2 && brief.trim().length > 0) || (s.id === 3 && plan !== null) || (s.id === 4 && exportedImages.length > 0);
-            const isActive = step === s.id;
-            const isClickable = isCompleted || s.id === 1 || (s.id === 2 && brief) || (s.id === 3 && plan) || (s.id === 4 && plan) || (s.id === 5 && plan);
-
-            return (
-              <div key={s.id} className="flex items-center gap-1.5 md:gap-2">
-                <button
-                  disabled={!isClickable}
-                  onClick={() => {
-                    if (isClickable) {
-                      setStep(s.id);
-                      if (s.id === 2) setActiveTab("brief");
-                      if (s.id === 3) setActiveTab("preview");
-                    }
-                  }}
-                  className={`flex items-center gap-2 px-3 py-1.5 rounded-xl text-xs font-medium transition-all ${isActive
-                      ? "bg-primary text-primary-foreground shadow-sm font-semibold"
-                      : isCompleted
-                        ? "bg-muted/40 text-foreground hover:bg-muted/70 cursor-pointer border border-hairline"
-                        : "text-muted-foreground/50 cursor-not-allowed opacity-60"
-                    }`}
-                >
-                  <span className={`size-5 rounded-full flex items-center justify-center text-[10px] font-bold ${isActive ? "bg-primary-foreground text-primary" : "bg-muted text-muted-foreground"
-                    }`}>
-                    {isActive && loadingJob ? <Loader2 className="size-3 animate-spin" /> : s.id}
-                  </span>
-                  <span>{s.label}</span>
-                </button>
-                {idx < arr.length - 1 && <span className="text-muted-foreground/30 text-xs">→</span>}
-              </div>
-            );
-          })}
         </div>
-
-        <Button
-          variant="ghost"
-          size="sm"
-          onClick={handleReset}
-          className="h-8 text-xs gap-1.5 px-3 text-muted-foreground hover:text-foreground shrink-0 border border-hairline hover:bg-muted/40"
-        >
-          <RotateCcw className="size-3.5" />
-          Clear / Reset
-        </Button>
       </div>
 
-      {topicTitle && (
-        <div className="w-full mx-auto shrink-0">
-          <span className="inline-flex items-center gap-1.5 text-[11px] font-mono bg-primary/5 border border-primary/20 text-muted-foreground px-2.5 py-1 rounded-xl">
-            📌 Topic Bank: <span className="text-foreground font-semibold">{topicTitle}</span>
-          </span>
+      <div className="flex-1 min-h-0 flex gap-3">
+        <div
+          className={`flex-1 min-w-0 min-h-0 flex-col rounded-xl border border-hairline bg-card/40 overflow-hidden ${
+            panelOpen ? (mobilePanel === "canvas" ? "hidden lg:flex" : "flex") : "flex"
+          }`}
+        >
+          <ChatFeed
+            messages={messages as Message[]}
+            busy={busy}
+            loadingJob={loadingJob}
+            artifacts={artifactCards}
+            onOpenArtifact={(kind) => openArtifact(kind === "slides" ? "preview" : kind)}
+            footer={nextAction}
+            emptyState={
+              <div className="flex flex-col items-center text-center gap-5 py-10">
+                <span className="size-11 rounded-xl bg-primary/10 border border-primary/20 flex items-center justify-center text-primary">
+                  <Sparkles className="size-5" />
+                </span>
+                <div className="space-y-1.5">
+                  <h2 className="text-lg font-semibold tracking-tight">Mau bikin carousel tentang apa?</h2>
+                  <p className="text-sm text-muted-foreground max-w-sm">
+                    Tulis idenya seperti mengobrol. Brief, desain slide, sampai jadwal posting disusun dari sini.
+                  </p>
+                </div>
+                <div className="flex flex-col gap-1.5 w-full max-w-sm">
+                  {STARTERS.map((s) => (
+                    <button
+                      key={s}
+                      type="button"
+                      onClick={() => handleUnifiedSubmit(s)}
+                      disabled={!model || busy}
+                      className="text-left text-sm rounded-lg border border-hairline bg-card px-3.5 py-2.5 hover:bg-muted/50 hover:border-primary/30 active:scale-[0.99] transition-all disabled:opacity-50"
+                    >
+                      {s}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            }
+          />
+
+          <Composer
+            value={chatInput}
+            onChange={(v) => {
+              setChatInput(v);
+              if (historyIndex !== -1) setHistoryIndex(-1);
+            }}
+            onSubmit={() => handleUnifiedSubmit()}
+            onKeyDown={(e) => handlePromptKeyDown(e, chatInput, setChatInput, () => handleUnifiedSubmit())}
+            onCancel={handleCancelGeneration}
+            busy={briefPending}
+            canSend={Boolean(model) && chatInput.trim().length > 0 && !isTyping}
+            placeholder={composerPlaceholder}
+            topics={bankTopics}
+            onPickTopic={startBriefFromTopic}
+            onImportMarkdown={handleFileUpload}
+            onImportHtml={handleHtmlUpload}
+            hint={
+              topicTitle ? (
+                <p className="text-[11px] text-muted-foreground text-center truncate">
+                  Dari Topic Bank: <span className="text-foreground font-medium">{topicTitle}</span>
+                </p>
+              ) : null
+            }
+          />
+        </div>
+
+        {panelOpen && hasArtifact && (
+          <div
+            className={`min-h-0 w-full lg:w-[46%] xl:w-[540px] lg:shrink-0 ${
+              mobilePanel === "canvas" ? "flex" : "hidden lg:flex"
+            }`}
+          >
+            <ArtifactPanel
+              tabs={tabs}
+              active={activeArtifactTab}
+              onSelect={setActiveTab}
+              onClose={() => {
+                setPanelOpen(false);
+                setMobilePanel("chat");
+              }}
+              loadingJob={loadingJob}
+            >
+              {activeArtifactTab === "brief" && (
+                <BriefEditor
+                  brief={brief}
+                  onChange={setBrief}
+                  mode={mdMode as MdMode}
+                  onModeChange={setMdMode}
+                  disabled={busy || isTyping}
+                  onPolish={handleHumanVoicePolish}
+                  polishDisabled={busy || isTyping || !brief.trim() || !model}
+                />
+              )}
+
+              {activeArtifactTab === "preview" && (
+                <div className="flex-1 min-h-0 overflow-y-auto p-3 flex flex-col gap-3">
+                  <div className="flex justify-center">
+                    <PreviewFrame html={html} slideCount={slideCount} />
+                  </div>
+                  {plan && <ScreenshotUploads plan={plan} onUpdate={handleUpdateScreenshot} />}
+                </div>
+              )}
+
+              {activeArtifactTab === "images" && (
+                <ExportPanel
+                  images={exportedImages}
+                  pending={exportPending}
+                  expectedCount={slideCount}
+                  canDownload={!exportPending && blobs.length > 0}
+                  onDownloadAll={handleDownloadAll}
+                />
+              )}
+
+              {activeArtifactTab === "publish" && (
+                <PublishPanel
+                  dueAt={dueAt}
+                  onDueAtChange={setDueAt}
+                  title={editableTitle}
+                  onTitleChange={setEditableTitle}
+                  caption={editableCaption}
+                  onCaptionChange={setEditableCaption}
+                  onCommitEdits={handleSaveEdits}
+                  config={pubConfig}
+                  state={publishState as PublishState}
+                  onPublish={handlePublish}
+                  onSaveToStock={handleSaveToStock}
+                  onReset={handleReset}
+                />
+              )}
+            </ArtifactPanel>
+          </div>
+        )}
+      </div>
+
+      {panelOpen && hasArtifact && (
+        <div className="lg:hidden shrink-0 pt-2 flex justify-center">
+          <div className="inline-flex p-0.5 bg-muted/60 rounded-lg border border-hairline">
+            <button
+              type="button"
+              onClick={() => setMobilePanel("chat")}
+              className={`px-3 py-1 rounded-md text-xs font-medium transition-colors ${
+                mobilePanel === "chat" ? "bg-card text-foreground shadow-xs" : "text-muted-foreground"
+              }`}
+            >
+              Obrolan
+            </button>
+            <button
+              type="button"
+              onClick={() => setMobilePanel("canvas")}
+              className={`px-3 py-1 rounded-md text-xs font-medium transition-colors ${
+                mobilePanel === "canvas" ? "bg-card text-foreground shadow-xs" : "text-muted-foreground"
+              }`}
+            >
+              Hasil
+            </button>
+          </div>
         </div>
       )}
 
-      {/* 2. MAIN 2-COLUMN WORKSPACE CONTAINER */}
-      <div className="flex-1 min-h-0 w-full flex flex-col lg:flex-row gap-4 overflow-hidden items-stretch">
-        {/* LEFT SIDEBAR CONSOLE (Sticky, Non-scrolling container, inner feed scrollable) */}
-        {showSidebar && (
-          <aside className="w-full lg:w-[360px] xl:w-[380px] shrink-0 h-full flex flex-col overflow-hidden bg-card border border-hairline shadow-xs rounded-2xl z-20 transition-all">
-            {/* Header */}
-            <div className="p-3 bg-muted/40 border-b border-hairline flex items-center justify-between gap-2 shrink-0">
-              <div className="flex items-center gap-2 min-w-0">
-                <div className="size-7 rounded-lg bg-primary/10 border border-primary/20 flex items-center justify-center text-primary shrink-0">
-                  <VourLogoIcon />
-                </div>
-                <div className="min-w-0">
-                  <h4 className="text-xs font-bold text-foreground truncate">Console Sesi Carousel</h4>
-                  <p className="text-[10px] text-muted-foreground flex items-center gap-1 font-mono">
-                    <span className="size-1.5 rounded-full bg-emerald-500 animate-ping inline-block" />
-                    Sesi Prompt Aktif
-                  </p>
-                </div>
-              </div>
-
-              {/* Redesigned Model Selector Popover Card */}
-              <div className="relative shrink-0">
-                <button
-                  type="button"
-                  onClick={() => setModelPopoverOpen(!modelPopoverOpen)}
-                  className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl border border-hairline bg-card hover:bg-muted/40 text-xs font-medium transition-all shadow-2xs group"
-                >
-                  <div className="size-4 shrink-0 flex items-center justify-center">
-                    {modelDetails[model]?.icon}
-                  </div>
-                  <span className="font-semibold text-foreground truncate max-w-[80px] text-[11px]">
-                    {modelDetails[model]?.label || model}
-                  </span>
-                  <ChevronDown className="size-3 text-muted-foreground group-hover:text-foreground transition-transform" />
-                </button>
-
-                {modelPopoverOpen && (
-                  <div className="absolute right-0 top-full mt-2 z-50 w-72 bg-card border border-hairline rounded-2xl shadow-2xl p-2.5 animate-in fade-in slide-in-from-top-2 duration-150">
-                    <div className="flex items-center justify-between border-b pb-2 mb-2 px-1">
-                      <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground font-mono">PILIH MODEL AI</span>
-                      <button
-                        type="button"
-                        onClick={() => setModelPopoverOpen(false)}
-                        className="text-muted-foreground text-xs hover:text-foreground p-0.5"
-                      >
-                        &times;
-                      </button>
-                    </div>
-
-                    <div className="relative mb-2">
-                      <Search className="absolute left-2.5 top-2.5 size-3.5 text-muted-foreground" />
-                      <Input
-                        value={modelSearch}
-                        onChange={(e) => setModelSearch(e.target.value)}
-                        placeholder="Cari model AI..."
-                        className="pl-8 h-8 text-xs bg-muted/20 border-hairline rounded-xl"
-                      />
-                    </div>
-
-                    <div className="space-y-1 max-h-56 overflow-y-auto pr-0.5">
-                      {models
-                        .filter((m) => {
-                          const info = modelDetails[m];
-                          const q = modelSearch.toLowerCase();
-                          return (info?.label || m).toLowerCase().includes(q) || (info?.vendor || "").toLowerCase().includes(q);
-                        })
-                        .map((m) => {
-                          const info = modelDetails[m];
-                          const isSelected = model === m;
-
-                          return (
-                            <button
-                              key={m}
-                              type="button"
-                              onClick={() => {
-                                setModel(m);
-                                setModelPopoverOpen(false);
-                              }}
-                              className={`w-full flex items-center justify-between p-2 rounded-xl text-xs text-left transition-all ${isSelected
-                                  ? "bg-primary/10 text-primary font-semibold border border-primary/20"
-                                  : "hover:bg-muted/40 text-foreground"
-                                }`}
-                            >
-                              <div className="flex items-center gap-2.5 min-w-0">
-                                <div className="size-5 shrink-0 flex items-center justify-center">
-                                  {info?.icon}
-                                </div>
-                                <div className="min-w-0">
-                                  <div className="truncate font-medium">{info?.label || m}</div>
-                                  <div className="text-[10px] text-muted-foreground truncate">{info?.vendor}</div>
-                                </div>
-                              </div>
-                              {isSelected && <Check className="size-4 text-primary shrink-0 ml-1" />}
-                            </button>
-                          );
-                        })}
-                    </div>
-                  </div>
-                )}
-              </div>
-            </div>
-
-            {/* Scrollable Chat Feed */}
-            <div className="flex-1 p-3 overflow-y-auto flex flex-col gap-3 font-sans text-xs bg-canvas-soft/30">
-              {messages.map((m, idx) => (
-                <div key={idx} className={`flex flex-col ${m.sender === "user" ? "items-end" : "items-start"}`}>
-                  <div
-                    className={`p-3 rounded-2xl max-w-[90%] leading-relaxed ${m.sender === "user"
-                        ? "bg-primary text-primary-foreground font-medium rounded-tr-xs shadow-xs"
-                        : "bg-card border border-hairline text-foreground rounded-tl-xs shadow-2xs"
-                      }`}
-                  >
-                    {m.text}
-                  </div>
-                  <span className="text-[9px] text-muted-foreground mt-1 px-1 font-mono">{m.timestamp}</span>
-                </div>
-              ))}
-              {(pending || briefPending) && (
-                <div className="flex items-center gap-2 text-xs text-muted-foreground italic p-2 bg-muted/20 rounded-xl border border-hairline animate-pulse">
-                  <VourLogoIcon />
-                  <span>AI sedang memproses instruksi &amp; konteks revisi...</span>
-                </div>
-              )}
-              <div ref={chatEndRef} />
-            </div>
-
-            {/* Single Unified Chat Input Form */}
-            <div className="p-3 bg-card border-t border-hairline flex flex-col gap-2 shrink-0 shadow-lg">
-              {topicTitle && (
-                <div className="flex items-center justify-between text-[10px] bg-primary/5 text-primary px-2.5 py-1 rounded-lg border border-primary/20">
-                  <span className="truncate">📌 Topic: <strong>{topicTitle}</strong></span>
-                </div>
-              )}
-              <div className="relative flex items-center">
-                <Textarea
-                  value={chatInput}
-                  onChange={(e) => {
-                    setChatInput(e.target.value);
-                    if (historyIndex !== -1) setHistoryIndex(-1);
-                  }}
-                  placeholder={
-                    step === 1 ? "Ketik ide atau topik (Shift+Enter untuk baris baru)..." :
-                      step === 2 ? "Instruksi revisi outline brief..." :
-                        step === 3 || step === 4 ? "Instruksi revisi slide/visual..." :
-                          "Ketik instruksi..."
-                  }
-                  className="pr-12 min-h-[44px] max-h-32 text-xs rounded-xl border-hairline shadow-inner focus-visible:ring-1 focus-visible:ring-primary py-2.5 resize-none"
-                  disabled={pending || isTyping}
-                  onKeyDown={(e) => handlePromptKeyDown(e, chatInput, setChatInput, () => handleUnifiedSubmit())}
-                />
-                <Button
-                  size="icon"
-                  className="absolute right-2 bottom-2 size-8 rounded-lg z-10 font-semibold"
-                  disabled={!model || !chatInput.trim()}
-                  onClick={briefPending ? handleCancelGeneration : () => handleUnifiedSubmit()}
-                >
-                  {briefPending ? <Square className="size-4" /> : <Send className="size-4" />}
-                </Button>
-              </div>
-              <div className="flex items-center justify-between px-1 text-[10px] text-muted-foreground font-mono">
-                <span>↵ Kirim • Shift+↵ Baris baru • ↑↓ History</span>
-                <span>Step {step}/5</span>
-              </div>
-            </div>
-          </aside>
-        )}
-
-        {/* RIGHT MAIN WORKSPACE (Scrollable sub-panel only when needed) */}
-        <main className="flex-1 min-w-0 w-full h-full flex flex-col overflow-y-auto pr-0.5">
-          {/* STEP 1: CONCEPT COMPONENT */}
-          {step === 1 && (
-            <div className="flex flex-col gap-6 w-full max-w-4xl mx-auto py-4 animate-in fade-in duration-200">
-              <Card className="shadow-sm border-hairline overflow-hidden bg-card/90">
-                <CardContent className="p-8 flex flex-col items-center text-center gap-6">
-                  <div className="size-14 rounded-2xl bg-primary/10 border border-primary/20 flex items-center justify-center text-primary shadow-xs">
-                    <VourLogoIcon />
-                  </div>
-                  <div className="space-y-2">
-                    <h2 className="text-xl font-extrabold text-foreground">Apa ide atau topik carousel Anda hari ini?</h2>
-                    <p className="text-xs text-muted-foreground max-w-lg mx-auto leading-relaxed">
-                      Ketik ide topik Anda pada <strong>Console Sesi Carousel</strong> di sebelah kiri agar seluruh konteks percakapan AI terjaga utuh.
-                    </p>
-                  </div>
-
-                  {/* Action Bar for Topic Bank & File Import */}
-                  <div className="flex flex-wrap items-center justify-center gap-3 pt-2">
-                    {bankTopics.length > 0 && (
-                      <div className="relative">
-                        <button
-                          type="button"
-                          onClick={() => setTopicPopoverOpen(!topicPopoverOpen)}
-                          disabled={pending || briefPending || !model}
-                          className="flex items-center gap-2 px-3.5 py-2 rounded-xl border border-hairline bg-primary/5 hover:bg-primary/10 text-xs transition-colors disabled:opacity-50 font-medium"
-                        >
-                          <span>📌 Dari Topic Bank…</span>
-                          <ChevronDown className="size-3.5 text-muted-foreground" />
-                        </button>
-
-                        {topicPopoverOpen && (
-                          <div className="absolute left-1/2 -translate-x-1/2 bottom-full mb-2 z-50 w-72 md:w-80 bg-card border border-hairline rounded-2xl shadow-2xl p-3 animate-in fade-in slide-in-from-bottom-2 duration-150 text-left">
-                            <div className="flex items-center justify-between border-b pb-2 mb-2">
-                              <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground font-mono">PILIH TOPIC</span>
-                              <button type="button" onClick={() => setTopicPopoverOpen(false)} className="text-muted-foreground text-xs hover:text-foreground">
-                                &times;
-                              </button>
-                            </div>
-                            <div className="relative mb-2">
-                              <Search className="absolute left-2.5 top-2.5 size-3.5 text-muted-foreground" />
-                              <Input
-                                value={topicSearch}
-                                onChange={(e) => setTopicSearch(e.target.value)}
-                                placeholder="Cari topic..."
-                                className="pl-8 h-8 text-xs bg-muted/20 border-hairline"
-                              />
-                            </div>
-                            <div className="space-y-1 max-h-64 overflow-y-auto pr-0.5">
-                              {bankTopics
-                                .filter((t) => t.title.toLowerCase().includes(topicSearch.toLowerCase()))
-                                .map((t) => (
-                                  <button
-                                    key={t.id}
-                                    type="button"
-                                    onClick={() => {
-                                      startBriefFromTopic(t);
-                                      setTopicPopoverOpen(false);
-                                    }}
-                                    className="w-full flex items-center gap-2.5 p-2 rounded-xl text-xs text-left transition-colors hover:bg-muted/40"
-                                  >
-                                    <span className="font-medium truncate">{t.title}</span>
-                                    <span className="text-[9px] font-mono uppercase text-muted-foreground bg-muted px-1.5 py-0.5 rounded border border-hairline">
-                                      {t.status}
-                                    </span>
-                                  </button>
-                                ))}
-                            </div>
-                          </div>
-                        )}
-                      </div>
-                    )}
-
-                    <Input
-                      type="file"
-                      accept=".md"
-                      ref={fileInputRef}
-                      onChange={handleFileUpload}
-                      className="hidden"
-                      id="md-upload-input"
-                    />
-                    <Button
-                      type="button"
-                      variant="outline"
-                      size="sm"
-                      className="h-9 text-xs gap-1.5 px-3.5 border-hairline font-medium"
-                      onClick={() => fileInputRef.current?.click()}
-                    >
-                      <Upload className="size-3.5" />
-                      Import .md Brief
-                    </Button>
-
-                    <input
-                      type="file"
-                      accept=".html,text/html"
-                      ref={htmlInputRef}
-                      onChange={handleHtmlUpload}
-                      className="hidden"
-                      id="html-upload-input"
-                    />
-                    <Button
-                      type="button"
-                      variant="outline"
-                      size="sm"
-                      className="h-9 text-xs gap-1.5 px-3.5 border-hairline font-medium"
-                      onClick={() => htmlInputRef.current?.click()}
-                    >
-                      <FileText className="size-3.5" />
-                      Import .html Slide
-                    </Button>
-                  </div>
-                </CardContent>
-              </Card>
-            </div>
-          )}
-
-          {/* STEP 2: BRIEF OUTLINE EDITOR COMPONENT */}
-          {step === 2 && (
-            <div className="flex flex-col gap-6 w-full max-w-6xl mx-auto py-2 animate-in fade-in duration-200">
-              <Card className="shadow-sm border-hairline overflow-hidden">
-                <CardContent className="p-6 flex flex-col gap-4">
-                  {/* Header with Mode Toggles */}
-                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b pb-3">
-                    <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground flex items-center gap-2">
-                      <FileText className="size-4 text-primary" />
-                      Outline Brief Editor
-                    </span>
-
-                    {/* View Mode Toggle Buttons & Anti-AI Polish */}
-                    <div className="flex flex-wrap items-center gap-2">
-                      <Button
-                        type="button"
-                        size="sm"
-                        variant="outline"
-                        disabled={pending || isTyping || !brief.trim() || !model}
-                        onClick={handleHumanVoicePolish}
-                        className="h-7 text-xs gap-1.5 px-3 font-medium border-primary/30 text-primary hover:bg-primary/5 shadow-2xs"
-                      >
-                        <User className="size-3.5 text-primary" />
-                        Human Voice Polish
-                      </Button>
-
-                      <div className="flex items-center gap-1 bg-muted/50 p-0.5 rounded-lg border border-hairline">
-                        <button
-                          type="button"
-                          onClick={() => setMdMode("split")}
-                          className={`px-3 py-1 text-xs font-medium rounded-md transition-colors ${mdMode === "split" ? "bg-card text-foreground shadow-xs font-semibold" : "text-muted-foreground hover:text-foreground"
-                            }`}
-                        >
-                          Split View
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => setMdMode("editor")}
-                          className={`px-3 py-1 text-xs font-medium rounded-md transition-colors ${mdMode === "editor" ? "bg-card text-foreground shadow-xs font-semibold" : "text-muted-foreground hover:text-foreground"
-                            }`}
-                        >
-                          Raw Editor
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => setMdMode("preview")}
-                          className={`px-3 py-1 text-xs font-medium rounded-md transition-colors ${mdMode === "preview" ? "bg-card text-foreground shadow-xs font-semibold" : "text-muted-foreground hover:text-foreground"
-                            }`}
-                        >
-                          Formatted Preview
-                        </button>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Main Content Area Based on mdMode */}
-                  <div className="h-[520px] w-full rounded-2xl border border-hairline overflow-hidden bg-canvas-soft shadow-inner relative">
-                    {mdMode === "editor" && (
-                      <Textarea
-                        value={brief}
-                        onChange={(e) => setBrief(e.target.value)}
-                        disabled={pending || isTyping}
-                        placeholder="# Judul Carousel..."
-                        className="font-mono text-xs h-full w-full p-4 bg-transparent border-none resize-none focus-visible:ring-0 leading-relaxed overflow-y-auto"
-                      />
-                    )}
-
-                    {mdMode === "preview" && (
-                      <div className="h-full w-full p-6 overflow-y-auto bg-card">
-                        {brief ? (
-                          briefPreview
-                        ) : (
-                          <div className="h-full flex items-center justify-center text-xs text-muted-foreground font-mono">
-                            Brief outline kosong. Ketik ide di langkah 1 untuk membuat brief.
-                          </div>
-                        )}
-                      </div>
-                    )}
-
-                    {mdMode === "split" && (
-                      <div className="grid grid-cols-1 md:grid-cols-2 h-full divide-y md:divide-y-0 md:divide-x divide-hairline overflow-hidden">
-                        <Textarea
-                          value={brief}
-                          onChange={(e) => setBrief(e.target.value)}
-                          disabled={pending || isTyping}
-                          placeholder="# Judul Carousel..."
-                          className="font-mono text-xs h-full w-full p-4 bg-transparent border-none resize-none focus-visible:ring-0 leading-relaxed overflow-y-auto"
-                        />
-                        <div className="h-full w-full p-6 overflow-y-auto bg-card/60">
-                          {brief ? (
-                            briefPreview
-                          ) : (
-                            <div className="h-full flex items-center justify-center text-xs text-muted-foreground font-mono">
-                              Live pratinjau markdown akan muncul di sini.
-                            </div>
-                          )}
-                        </div>
-                      </div>
-                    )}
-
-                    {loadingJob && <StepLoader key={loadingJob} kind={loadingJob} />}
-                  </div>
-
-                  {/* Action Navigation Bar */}
-                  <div className="flex items-center justify-between pt-4 border-t">
-                    <Button variant="outline" size="sm" onClick={() => setStep(1)} className="gap-1.5">
-                      <ArrowLeft className="size-3.5" /> Back ke Concept
-                    </Button>
-
-                    <Button
-                      size="sm"
-                      disabled={pending || isTyping || !brief.trim()}
-                      onClick={handlePlanGeneration}
-                      className="gap-1.5 font-semibold px-5"
-                    >
-                      {loadingJob === "plan" ? (
-                        <>
-                          <Loader2 className="size-4 animate-spin" />
-                          Merender Slide…
-                        </>
-                      ) : (
-                        <>
-                          <Check className="size-4" />
-                          Approve &amp; Render Slide
-                        </>
-                      )}
-                    </Button>
-                  </div>
-                </CardContent>
-              </Card>
-            </div>
-          )}
-
-          {/* STEP 3: LIVE DESIGN CANVAS COMPONENT */}
-          {step === 3 && plan && (
-            <div className="flex flex-col gap-6 w-full max-w-6xl mx-auto py-2 animate-in fade-in duration-200">
-              <Card className="shadow-sm border-hairline overflow-hidden">
-                <CardContent className="p-6 flex flex-col gap-6">
-                  {/* Workspace Header Tabs & Controls */}
-                  <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b pb-4">
-                    <div className="flex items-center gap-2">
-                      <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground flex items-center gap-2">
-                        <LayoutGrid className="size-4 text-primary" />
-                        Live Design Canvas
-                      </span>
-                      <span className="text-xs font-mono text-muted-foreground bg-muted/40 px-2 py-0.5 rounded border border-hairline">
-                        {plan.slides.length} Slides
-                      </span>
-                    </div>
-
-                    <div className="flex items-center gap-2">
-                      <div className="inline-flex p-0.5 bg-muted/50 rounded-lg border border-hairline">
-                        <button
-                          onClick={() => setActiveTab("brief")}
-                          className={`px-3 py-1 rounded-md text-xs font-medium transition-colors ${activeTab === "brief" ? "bg-card text-foreground shadow-xs" : "text-muted-foreground"}`}
-                        >
-                          Outline Brief
-                        </button>
-                        <button
-                          onClick={() => setActiveTab("preview")}
-                          className={`px-3 py-1 rounded-md text-xs font-medium transition-colors ${activeTab === "preview" ? "bg-card text-foreground shadow-xs" : "text-muted-foreground"}`}
-                        >
-                          Live Preview
-                        </button>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Main Preview Frame */}
-                  <div className="relative w-full flex justify-center py-4 bg-canvas-soft border border-hairline rounded-2xl min-h-[460px] shadow-inner overflow-hidden">
-                    {activeTab === "preview" ? (
-                      <PreviewFrame html={html} slideCount={slideCount} />
-                    ) : (
-                      <Textarea
-                        value={brief}
-                        onChange={(e) => setBrief(e.target.value)}
-                        className="font-mono text-xs h-96 w-full p-4 bg-transparent border-none resize-none"
-                      />
-                    )}
-
-                    {loadingJob && <StepLoader key={loadingJob} kind={loadingJob} />}
-                  </div>
-
-                  {/* Evidence Screenshot Upload Panel */}
-                  {plan && plan.slides.some((s) => s.role === "point" && s.mockup?.type === "screenshot") && (
-                    <div className="flex flex-col gap-3 p-4 bg-muted/20 border border-hairline rounded-2xl">
-                      <div className="flex items-center justify-between">
-                        <span className="text-xs font-bold uppercase tracking-wider text-primary flex items-center gap-2">
-                          <Upload className="size-4 text-primary" />
-                          Bukti Screenshot Asli ({plan.slides.filter((s) => s.role === "point" && s.mockup?.type === "screenshot").length} Slide)
-                        </span>
-                        <span className="text-[11px] text-muted-foreground">
-                          Di-compress &amp; di-embed inline (base64) untuk offline capture aman.
-                        </span>
-                      </div>
-
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                        {plan.slides.map((s, idx) => {
-                          if (s.role !== "point" || s.mockup?.type !== "screenshot") return null;
-                          const m = s.mockup;
-                          const status = m.evidenceStatus || "pending";
-                          const brief = m.screenshotBrief;
-
-                          return (
-                            <div key={idx} className="p-3 bg-card border border-hairline rounded-xl flex flex-col gap-2 shadow-xs">
-                              <div className="flex items-center justify-between">
-                                <span className="text-xs font-bold text-foreground">
-                                  Slide {idx + 1} — {s.headline || "Screenshot Evidence"}
-                                </span>
-                                <span className={`text-[10px] font-mono font-bold px-2 py-0.5 rounded ${status === "captured" ? "bg-emerald-500/10 text-emerald-600 border border-emerald-500/20" :
-                                    status === "fallback_used" ? "bg-amber-500/10 text-amber-600 border border-amber-500/20" :
-                                      "bg-rose-500/10 text-rose-600 border border-rose-500/20 animate-pulse"
-                                  }`}>
-                                  {status === "captured" ? "✓ CAPTURED" : status === "fallback_used" ? "FALLBACK TEXT" : "⚠️ PENDING UPLOAD"}
-                                </span>
-                              </div>
-
-                              {brief && (
-                                <div className="text-[11px] text-muted-foreground flex flex-col gap-0.5 bg-muted/40 p-2 rounded-lg font-mono">
-                                  <div>📌 <strong>Source:</strong> {brief.source || "App / Tool"}</div>
-                                  <div>👁️ <strong>Must Show:</strong> {brief.mustShow || "-"}</div>
-                                  <div>🔒 <strong>Must Hide:</strong> {brief.mustHide || "-"}</div>
-                                  <div>📐 <strong>Target Ratio:</strong> {brief.cropRatio || "4:5"}</div>
-                                </div>
-                              )}
-
-                              {m.screenshotImage?.dataUrl ? (
-                                <div className="flex items-center gap-3 mt-1">
-                                  <img src={m.screenshotImage.dataUrl} alt="Upload preview" className="size-14 object-cover rounded-lg border border-hairline shadow-xs" />
-                                  <div className="flex flex-col gap-1">
-                                    <span className="text-[10px] text-muted-foreground font-mono">
-                                      Di-upload: {new Date(m.screenshotImage.uploadedAt).toLocaleTimeString()}
-                                    </span>
-                                    <label className="cursor-pointer text-xs font-semibold text-primary hover:underline">
-                                      Ganti Gambar
-                                      <input
-                                        type="file"
-                                        accept="image/png,image/jpeg,image/webp"
-                                        className="hidden"
-                                        onChange={async (e) => {
-                                          const file = e.target.files?.[0];
-                                          if (file) {
-                                            try {
-                                              const dataUrl = await processUploadedScreenshot(file, brief?.cropRatio || "4:5");
-                                              handleUpdateScreenshot(idx, dataUrl);
-                                              toast.success(`Screenshot slide ${idx + 1} berhasil di-upload!`);
-                                            } catch (err) {
-                                              toast.error("Gagal memproses gambar");
-                                            }
-                                          }
-                                        }}
-                                      />
-                                    </label>
-                                  </div>
-                                </div>
-                              ) : (
-                                <label className="mt-1 flex items-center justify-center gap-2 p-2.5 border-2 border-dashed border-primary/30 hover:border-primary rounded-xl cursor-pointer bg-primary/5 hover:bg-primary/10 transition-colors text-xs font-medium text-primary">
-                                  <Upload className="size-4" />
-                                  <span>Upload Screenshot Slide {idx + 1}</span>
-                                  <input
-                                    type="file"
-                                    accept="image/png,image/jpeg,image/webp"
-                                    className="hidden"
-                                    onChange={async (e) => {
-                                      const file = e.target.files?.[0];
-                                      if (file) {
-                                        try {
-                                          const dataUrl = await processUploadedScreenshot(file, brief?.cropRatio || "4:5");
-                                          handleUpdateScreenshot(idx, dataUrl);
-                                          toast.success(`Screenshot slide ${idx + 1} berhasil di-upload!`);
-                                        } catch (err) {
-                                          toast.error("Gagal memproses gambar");
-                                        }
-                                      }
-                                    }}
-                                  />
-                                </label>
-                              )}
-                            </div>
-                          );
-                        })}
-                      </div>
-                    </div>
-                  )}
-
-                  {/* Action Navigation Bar */}
-                  <div className="flex items-center justify-between pt-4 border-t">
-                    <Button variant="outline" size="sm" onClick={() => setStep(2)} className="gap-1.5">
-                      <ArrowLeft className="size-3.5" /> Back ke Brief
-                    </Button>
-
-                    <Button
-                      size="sm"
-                      disabled={pending || exportPending}
-                      onClick={() => handleExport()}
-                      className="gap-1.5 font-semibold px-5"
-                    >
-                      {exportPending ? (
-                        <Loader2 className="size-4 animate-spin" />
-                      ) : (
-                        <Upload className="size-4" />
-                      )}
-                      {exportPending ? "Mengekspor…" : "Approve & Export JPEGs"}
-                    </Button>
-                  </div>
-                </CardContent>
-              </Card>
-            </div>
-          )}
-
-          {/* STEP 4: JPEG EXPORT COMPONENT */}
-          {step === 4 && (
-            <div className="flex flex-col gap-6 w-full max-w-5xl mx-auto py-2 animate-in fade-in duration-200">
-              <Card className="shadow-sm border-hairline">
-                <CardContent className="p-6 flex flex-col gap-6">
-                  <div className="flex items-center justify-between border-b pb-4">
-                    <div>
-                      <h3 className="font-bold text-base flex items-center gap-2">
-                        {exportPending ? (
-                          <Loader2 className="size-5 text-primary animate-spin" />
-                        ) : (
-                          <CheckCircle2 className="size-5 text-emerald-500" />
-                        )}
-                        {exportPending ? "Menyiapkan JPEG Assets" : "JPEG Assets Ready"}
-                      </h3>
-                      <p className="text-xs text-muted-foreground mt-0.5">
-                        {exportPending
-                          ? `Merender ${slideCount || "…"} slide ke gambar resolusi tinggi.`
-                          : `${exportedImages.length} slide berhasil di-export ke format gambar JPEG resolusi tinggi.`}
-                      </p>
-                    </div>
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      onClick={handleDownloadAll}
-                      disabled={exportPending || blobs.length === 0}
-                      className="gap-1.5 font-mono text-xs"
-                    >
-                      <Upload className="size-3.5" /> Download All ZIP
-                    </Button>
-                  </div>
-
-                  {/* Exported JPEGs Grid */}
-                  <div className="relative grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4 py-2 min-h-[240px]">
-                    {exportPending &&
-                      Array.from({ length: Math.max(slideCount, 4) }).map((_, i) => (
-                        <div
-                          key={`skeleton-${i}`}
-                          className="aspect-[4/5] rounded-xl border border-hairline bg-muted/50 animate-pulse"
-                        />
-                      ))}
-                    {exportPending && loadingJob && <StepLoader key={loadingJob} kind={loadingJob} />}
-                    {!exportPending && exportedImages.map((src, i) => (
-                      <div key={i} className="flex flex-col gap-2 group">
-                        <div className="aspect-[4/5] rounded-xl border border-hairline overflow-hidden bg-muted relative shadow-sm group-hover:shadow-md transition-shadow">
-                          <img src={src} alt={`Slide ${i + 1}`} className="size-full object-cover" />
-                          <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                            <a
-                              href={src}
-                              download={`slide-${i + 1}.jpg`}
-                              className="text-[10px] font-mono bg-card text-foreground px-2.5 py-1 rounded-md border border-hairline shadow-xs font-semibold hover:bg-muted"
-                            >
-                              Download
-                            </a>
-                          </div>
-                        </div>
-                        <span className="text-[10px] font-mono text-center text-muted-foreground font-medium">Slide {i + 1}</span>
-                      </div>
-                    ))}
-                  </div>
-
-                  {/* Action Navigation Bar */}
-                  <div className="flex items-center justify-between pt-4 border-t">
-                    <Button variant="outline" size="sm" onClick={() => setStep(3)} className="gap-1.5">
-                      <ArrowLeft className="size-3.5" /> Back ke Design
-                    </Button>
-
-                    <Button
-                      size="sm"
-                      onClick={() => setStep(5)}
-                      disabled={exportPending || exportedImages.length === 0}
-                      className="gap-1.5 font-semibold px-5"
-                    >
-                      Lanjut ke Penjadwalan <span className="text-xs">→</span>
-                    </Button>
-                  </div>
-                </CardContent>
-              </Card>
-            </div>
-          )}
-
-          {/* STEP 5: SCHEDULE & PUBLISH COMPONENT */}
-          {step === 5 && (
-            <div className="flex flex-col gap-6 w-full max-w-4xl mx-auto py-2 animate-in fade-in duration-200">
-              <Card className="shadow-sm border-hairline">
-                <CardContent className="p-6 flex flex-col gap-6">
-                  <div className="border-b pb-4">
-                    <h3 className="font-bold text-base flex items-center gap-2">
-                      <Calendar className="size-5 text-primary" />
-                      Schedule &amp; Publish Content
-                    </h3>
-                    <p className="text-xs text-muted-foreground mt-0.5">
-                      Atur waktu publish ke Buffer atau simpan sebagai Stock Content lokal.
-                    </p>
-                  </div>
-
-                  {/* Destination Platforms Status */}
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div className="bg-card border border-hairline rounded-xl p-4 shadow-xs">
-                      <div className="flex items-center justify-between">
-                        <span className="text-xs font-semibold text-muted-foreground uppercase">Instagram</span>
-                        {pubConfig?.hasIg ? (
-                          <span className="text-[10px] font-semibold text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200">
-                            Active
-                          </span>
-                        ) : (
-                          <span className="text-[10px] font-semibold text-muted-foreground bg-muted px-2 py-0.5 rounded border border-border">
-                            Not Set
-                          </span>
-                        )}
-                      </div>
-                      <p className="text-[11px] text-muted-foreground mt-1.5">
-                        {pubConfig?.hasIg
-                          ? "Carousel JPEG dan caption akan dikirim ke Instagram."
-                          : "Set BUFFER_IG_CHANNEL_ID di .env untuk mengaktifkan."}
-                      </p>
-                    </div>
-
-                    <div className="bg-card border border-hairline rounded-xl p-4 shadow-xs">
-                      <div className="flex items-center justify-between">
-                        <span className="text-xs font-semibold text-muted-foreground uppercase">TikTok</span>
-                        {pubConfig?.hasTt ? (
-                          <span className="text-[10px] font-semibold text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200">
-                            Active
-                          </span>
-                        ) : (
-                          <span className="text-[10px] font-semibold text-muted-foreground bg-muted px-2 py-0.5 rounded border border-border">
-                            Not Set
-                          </span>
-                        )}
-                      </div>
-                      <p className="text-[11px] text-muted-foreground mt-1.5">
-                        {pubConfig?.hasTt
-                          ? "Carousel JPEG, judul, dan caption akan dikirim ke TikTok."
-                          : "Set BUFFER_TIKTOK_CHANNEL_ID di .env untuk mengaktifkan."}
-                      </p>
-                    </div>
-                  </div>
-
-                  {/* Date & Time Picker */}
-                  <div className="bg-card border border-hairline rounded-xl p-4 shadow-xs space-y-3">
-                    <label className="text-xs font-semibold text-muted-foreground uppercase flex items-center gap-1.5">
-                      <Clock className="size-3.5 text-primary" />
-                      Waktu Posting (dueAt)
-                    </label>
-                    <Input
-                      type="datetime-local"
-                      value={dueAt}
-                      onChange={(e) => setDueAt(e.target.value)}
-                      disabled={publishState.status === "uploading" || publishState.status === "publishing"}
-                      className="text-xs"
-                    />
-                    <p className="text-[10px] text-muted-foreground">
-                      Pilih waktu kapan Buffer akan menjadwalkan notifikasi posting ini.
-                    </p>
-                  </div>
-
-                  {/* Caption & Metadata Preview */}
-                  <div className="bg-card border border-hairline rounded-xl p-4 shadow-xs space-y-3">
-                    <span className="text-xs font-semibold text-muted-foreground uppercase block">
-                      Instagram Caption &amp; TikTok Title
-                    </span>
-                    <div className="space-y-3">
-                      <div>
-                        <span className="text-[10px] font-medium text-muted-foreground uppercase block">TikTok Title</span>
-                        <Input
-                          type="text"
-                          value={editableTitle}
-                          onChange={(e) => setEditableTitle(e.target.value)}
-                          onBlur={handleSaveEdits}
-                          disabled={publishState.status === "uploading" || publishState.status === "publishing"}
-                          placeholder="Judul postingan TikTok..."
-                          className="text-xs font-mono mt-1 w-full bg-muted/20 focus-visible:ring-1 focus-visible:ring-primary border-hairline"
-                        />
-                      </div>
-                      <div>
-                        <span className="text-[10px] font-medium text-muted-foreground uppercase block">Caption (Instagram / TikTok)</span>
-                        <Textarea
-                          value={editableCaption}
-                          onChange={(e) => setEditableCaption(e.target.value)}
-                          onBlur={handleSaveEdits}
-                          disabled={publishState.status === "uploading" || publishState.status === "publishing"}
-                          placeholder="Tulis caption Anda di sini..."
-                          className="text-xs font-mono mt-1 w-full h-32 bg-muted/20 focus-visible:ring-1 focus-visible:ring-primary border-hairline resize-none"
-                        />
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Action or Progress Panel */}
-                  <div className="bg-card border border-hairline rounded-xl p-6 shadow-xs text-center space-y-4">
-                    {publishState.status === "idle" ? (
-                      <div className="flex flex-col sm:flex-row gap-3">
-                        <Button
-                          onClick={handlePublish}
-                          className="flex-1 font-semibold"
-                          disabled={!pubConfig?.hasIg && !pubConfig?.hasTt}
-                        >
-                          Schedule to Buffer
-                        </Button>
-                        <Button
-                          onClick={handleSaveToStock}
-                          variant="outline"
-                          className="flex-1 font-semibold border-primary/40 text-primary hover:bg-primary/5"
-                        >
-                          Save to Stock Content
-                        </Button>
-                      </div>
-                    ) : null}
-
-                    {publishState.status === "uploading" || publishState.status === "publishing" ? (
-                      <div className="space-y-3">
-                        <div className="size-8 rounded-full border-2 border-primary border-t-transparent animate-spin mx-auto" />
-                        <p className="text-xs font-medium text-foreground">{publishState.progressMsg}</p>
-                      </div>
-                    ) : null}
-
-                    {publishState.status === "success" ? (
-                      <div className="space-y-3">
-                        <CheckCircle2 className="size-8 text-emerald-500 mx-auto" />
-                        <p className="text-xs font-medium text-emerald-600">{publishState.progressMsg || "Berhasil!"}</p>
-                        {publishState.igPostId || publishState.ttPostId ? (
-                          <div className="text-left text-[11px] font-mono border border-emerald-100 bg-emerald-50/50 rounded p-3 space-y-1">
-                            {publishState.igPostId ? (
-                              <div>Instagram Post ID: <span className="text-foreground font-semibold">{publishState.igPostId}</span></div>
-                            ) : null}
-                            {publishState.ttPostId ? (
-                              <div>TikTok Post ID: <span className="text-foreground font-semibold">{publishState.ttPostId}</span></div>
-                            ) : null}
-                          </div>
-                        ) : null}
-                        <Button
-                          onClick={handleReset}
-                          className="w-full mt-2 font-semibold bg-emerald-600 hover:bg-emerald-700 text-white"
-                        >
-                          Buat Konten Baru
-                        </Button>
-                      </div>
-                    ) : null}
-
-                    {publishState.status === "error" ? (
-                      <div className="space-y-3">
-                        <XCircle className="size-8 text-destructive mx-auto" />
-                        <p className="text-xs font-medium text-destructive">Gagal Mempublikasikan</p>
-                        <p className="text-[11px] text-muted-foreground border border-destructive/20 bg-destructive/5 rounded p-3 font-mono text-left max-h-32 overflow-y-auto">
-                          {publishState.errorMsg}
-                        </p>
-                        <Button onClick={handlePublish} variant="outline" className="w-full">
-                          Coba Lagi
-                        </Button>
-                      </div>
-                    ) : null}
-                  </div>
-
-                  {/* Bottom Navigation */}
-                  <div className="flex items-center justify-between pt-2">
-                    <Button variant="outline" size="sm" onClick={() => setStep(4)} className="gap-1.5">
-                      <ArrowLeft className="size-3.5" /> Back ke Export
-                    </Button>
-                  </div>
-                </CardContent>
-              </Card>
-            </div>
-          )}
-        </main>
-      </div>
-
-      {/* PENDING SCREENSHOT EXPORT GATING MODAL */}
       {showPendingModal && (
-        <div className="fixed inset-0 bg-black/60 backdrop-blur-xs z-50 flex items-center justify-center p-4 animate-in fade-in duration-150">
+        <div
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="pending-shot-title"
+          className="fixed inset-0 bg-black/60 backdrop-blur-xs z-50 flex items-center justify-center p-4 animate-in fade-in duration-150"
+        >
           <Card className="w-full max-w-md bg-card border-hairline shadow-xl">
-            <CardContent className="p-6 flex flex-col gap-4">
-              <div className="flex items-center gap-3 text-amber-500">
-                <div className="size-10 rounded-xl bg-amber-500/10 border border-amber-500/20 flex items-center justify-center shrink-0">
-                  <AlertCircle className="size-6" />
-                </div>
+            <CardContent className="p-5 flex flex-col gap-4">
+              <div className="flex items-start gap-3">
+                <span className="size-9 rounded-lg bg-amber-500/10 border border-amber-500/20 flex items-center justify-center text-amber-500 shrink-0">
+                  <AlertCircle className="size-5" />
+                </span>
                 <div>
-                  <h3 className="font-bold text-base text-foreground">Screenshot Masih Pending</h3>
-                  <p className="text-xs text-muted-foreground">
-                    {plan?.slides.filter((s) => s.role === "point" && s.mockup?.type === "screenshot" && s.mockup.evidenceStatus === "pending").length} slide masih butuh screenshot asli sebelum export.
+                  <h3 id="pending-shot-title" className="font-semibold text-sm text-foreground">
+                    Ada slide yang butuh screenshot
+                  </h3>
+                  <p className="text-xs text-muted-foreground mt-0.5">
+                    {plan?.slides.filter((s) => s.role === "point" && s.mockup?.type === "screenshot" && s.mockup.evidenceStatus === "pending").length} slide belum ada gambar aslinya.
                   </p>
                 </div>
               </div>
 
-              <div className="p-3 bg-muted/40 rounded-xl border border-hairline flex flex-col gap-2">
-                {plan?.slides.map((s, idx) => {
-                  if (s.role === "point" && s.mockup?.type === "screenshot" && s.mockup.evidenceStatus === "pending") {
-                    return (
-                      <div key={idx} className="flex items-center justify-between text-xs font-mono">
-                        <span className="font-bold text-foreground">Slide {idx + 1}: {s.headline}</span>
-                        <span className="text-rose-500 font-semibold">Pending</span>
-                      </div>
-                    );
-                  }
-                  return null;
-                })}
+              <div className="p-2.5 bg-muted/40 rounded-lg flex flex-col gap-1.5">
+                {plan?.slides.map((s, idx) =>
+                  s.role === "point" && s.mockup?.type === "screenshot" && s.mockup.evidenceStatus === "pending" ? (
+                    <div key={idx} className="flex items-center justify-between gap-2 text-xs">
+                      <span className="truncate">Slide {idx + 1}: {s.headline}</span>
+                      <span className="text-rose-500 font-medium shrink-0">Belum ada</span>
+                    </div>
+                  ) : null
+                )}
               </div>
 
               <p className="text-xs text-muted-foreground leading-relaxed">
-                Anda dapat meng-upload screenshot asli di preview slide, atau memilih <strong>&quot;Lanjut tanpa screenshot&quot;</strong> untuk menyembunyikan warning dan merender mode referensi teks.
+                Kamu bisa unggah screenshot di panel Slide, atau lanjut tanpa gambar dan slide itu dirender sebagai kutipan teks.
               </p>
 
-              <div className="flex items-center justify-end gap-2 pt-2 border-t">
+              <div className="flex items-center justify-end gap-2 pt-1">
                 <Button variant="outline" size="sm" onClick={() => setShowPendingModal(false)}>
-                  Batal &amp; Upload Manual
+                  Unggah dulu
                 </Button>
                 <Button size="sm" variant="secondary" onClick={handleContinueWithoutScreenshots}>
-                  Lanjut Tanpa Screenshot
+                  Lanjut tanpa gambar
                 </Button>
               </div>
             </CardContent>

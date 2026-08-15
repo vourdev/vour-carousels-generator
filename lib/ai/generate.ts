@@ -96,7 +96,7 @@ function enforceIllustrationForAnalogySlides(plan: SlidePlan): SlidePlan {
       ...slide,
       mockup: {
         type: "illustration" as const,
-        illustrationSlug: normalizeIllustration(ILLUSTRATION_FALLBACK_SLUG),
+        illustrationSlugs: [normalizeIllustration(ILLUSTRATION_FALLBACK_SLUG)],
       },
     };
   });

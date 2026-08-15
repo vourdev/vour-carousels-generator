@@ -14,7 +14,7 @@ export default async function CreatePage({
   const models = availableModels().filter((m) => m === "vour-high" || m === "vour-lite");
   const initialTopic = topicId ? await getTopic(topicId, session.user.id) : null;
   return (
-    <main className="mx-auto w-full max-w-7xl h-screen overflow-hidden p-3 md:p-4 flex flex-col gap-2.5">
+    <main className="mx-auto w-full max-w-7xl h-[100dvh] overflow-hidden p-3 md:p-4 flex flex-col gap-2.5">
       <div className="flex items-center justify-between shrink-0 border-b border-hairline pb-2.5">
         <div className="flex items-center gap-3">
           <Link href="/" className="size-9 rounded-full overflow-hidden bg-[#07070e] border border-white/20 shadow-md shrink-0 hover:scale-105 transition-transform">

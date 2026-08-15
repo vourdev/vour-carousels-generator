@@ -302,8 +302,10 @@ describe("renderSlide", () => {
       role: "cover", eyebrow: "E", headline: "H", accentWord: "H",
       hook: { kind: "custom", html: '<div class="x">ok</div><script>alert(1)</script>' },
     });
-    expect(html).toContain('<div class="x">ok</div>');
+    // "x" is not on the class whitelist, so the attribute goes with the script.
+    expect(html).toContain("<div>ok</div>");
     expect(html).not.toContain("alert(1)");
+    expect(html).not.toContain('class="x"');
   });
 
   it("preserves $ sequences in a custom hook verbatim (no replace() expansion)", () => {
@@ -312,7 +314,8 @@ describe("renderSlide", () => {
       hook: { kind: "custom", html: '<div class="dollar">$& $$ $` $\' cost=$50</div>' },
     });
     // $-sequences must survive unchanged; String.replace would collapse/expand them.
-    expect(html).toContain('<div class="dollar">$& $$ $` $\' cost=$50</div>');
+    // The non-whitelisted class is stripped, the dollar text is not.
+    expect(html).toContain('<div>$& $$ $` $\' cost=$50</div>');
   });
 });
 
@@ -448,19 +451,19 @@ describe("custom mockup and cover css", () => {
       body: "Ini adalah slide dengan mockup kustom.",
       mockup: {
         type: "custom",
-        html: "<div class='my-special-class'>Halo Dunia</div>",
-        css: ".my-special-class { color: red; }"
+        html: "<div class='my-special-class' style='color:red'>Halo Dunia</div>",
       }
     }, 4);
 
-    // Scoped to this slide's fragment, and dropped into the flex slot every
-    // other mockup gets — otherwise it hugs the headline and leaves dead space.
-    expect(html).toContain(".cm-4 .my-special-class{ color: red; }");
-    expect(html).toContain('<div class="diag-wrap"><div class="cm cm-4">');
-    expect(html).toContain("<div class='my-special-class'>Halo Dunia</div>");
+    // Dropped into the flex slot every other mockup gets — otherwise it hugs the
+    // headline and leaves dead space — and stripped of everything decorative.
+    expect(html).toContain('<div class="diag-wrap"><div class="cm cm-base cm-4">');
+    expect(html).toContain("Halo Dunia");
+    expect(html).not.toContain("style=");
+    expect(html).not.toContain("my-special-class");
   });
 
-  it("renders a custom cover hook with custom css", () => {
+  it("renders a custom cover hook, stripped to structure", () => {
     const html = renderSlide({
       role: "cover",
       eyebrow: "COVER DUST",
@@ -468,24 +471,27 @@ describe("custom mockup and cover css", () => {
       hook: {
         kind: "custom",
         html: "<div class='cover-special'>Special Content</div>",
-        css: ".cover-special { font-size: 50px; }"
       }
     }, 7);
 
-    expect(html).toContain(".cm-7 .cover-special{ font-size: 50px; }");
-    expect(html).toContain('<div class="anchor-wrap"><div class="cm cm-7">');
-    expect(html).toContain("<div class='cover-special'>Special Content</div>");
+    expect(html).toContain('<div class="anchor-wrap"><div class="cm cm-base cm-7">');
+    expect(html).toContain("Special Content");
+    expect(html).not.toContain("cover-special");
   });
 
-  it("keeps a custom fragment's css from reaching the slide chrome", () => {
-    // A rule on shared chrome used to leak to EVERY slide and shift "Geser".
+  it("strips a <style> block smuggled into a custom fragment's html", () => {
+    // A rule on shared chrome used to leak to EVERY slide and shift "Geser". With the
+    // css field gone, the remaining route is a <style> tag hidden inside html.
     const html = renderSlide({
       role: "point", counter: "01/03", eyebrow: "E", headline: "H", body: "b",
-      mockup: { type: "custom", html: "<div>x</div>", css: ".geser{left:400px}section{padding:0}" },
+      mockup: {
+        type: "custom",
+        html: "<style>.geser{left:400px}section{padding:0}</style><div>x</div>",
+      },
     }, 2);
-    expect(html).toContain(".cm-2 .geser{left:400px}");
-    expect(html).toContain(".cm-2 section{padding:0}");
-    expect(html).not.toContain("<style>.geser{left:400px}");
+    expect(html).toContain('<div class="cm cm-base cm-2"><div>x</div></div>');
+    expect(html).not.toContain(".geser{left:400px}");
+    expect(html).not.toContain("padding:0");
   });
 
   it("prints the series stamp on both cover variants, defaulting it", () => {

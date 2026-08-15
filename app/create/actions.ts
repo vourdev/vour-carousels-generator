@@ -7,6 +7,7 @@ import { briefRevisionPrompt } from "@/lib/ai/prompts";
 import { appendRevision, listRevisions, clearRevisions } from "@/lib/memory/repo";
 import { summarizePlanDiff } from "@/lib/memory/diff";
 import type { SlidePlan } from "@/lib/ds/schema";
+import { assembleCarousel } from "@/lib/ds/assemble";
 
 import { uploadImage } from "@/lib/publish/cloudinary";
 import { scheduleBufferPost } from "@/lib/publish/buffer";
@@ -110,6 +111,19 @@ export async function getPublishingConfigAction(): Promise<{ hasIg: boolean; has
     hasIg: Boolean(process.env.BUFFER_IG_CHANNEL_ID),
     hasTt: Boolean(process.env.BUFFER_TIKTOK_CHANNEL_ID),
   };
+}
+
+/**
+ * Assemble the preview/export HTML for a plan.
+ *
+ * This runs on the server on purpose. assembleCarousel pulls in render-slide, which reads
+ * the ~1.5 MB of unDraw SVGs off disk; calling it from the client component put that whole
+ * payload into the browser bundle (a single 2.7 MB chunk). Now only the assembled HTML for
+ * the deck at hand crosses the wire, and only when the plan actually changes.
+ */
+export async function assembleAction(plan: SlidePlan): Promise<string> {
+  await requireSession();
+  return assembleCarousel(plan);
 }
 
 export async function uploadSingleImageAction(base64Image: string): Promise<string> {

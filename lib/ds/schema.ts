@@ -205,14 +205,45 @@ const mockupGitBranch = z.object({
   mergeLabel: z.string().max(12).default("merge"),
 });
 
-/** Illustration — unDraw editorial SVG for abstract concepts / analogies */
+/**
+ * Illustration — unDraw editorial SVG for abstract concepts / analogies.
+ *
+ * The model's entire vocabulary here is: which slugs, and how many. Colour, size,
+ * spacing and surface variant are resolved by the renderer — there is deliberately no
+ * field to override any of them, because a model-supplied colour cannot be re-scoped
+ * per surface the way a CSS token can (see the surface-token note in
+ * carousel-css-extra.ts). Capped at 2: the content column is 920px wide, so two items
+ * plus the 28px gap already fill it at 446px each — a third would have to shrink below
+ * the width where an unDraw drawing stays readable.
+ */
 const mockupIllustration = z.object({
   type: z.literal("illustration"),
-  illustrationSlug: z.string().transform(normalizeIllustration),
-  /** Optional second slug for a side-by-side pair layout (180×180px each, 24px gap). */
-  illustrationSlug2: z.string().transform(normalizeIllustration).optional(),
+  illustrationSlugs: z
+    .array(z.string().transform(normalizeIllustration))
+    .min(1)
+    .max(2),
   caption: z.string().max(90).optional(),
 });
+
+/**
+ * Accept the pre-array shape ({ illustrationSlug, illustrationSlug2 }) and fold it into
+ * illustrationSlugs. Plans are persisted in the carousels history table and re-parsed on
+ * load, so dropping the old keys outright would break every deck already saved. It also
+ * absorbs a model that still emits the old field names from a stale prompt.
+ */
+function migrateLegacyIllustration(raw: unknown): unknown {
+  if (!raw || typeof raw !== "object") return raw;
+  const m = raw as Record<string, unknown>;
+  if (m.type !== "illustration" || Array.isArray(m.illustrationSlugs)) return raw;
+  const legacy = [m.illustrationSlug, m.illustrationSlug2].filter(
+    (s): s is string => typeof s === "string" && s.trim() !== ""
+  );
+  if (!legacy.length) return raw;
+  const rest: Record<string, unknown> = { ...m };
+  delete rest.illustrationSlug;
+  delete rest.illustrationSlug2;
+  return { ...rest, illustrationSlugs: legacy };
+}
 
 export const screenshotBriefSchema = z.object({
   source: z.string().max(120),
@@ -234,13 +265,20 @@ const mockupScreenshot = z.object({
   evidenceStatus: z.enum(["pending", "captured", "fallback_used"]).default("pending"),
 });
 
+/**
+ * Custom — structural escape hatch for content that fits none of the built-in mockups.
+ *
+ * There is no `css` field and no styling channel of any kind: whatever HTML arrives is
+ * run through sanitizeCustomHtml at render time, which strips <style>, inline style=,
+ * presentational attributes, and every class outside CUSTOM_CLASS_WHITELIST. Structure
+ * and copy are the model's; appearance is the design system's.
+ */
 const mockupCustom = z.object({
   type: z.literal("custom"),
   html: z.string().max(8000),
-  css: z.string().max(8000).optional(),
 });
 
-export const mockupSchema = z.discriminatedUnion("type", [
+const mockupUnion = z.discriminatedUnion("type", [
   mockupCard,
   mockupTerminal,
   mockupComparison,
@@ -266,7 +304,9 @@ export const mockupSchema = z.discriminatedUnion("type", [
   mockupCustom,
 ]);
 
-export type Mockup = z.infer<typeof mockupSchema>;
+export const mockupSchema = z.preprocess(migrateLegacyIllustration, mockupUnion);
+
+export type Mockup = z.infer<typeof mockupUnion>;
 
 /* ── Cover hook (intro scroll-stopper) ────────────────────────── */
 
@@ -293,10 +333,10 @@ const coverHookImage = z.object({
   label: z.string().max(40).optional(),
 });
 
+// Same contract as mockupCustom: structure only, no styling channel.
 const coverHookCustom = z.object({
   kind: z.literal("custom"),
   html: z.string().max(4000),
-  css: z.string().max(4000).optional(),
 });
 
 /** Cover anchor — an ID badge (contrarian "X is not a job title" angle) */
