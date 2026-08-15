@@ -170,7 +170,7 @@ const mockupPromptcard = z.object({
   body: z.string().max(180),
 });
 
-/** Folder tree — mono directory listing (3–8 rows), one active row in Ember */
+/** Folder tree — mono directory listing (3–8 rows), one active row in the brand accent */
 const mockupFolderTree = z.object({
   type: z.literal("foldertree"),
   lines: z

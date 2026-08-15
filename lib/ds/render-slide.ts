@@ -134,7 +134,7 @@ function renderCalloutMockup(m: Extract<Mockup, { type: "callout" }>): string {
     calloutText: m.text,
   });
   // Function replacer: keep raw SVG out of String.replace $-interpretation.
-  return base.replace("ICON_INJECT", () => renderIcon(m.icon, { size: 24, color: "#EE4B1A" }));
+  return base.replace("ICON_INJECT", () => renderIcon(m.icon, { size: 24, color: "#0F6666" }));
 }
 
 function renderBigstatMockup(m: Extract<Mockup, { type: "bigstat" }>): string {
@@ -281,7 +281,7 @@ function renderFolderTreeMockup(m: Extract<Mockup, { type: "foldertree" }>): str
 function renderCommandPaletteMockup(m: Extract<Mockup, { type: "commandpalette" }>): string {
   const rows = m.rows
     .map((r) => {
-      const icon = renderIcon(r.icon, { size: 28, color: "#FF6A3D" });
+      const icon = renderIcon(r.icon, { size: 28, color: "#50DCDC" });
       const key = r.active ? `<span class="k">↵</span>` : "";
       return `<div class="row${r.active ? " on" : ""}">${icon}${escapeHtml(r.label)}${key}</div>`;
     })
@@ -293,7 +293,7 @@ function renderCommandPaletteMockup(m: Extract<Mockup, { type: "commandpalette" 
 }
 
 function renderDatabaseMockup(m: Extract<Mockup, { type: "database" }>): string {
-  const headIcon = renderIcon("database", { size: 26, color: "#F7F1E8" });
+  const headIcon = renderIcon("database", { size: 26, color: "#FFFFFF" });
   const renderTable = (t: (typeof m.tables)[number]) => {
     const rows = t.rows
       .map(
@@ -342,7 +342,7 @@ function renderImageHook(h: Extract<CoverHook, { kind: "image" }>): string {
 }
 
 function renderBadgeHook(h: Extract<CoverHook, { kind: "badge" }>): string {
-  const gitIcon = renderIcon("git-branch", { size: 24, color: "#FF6A3D" });
+  const gitIcon = renderIcon("git-branch", { size: 24, color: "#50DCDC" });
   const sub = h.sub ? `<div class="sub">${escapeHtml(h.sub)}</div>` : "";
   const strike = h.struck ? `<div class="cover-strike"></div>` : "";
   return coverBadgeTemplate
@@ -358,11 +358,11 @@ function renderNocGridHook(h: Extract<CoverHook, { kind: "nocgrid" }>): string {
   const down = (h.state ?? "down") === "down";
   const banner = h.banner ?? "100% PACKET LOSS";
   // Slugs MUST be in the icons allowlist or renderIcon falls back to "sparkles".
-  const nodeIcon = renderIcon(down ? "x-circle" : "check-circle", { size: 34, color: down ? "#FF5A4D" : "#4E9E5C" });
+  const nodeIcon = renderIcon(down ? "x-circle" : "check-circle", { size: 34, color: down ? "#8FA5A5" : "#16705A" });
   const nodes = Array.from({ length: cols * rows })
     .map(() => `<span class="node ${down ? "down" : "up"}">${nodeIcon}</span>`)
     .join("");
-  const bannerIcon = renderIcon(down ? "alert-triangle" : "check-circle", { size: 40, color: down ? "#FF5A4D" : "#4E9E5C" });
+  const bannerIcon = renderIcon(down ? "alert-triangle" : "check-circle", { size: 40, color: down ? "#8FA5A5" : "#16705A" });
   return coverNocGridTemplate
     .replace("GRID_COLS_INJECT", () => String(cols))
     .replace("NODES_INJECT", () => nodes)
@@ -372,7 +372,7 @@ function renderNocGridHook(h: Extract<CoverHook, { kind: "nocgrid" }>): string {
 function renderDoorHook(h: Extract<CoverHook, { kind: "door" }>): string {
   // "hand"/"pointer" are NOT in the icon allowlist; arrow-right is verified present
   // and reads as the (wrong) push direction the label demands.
-  const handIcon = renderIcon("arrow-right", { size: 96, color: "#FF6A3D" });
+  const handIcon = renderIcon("arrow-right", { size: 96, color: "#50DCDC" });
   const handle = h.pull === false ? "" : `<div class="handle"></div>`;
   return coverDoorTemplate
     .replace("LABEL_INJECT", () => escapeHtml(h.label ?? "DORONG"))
@@ -557,7 +557,7 @@ export function renderSlide(slide: Slide, slideIndex = 0): string {
         });
         // Function replacer keeps raw SVG safe from $-sequence interpretation.
         return filled.replace("ICON_INJECT", () =>
-          renderIcon(mockup.icon, { size: 24, color: "#EE4B1A" })
+          renderIcon(mockup.icon, { size: 24, color: "#0F6666" })
         );
       }
 

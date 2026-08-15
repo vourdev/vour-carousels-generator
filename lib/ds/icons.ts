@@ -20,7 +20,7 @@ export function renderIcon(
   raw: string,
   opts: { size?: number; color?: string } = {}
 ): string {
-  const { size = 24, color = "#EE4B1A" } = opts;
+  const { size = 24, color = "#0F6666" } = opts;
   const slug = normalizeIcon(raw);
   return ICON_SVGS[slug]
     .replace('width="24"', `width="${size}"`)

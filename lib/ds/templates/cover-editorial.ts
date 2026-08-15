@@ -4,7 +4,7 @@
 // EB Garamond series stamp top-right), left-aligned copy weighted bottom-left, and
 // "Geser" pinned bottom-left.
 //
-// Locked to DESIGN.md tokens: Ember #EE4B1A / Ember-bright #FF6A3D only (no second
+// Locked to the brand tokens: VOUR_TEAL_DEEP #0F6666 / VOUR_TEAL #50DCDC only (no second
 // hue), one radius scale, no backdrop-filter (dies on screenshot export). All
 // {{slot}} values are escaped by fillTemplate; GHOST_NUMERAL_INJECT is injected via
 // the function-replacer form in renderSlide so $-sequences stay verbatim.

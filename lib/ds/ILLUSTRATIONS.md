@@ -64,7 +64,8 @@ The split now is:
 
 ## Two surface variants, and why the model has no say
 
-Slides render on two surfaces: **Ink** (`#14110E`, the deck default) and **Paper** (cream,
+Slides render on two surfaces: **Ink** (logo black `#000000` falling from `#0D1414`, the deck
+default) and **Paper** (Mist `#F2F7F7`,
 the explicit `surface: "paper"` opt-out). unDraw ships one palette built for white pages —
 `#090814`, `#2f2e41`, `#3f3d56` carry the hair, clothes and outlines. On Ink those are
 within a few points of the background, so the illustration dissolves. That is the whole
@@ -74,8 +75,8 @@ CSS cannot fix it: `carousel-css-extra.ts` already documents the rule that a moc
 never name a literal ink/paper colour, but an SVG `fill` is not a token and cannot be
 re-scoped per surface. So the remap happens at codegen. Each slug is written twice:
 
-- `<slug>.onLight.svg` — unDraw's value ordering kept, neutrals warmed into the brand ramp, accent `#EE4B1A`
-- `<slug>.onDark.svg` — neutral ramp **inverted** (darkest becomes lightest), accent `#FF6A3D`
+- `<slug>.onLight.svg` — unDraw's value ordering kept, neutrals pulled onto the Vour ramp, accent `#0F6666` (VOUR_TEAL_DEEP)
+- `<slug>.onDark.svg` — neutral ramp **inverted** (darkest becomes lightest), accent `#4DE1F3` (VOUR_TEAL_BRIGHT)
 
 Skin tones (`#ed9da0`, `#ffb8b8`, `#a0616a` …) are deliberately left alone — they are
 mid-tone and legible on both, and inverting them turns people green.
@@ -130,7 +131,7 @@ becomes dynamic, nft loses the trail and the illustrations silently degrade to t
 ## Regenerating
 
 ```bash
-npm run gen:illustrations   # fetches each slug, recolors #6c63ff → #EE4B1A, writes one .svg per slug
+npm run gen:illustrations   # fetches each slug, recolors #6c63ff → the surface accent, writes one .svg per variant
 npm test                    # fails if a manifest slug has no file on disk, or if the payload leaks client-side
 ```
 

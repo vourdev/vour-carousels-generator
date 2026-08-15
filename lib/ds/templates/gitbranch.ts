@@ -5,8 +5,8 @@
 //
 // Every stroke/fill carries a g-* class so the stylesheet can bind it to the
 // --ms-* surface tokens. As raw colour attributes the main line and its commit
-// dots were locked to #1C0A05 and vanished on the near-black Ink canvas, and the
-// Ember parts never picked up the brighter on-dark accent.
+// dots were locked to #000000 and vanished on the near-black Ink canvas, and the
+// accent parts never picked up the brighter on-dark accent.
 export const gitBranchTemplate = String.raw`<div class="diag-wrap mt-40">
     <div class="git">
       <svg viewBox="0 0 920 300" fill="none">

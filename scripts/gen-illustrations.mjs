@@ -33,54 +33,54 @@ const UNDRAW_ACCENTS = [/#6c63ff/gi, /#6c5ce7/gi];
    #fff (75%), #e6e6e6 (64%), #3f3d56 (62%), #090814 (60%), #f2f2f2 (52%),
    #2f2e41 (44%), #ccc (37%), #d6d6e3 (28%) …
 
-   onLight keeps unDraw's own value ordering — dark ink stays dark — but warms the
-   neutrals into the brand ramp so they sit on cream instead of on white.
+   onLight keeps unDraw's own value ordering — dark ink stays dark — but pulls the
+   neutrals onto the Vour ramp so they sit on Mist instead of on plain white.
    onDark INVERTS the neutral ramp: what was darkest becomes lightest. Skin tones
    (#ed9da0, #ffb8b8, #a0616a …) are mid-tone and legible on both, so they are left
    alone on purpose — inverting them turns people green. */
 const PALETTES = {
   onLight: {
-    accent: "#EE4B1A", // --ms-accent on Paper
+    accent: "#0F6666", // VOUR_TEAL_DEEP — the only accent that passes AA on Mist
     map: {
-      "#090814": "#1C0A05",
-      "#2f2e41": "#33211A",
-      "#2f2e43": "#33211A",
-      "#3f3d56": "#4A342A",
-      "#b6b3c5": "#B3A493",
-      "#d6d6e3": "#CFC2B0",
-      "#ccc": "#CFC2B0",
-      "#cacaca": "#CFC2B0",
-      "#cbcbcb": "#CFC2B0",
-      "#e6e6e6": "#DED3C4",
-      "#e4e4e4": "#DED3C4",
-      "#e5e5e5": "#DED3C4",
-      "#f0f0f0": "#F0E7DA",
-      "#f1f1f1": "#F0E7DA",
-      "#f2f2f2": "#F5EDE2",
-      "#fff": "#FFFDF9",
-      "#ffffff": "#FFFDF9",
+      "#090814": "#000000",
+      "#2f2e41": "#16292A",
+      "#2f2e43": "#16292A",
+      "#3f3d56": "#2C4445",
+      "#b6b3c5": "#93A9A9",
+      "#d6d6e3": "#B7CACA",
+      "#ccc": "#B7CACA",
+      "#cacaca": "#B7CACA",
+      "#cbcbcb": "#B7CACA",
+      "#e6e6e6": "#D3E1E1",
+      "#e4e4e4": "#D3E1E1",
+      "#e5e5e5": "#D3E1E1",
+      "#f0f0f0": "#E6EFEF",
+      "#f1f1f1": "#E6EFEF",
+      "#f2f2f2": "#EDF4F4",
+      "#fff": "#FFFFFF",
+      "#ffffff": "#FFFFFF",
     },
   },
   onDark: {
-    accent: "#FF6A3D", // --ms-accent on Ink
+    accent: "#4DE1F3", // VOUR_TEAL_BRIGHT — 13.4:1 on logo black
     map: {
-      "#090814": "#F7F1E8",
-      "#2f2e41": "#E0D8CC",
-      "#2f2e43": "#E0D8CC",
-      "#3f3d56": "#C4B9AA",
-      "#b6b3c5": "#4A4038",
-      "#d6d6e3": "#3A322A",
-      "#ccc": "#3A322A",
-      "#cacaca": "#3A322A",
-      "#cbcbcb": "#3A322A",
-      "#e6e6e6": "#2E2721",
-      "#e4e4e4": "#2E2721",
-      "#e5e5e5": "#2E2721",
-      "#f0f0f0": "#241E18",
-      "#f1f1f1": "#241E18",
-      "#f2f2f2": "#241E18",
-      "#fff": "#1F1A15",
-      "#ffffff": "#1F1A15",
+      "#090814": "#FFFFFF",
+      "#2f2e41": "#D8E6E6",
+      "#2f2e43": "#D8E6E6",
+      "#3f3d56": "#A9C0C0",
+      "#b6b3c5": "#3C5050",
+      "#d6d6e3": "#2A3B3B",
+      "#ccc": "#2A3B3B",
+      "#cacaca": "#2A3B3B",
+      "#cbcbcb": "#2A3B3B",
+      "#e6e6e6": "#1D2C2C",
+      "#e4e4e4": "#1D2C2C",
+      "#e5e5e5": "#1D2C2C",
+      "#f0f0f0": "#152121",
+      "#f1f1f1": "#152121",
+      "#f2f2f2": "#152121",
+      "#fff": "#0D1414",
+      "#ffffff": "#0D1414",
     },
   },
 };

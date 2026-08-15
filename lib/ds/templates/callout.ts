@@ -2,8 +2,8 @@
 // Adapted from "design-system" DarkCallout component.
 //
 // The banner INVERTS against its surface (--ms-invert-*): near-black on Paper,
-// cream on Ink. It used to be a hard-coded #14110E panel, which on the Ink
-// canvas (#14110E) meant an invisible callout — the emphasis component being
+// cream on Ink. It used to be a hard-coded #000000 panel, which on the Ink
+// canvas (#000000) meant an invisible callout — the emphasis component being
 // the least visible thing on the slide.
 export const calloutTemplate = String.raw`<div class="diag-wrap mt-40">
     <div style="background:var(--ms-invert-bg);border-radius:20px;padding:26px 30px;display:flex;align-items:flex-start;gap:20px;width:100%">

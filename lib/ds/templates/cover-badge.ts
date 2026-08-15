@@ -1,4 +1,4 @@
-// Cover anchor — ID badge, optionally struck through with an Ember bar.
+// Cover anchor — ID badge, optionally struck through with an accent bar.
 // Ported from the approved cover-slides preview (DevOps cover). Sentinels are
 // filled by renderBadgeHook (all user text escaped there).
 export const coverBadgeTemplate = String.raw`<div class="anchor-wrap">

@@ -1,40 +1,59 @@
 // Additive carousel styles that must NOT live in the verbatim DS-bundle block
-// (lib/ds/carousel-css.ts is marked DO NOT EDIT). Appended after it in assemble.
+// (lib/ds/carousel-css.ts mirrors the design-system template). Appended after it in assemble.
+import {
+  VOUR_BLACK,
+  VOUR_CHARCOAL,
+  VOUR_LINE_DARK,
+  VOUR_LINE_LIGHT,
+  VOUR_MIST,
+  VOUR_MIST_FAINT,
+  VOUR_MIST_MUTED,
+  VOUR_SLATE,
+  VOUR_SLATE_FAINT,
+  VOUR_TEAL,
+  VOUR_TEAL_DEEP,
+  VOUR_WHITE,
+} from "@/lib/ds/tokens";
+
 export const carouselExtraCss = String.raw`
   /* ═══ Surface tokens ═══
      A mockup must never name a literal ink/paper colour. Descendant CSS can be
-     re-scoped per surface, but an inline style="color:#1C0A05" or an SVG
-     fill="#1C0A05" cannot — which is why bigstat's unit and gitbranch's main
+     re-scoped per surface, but an inline style="color:#000000" or an SVG
+     fill="#000000" cannot — which is why bigstat's unit and gitbranch's main
      line rendered near-black on the near-black Ink canvas. Templates resolve
      these tokens instead, so one declaration below flips the whole component.
 
-     Defaults are the Paper values, matching the DO-NOT-EDIT base palette; the
-     Ink block re-binds them. Anything reading a token is correct on BOTH
-     surfaces with no per-surface rule of its own. */
+     Interpolated from lib/ds/tokens.ts rather than written as literals: this block
+     is the seam where the brand palette enters the deck, so it is the one place that
+     must not be able to drift from the token file.
+
+     Defaults are the light-surface values, matching the base palette; the dark block
+     re-binds them. Anything reading a token is correct on BOTH surfaces with no
+     per-surface rule of its own. */
   section {
-    --ms-fg: #1C0A05;
-    --ms-fg-muted: #3D2419;
-    --ms-fg-faint: #A48C7E;
-    --ms-panel: #FFFDF9;
-    --ms-panel-deep: #FBF6EF;
-    --ms-line: rgba(28, 10, 5, 0.14);
-    --ms-accent: #EE4B1A;
+    --ms-fg: ${VOUR_BLACK};
+    --ms-fg-muted: ${VOUR_SLATE};
+    --ms-fg-faint: ${VOUR_SLATE_FAINT};
+    --ms-panel: ${VOUR_WHITE};
+    --ms-panel-deep: ${VOUR_MIST};
+    --ms-line: ${VOUR_LINE_LIGHT};
+    --ms-accent: ${VOUR_TEAL_DEEP};
     /* Callout inverts against its surface — that inversion IS the emphasis. */
-    --ms-invert-bg: #14110E;
-    --ms-invert-fg: #F7F1E8;
-    --ms-invert-chip: rgba(255, 255, 255, 0.08);
+    --ms-invert-bg: ${VOUR_BLACK};
+    --ms-invert-fg: ${VOUR_WHITE};
+    --ms-invert-chip: rgba(242, 247, 247, 0.10);
   }
   body section:not(.paper) {
-    --ms-fg: #F7F1E8;
-    --ms-fg-muted: rgba(247, 241, 232, 0.72);
-    --ms-fg-faint: rgba(247, 241, 232, 0.45);
-    --ms-panel: #1F1A15;
-    --ms-panel-deep: #14110E;
-    --ms-line: rgba(247, 241, 232, 0.16);
-    --ms-accent: #FF6A3D;
-    --ms-invert-bg: #FDFBF6;
-    --ms-invert-fg: #1C0A05;
-    --ms-invert-chip: rgba(28, 10, 5, 0.08);
+    --ms-fg: ${VOUR_WHITE};
+    --ms-fg-muted: ${VOUR_MIST_MUTED};
+    --ms-fg-faint: ${VOUR_MIST_FAINT};
+    --ms-panel: ${VOUR_CHARCOAL};
+    --ms-panel-deep: ${VOUR_BLACK};
+    --ms-line: ${VOUR_LINE_DARK};
+    --ms-accent: ${VOUR_TEAL};
+    --ms-invert-bg: ${VOUR_MIST};
+    --ms-invert-fg: ${VOUR_BLACK};
+    --ms-invert-chip: rgba(0, 0, 0, 0.08);
   }
 
   /* Text-only editorial cover: brand-row pinned top, "Geser" pinned bottom,
@@ -52,9 +71,9 @@ export const carouselExtraCss = String.raw`
   .series-stamp {
     font-family: 'EB Garamond', Georgia, serif;
     font-style: italic; font-weight: 500; font-size: 28px;
-    letter-spacing: 0.01em; color: #6E4B3E;
+    letter-spacing: 0.01em; color: #4A5C5C;
   }
-  .series-stamp.active { color: #EE4B1A; }
+  .series-stamp.active { color: #0F6666; }
 
   /* Improvised editorial-Ink intro container & ghost spacing */
   /* No height here: "section" already pins 1350px, and a "height:100%" on this
@@ -86,7 +105,7 @@ export const carouselExtraCss = String.raw`
     font-weight: 800;
     font-size: 640px;
     line-height: 0.85;
-    color: #FF6A3D;
+    color: #50DCDC;
     opacity: 0.06;
     pointer-events: none;
     user-select: none;
@@ -107,43 +126,51 @@ export const carouselExtraCss = String.raw`
      rules — it falls through to the DO-NOT-EDIT base, so there is no second copy
      of the cream palette to keep in sync. When adding an ink rule here, scope it
      the same way; do not add a paper counterpart. */
+  /* Dark surface. The base is a charcoal-to-black fall rather than one flat black:
+     logo black is the floor, VOUR_CHARCOAL carries the teal tint, and the gradient
+     between them is what stops a dark slide reading as an unstyled void. */
   body section:not(.paper) {
     position: relative;
-    background: linear-gradient(rgba(247,241,232,0.03), transparent 200px), #14110E;
-    color: #F7F1E8;
+    background:
+      linear-gradient(rgba(242,247,247,0.03), transparent 220px),
+      radial-gradient(130% 90% at 50% 0%, #0D1414, #000000 68%);
+    color: #FFFFFF;
   }
+  /* Two teal glows, held at 5-10% so they read as light in the room rather than as
+     a coloured background. Corner placement is what gives consecutive dark slides
+     different centres of gravity. */
   body section:not(.paper)::before {
     content: ""; position: absolute; inset: 0; pointer-events: none; z-index: 0;
     background:
-      radial-gradient(60% 42% at 100% 0%, rgba(238,75,26,0.16), transparent 60%),
-      radial-gradient(50% 40% at 0% 100%, rgba(238,75,26,0.08), transparent 65%);
+      radial-gradient(60% 42% at 100% 0%, rgba(80,220,220,0.08), transparent 60%),
+      radial-gradient(50% 40% at 0% 100%, rgba(77,225,243,0.05), transparent 65%);
   }
   body section > * { position: relative; z-index: 1; }
 
   /* Text + default elements coloring on the dark canvas. */
-  body section:not(.paper) .counter { color: rgba(247,241,232,0.45); }
-  body section:not(.paper) .eyebrow { color: #FF6A3D; }
-  body section:not(.paper) h1 { color: #F7F1E8; }
-  body section:not(.paper) h1 .a { color: #FF6A3D; }
+  body section:not(.paper) .counter { color: rgba(242,247,247,0.45); }
+  body section:not(.paper) .eyebrow { color: #50DCDC; }
+  body section:not(.paper) h1 { color: #FFFFFF; }
+  body section:not(.paper) h1 .a { color: #50DCDC; }
   body section:not(.paper) .lede,
-  body section:not(.paper) .body-text { color: rgba(247,241,232,0.72); }
-  body section:not(.paper) .geser { color: rgba(247,241,232,0.45); }
+  body section:not(.paper) .body-text { color: rgba(242,247,247,0.72); }
+  body section:not(.paper) .geser { color: rgba(242,247,247,0.45); }
 
   /* Info cards keep their LIGHT tone background + dark text on ink (they read as
      raised light tiles) — only soften the edge against the dark canvas. */
   body section:not(.paper) .card { box-shadow: 0 24px 60px rgba(0,0,0,0.35); }
-  body section:not(.paper) .catatan-body { color: #F7F1E8; }
-  body section:not(.paper) .checklist li { color: #F7F1E8; }
-  body section:not(.paper) .brand-handle { color: #F7F1E8; }
+  body section:not(.paper) .catatan-body { color: #FFFFFF; }
+  body section:not(.paper) .checklist li { color: #FFFFFF; }
+  body section:not(.paper) .brand-handle { color: #FFFFFF; }
 
   /* Panels that are dark BY DESIGN (terminal, command palette) sit only 11 points
      of luminance above the Ink canvas, so on Ink they read as a smudge rather
      than a device. A hairline edge is what separates them from the background. */
   body section:not(.paper) .cmdp {
-    border-color: rgba(247, 241, 232, 0.16);
+    border-color: rgba(242,247,247, 0.16);
     box-shadow: 0 24px 60px rgba(0, 0, 0, 0.45);
   }
-  body section:not(.paper) .cmdp .search { border-bottom-color: rgba(247, 241, 232, 0.14); }
+  body section:not(.paper) .cmdp .search { border-bottom-color: rgba(242,247,247, 0.14); }
 
   /* Git branch SVG — bound to the surface tokens. CSS beats SVG presentation
      attributes, so these win wherever the template still carries a literal. */
@@ -182,180 +209,185 @@ export const carouselExtraCss = String.raw`
 
   /* ═══ Mockup border/chrome overrides — INK SURFACE ONLY ═══ */
   body section:not(.paper) .browser {
-    border-color: rgba(247, 241, 232, 0.16);
+    border-color: rgba(242,247,247, 0.16);
     box-shadow: 0 24px 60px rgba(0, 0, 0, 0.4);
   }
   body section:not(.paper) .b-chrome {
-    background: #1F1A15;
-    border-bottom-color: rgba(247, 241, 232, 0.14);
+    background: #0D1414;
+    border-bottom-color: rgba(242,247,247, 0.14);
   }
   body section:not(.paper) .b-url {
-    background: #14110E;
-    border-color: rgba(247, 241, 232, 0.16);
-    color: rgba(247, 241, 232, 0.72);
+    background: #000000;
+    border-color: rgba(242,247,247, 0.16);
+    color: rgba(242,247,247, 0.72);
   }
   body section:not(.paper) .b-card {
-    background: #1F1A15;
-    border-color: rgba(247, 241, 232, 0.14);
+    background: #0D1414;
+    border-color: rgba(242,247,247, 0.14);
   }
   body section:not(.paper) .b-card .t {
-    color: #F7F1E8;
+    color: #FFFFFF;
   }
   body section:not(.paper) .b-card .s {
-    color: rgba(247, 241, 232, 0.45);
+    color: rgba(242,247,247, 0.45);
   }
 
   body section:not(.paper) .terminal {
-    border: 1.5px solid rgba(247, 241, 232, 0.16);
-    background: #1F1A15;
+    border: 1.5px solid rgba(242,247,247, 0.16);
+    background: #0D1414;
     box-shadow: 0 24px 60px rgba(0, 0, 0, 0.4);
   }
   body section:not(.paper) .terminal-bar {
-    border-bottom: 1px solid rgba(247, 241, 232, 0.10);
+    border-bottom: 1px solid rgba(242,247,247, 0.10);
     padding-bottom: 12px;
   }
 
   body section:not(.paper) .prompt {
-    background: #1F1A15;
-    border-color: #FF6A3D;
+    background: #0D1414;
+    border-color: #50DCDC;
   }
   body section:not(.paper) .prompt .lbl {
-    background: #14110E;
-    color: #FF6A3D;
+    background: #000000;
+    color: #50DCDC;
   }
   body section:not(.paper) .prompt pre {
-    color: #F7F1E8;
+    color: #FFFFFF;
   }
 
   body section:not(.paper) .tree {
-    background: #1F1A15;
-    border-color: rgba(247, 241, 232, 0.16);
-    color: rgba(247, 241, 232, 0.72);
+    background: #0D1414;
+    border-color: rgba(242,247,247, 0.16);
+    color: rgba(242,247,247, 0.72);
   }
 
   body section:not(.paper) .db .table {
-    border-color: rgba(247, 241, 232, 0.16);
-    background: #1F1A15;
+    border-color: rgba(242,247,247, 0.16);
+    background: #0D1414;
   }
   body section:not(.paper) .db .table .th {
-    background: #14110E;
-    color: #F7F1E8;
+    background: #000000;
+    color: #FFFFFF;
   }
   body section:not(.paper) .db .table .tr {
-    color: rgba(247, 241, 232, 0.72);
-    border-top-color: rgba(247, 241, 232, 0.10);
+    color: rgba(242,247,247, 0.72);
+    border-top-color: rgba(242,247,247, 0.10);
   }
   body section:not(.paper) .db .table .tr .ty {
-    color: rgba(247, 241, 232, 0.45);
+    color: rgba(242,247,247, 0.45);
   }
 
   body section:not(.paper) .node {
-    background: #1F1A15;
-    border-color: rgba(247, 241, 232, 0.16);
-    color: #F7F1E8;
+    background: #0D1414;
+    border-color: rgba(242,247,247, 0.16);
+    color: #FFFFFF;
   }
   body section:not(.paper) .node.filled {
-    background: #EE4B1A;
-    border-color: #EE4B1A;
+    background: #0F6666;
+    border-color: #0F6666;
     color: #fff;
   }
 
   body section:not(.paper) .step {
-    background: #1F1A15;
-    border: 1.5px solid rgba(247, 241, 232, 0.14);
+    background: #0D1414;
+    border: 1.5px solid rgba(242,247,247, 0.14);
   }
   body section:not(.paper) .step-title {
-    color: #F7F1E8;
+    color: #FFFFFF;
   }
   body section:not(.paper) .step-body {
-    color: rgba(247, 241, 232, 0.72);
+    color: rgba(242,247,247, 0.72);
   }
 
   body section:not(.paper) .timeline .tl-card.old {
-    background: #1F1A15;
-    border: 1.5px solid rgba(247, 241, 232, 0.10);
+    background: #0D1414;
+    border: 1.5px solid rgba(242,247,247, 0.10);
   }
   body section:not(.paper) .timeline .tl-card.old .d {
-    color: rgba(247, 241, 232, 0.45);
+    color: rgba(242,247,247, 0.45);
   }
   body section:not(.paper) .timeline .tl-card.old .h {
-    color: #F7F1E8;
+    color: #FFFFFF;
   }
   body section:not(.paper) .timeline .tl-card.old .t {
-    color: rgba(247, 241, 232, 0.72);
+    color: rgba(242,247,247, 0.72);
   }
 
   body section:not(.paper) .dtable {
-    border-top-color: rgba(247, 241, 232, 0.16);
+    border-top-color: rgba(242,247,247, 0.16);
   }
   body section:not(.paper) .dt-row {
-    border-top-color: rgba(247, 241, 232, 0.10);
+    border-top-color: rgba(242,247,247, 0.10);
   }
   body section:not(.paper) .dt-row .c {
-    color: rgba(247, 241, 232, 0.72);
+    color: rgba(242,247,247, 0.72);
   }
   body section:not(.paper) .dt-row .c.b {
-    color: #F7F1E8;
+    color: #FFFFFF;
   }
 
   body section:not(.paper) .clist .row {
-    border-top-color: rgba(247, 241, 232, 0.10);
+    border-top-color: rgba(242,247,247, 0.10);
   }
   body section:not(.paper) .clist .desc {
-    color: rgba(247, 241, 232, 0.72);
+    color: rgba(242,247,247, 0.72);
   }
 
   body section:not(.paper) .highlight {
-    background: #1F1A15;
-    border: 1.5px solid rgba(247, 241, 232, 0.14);
+    background: #0D1414;
+    border: 1.5px solid rgba(242,247,247, 0.14);
   }
   body section:not(.paper) .highlight .sub {
-    color: rgba(247, 241, 232, 0.72);
+    color: rgba(242,247,247, 0.72);
   }
 
   body section:not(.paper) .diag-bars .panel {
-    background: #1F1A15;
-    border-color: rgba(247, 241, 232, 0.10);
+    background: #0D1414;
+    border-color: rgba(242,247,247, 0.10);
   }
   body section:not(.paper) .diag-bars .panel.loser {
-    border-color: rgba(193, 59, 26, 0.3);
+    border-color: rgba(96,114,114, 0.3);
   }
   body section:not(.paper) .diag-bars .panel .foot {
-    color: #FF6A3D;
+    color: #50DCDC;
   }
   body section:not(.paper) .diag-bars .panel.loser .foot {
-    color: #C13B1A;
+    color: #607272;
   }
 
   body section:not(.paper) .quote-inset {
-    background: #1F1A15;
-    border-left-color: #EE4B1A;
+    background: #0D1414;
+    border-left-color: #0F6666;
   }
   body section:not(.paper) .qi-body {
-    color: #F7F1E8;
+    color: #FFFFFF;
   }
 
   body section:not(.paper) .mock {
-    background: #1F1A15;
-    border-color: rgba(247, 241, 232, 0.16);
+    background: #0D1414;
+    border-color: rgba(242,247,247, 0.16);
   }
   body section:not(.paper) .mock-head {
-    color: rgba(247, 241, 232, 0.45);
-    border-bottom-color: rgba(247, 241, 232, 0.14);
+    color: rgba(242,247,247, 0.45);
+    border-bottom-color: rgba(242,247,247, 0.14);
   }
   body section:not(.paper) .mock-field {
-    background: #14110E;
-    border-color: rgba(247, 241, 232, 0.16);
-    color: #F7F1E8;
+    background: #000000;
+    border-color: rgba(242,247,247, 0.16);
+    color: #FFFFFF;
   }
 
-  /* ═══ Cover Ink surface — heavier than body Ink: adds the Ember corner halo ═══ */
+  /* ═══ Cover dark surface — a third background variant, heavier than body dark ═══
+     The cover carries more light than an interior slide so the first frame of the
+     carousel has more presence in a feed. Every stop stays inside the 5-10% band the
+     brand allows; the extra weight comes from a third glow and wider falloff, not from
+     turning the opacity up until the background stops being black. */
   section.cover-ink { position: relative; }
   section.cover-ink::before {
     content: ""; position: absolute; inset: 0; pointer-events: none;
     background:
-      radial-gradient(60% 42% at 100% 0%, rgba(238,75,26,0.16), transparent 60%),
-      radial-gradient(50% 40% at 0% 100%, rgba(238,75,26,0.08), transparent 65%);
+      radial-gradient(70% 50% at 100% 0%, rgba(80,220,220,0.10), transparent 62%),
+      radial-gradient(60% 46% at 0% 100%, rgba(77,225,243,0.07), transparent 66%),
+      radial-gradient(90% 60% at 50% 55%, rgba(80,220,220,0.05), transparent 70%);
   }
   section.cover-ink > * { position: relative; z-index: 1; }
   /* …except the ghost numeral, which must stay out of flow. "section.cover-ink > *"
@@ -396,7 +428,7 @@ export const carouselExtraCss = String.raw`
     background: var(--ms-panel); border: 1.5px solid var(--ms-line);
     border-radius: 20px;
     /* Tinted to the canvas, never pure black — see the shadow note in DESIGN.md. */
-    box-shadow: 0 16px 40px rgba(28, 10, 5, 0.10); }
+    box-shadow: 0 16px 40px rgba(0,0,0, 0.10); }
   /* justify-content:center on .cm would push a short fragment's children apart once
      .cm-base makes it a real box; keep the content stacked from the top. */
   .diag-wrap > .cm.cm-base,
@@ -432,7 +464,7 @@ export const carouselExtraCss = String.raw`
     margin-top: 32px;
     /* The cover CTA is the one instruction on the slide — it carries the accent,
        not the muted body tint the inner slides use. */
-    color: #FF6A3D;
+    color: #50DCDC;
     font-weight: 600;
     letter-spacing: 0.12em;
     text-transform: uppercase;
@@ -440,145 +472,145 @@ export const carouselExtraCss = String.raw`
     align-items: center;
     gap: 12px;
   }
-  /* Ember rule under the CTA so it reads as a control, not stray copy. */
+  /* Accent rule under the CTA so it reads as a control, not stray copy. */
   section.cover-ink .geser::before {
     content: "";
     width: 56px; height: 2px;
-    background: #FF6A3D;
+    background: #50DCDC;
     border-radius: 1px;
   }
 
   /* Cover anchor — ID badge (NOT .badge; that is the step-number badge) */
   .cover-badge { position: relative; width: 560px; padding: 48px 44px 44px; border-radius: 26px;
-    background: #1F1A15; border: 1.5px solid #2B241D; transform: rotate(-4deg);
+    background: #0D1414; border: 1.5px solid #162020; transform: rotate(-4deg);
     box-shadow: 0 40px 90px rgba(0,0,0,0.55); }
   .cover-badge .hole { position: absolute; top: 18px; left: 50%; transform: translateX(-50%);
-    width: 120px; height: 16px; border-radius: 8px; background: #14110E; border: 1.5px solid #2B241D; }
+    width: 120px; height: 16px; border-radius: 8px; background: #000000; border: 1.5px solid #162020; }
   .cover-badge .brow { display: flex; align-items: center; gap: 12px; margin-top: 20px;
-    font-family: 'JetBrains Mono'; font-size: 22px; color: rgba(247,241,232,0.45); letter-spacing: 0.08em; }
+    font-family: 'JetBrains Mono'; font-size: 22px; color: rgba(242,247,247,0.45); letter-spacing: 0.08em; }
   .cover-badge .role { font-family: 'Sora'; font-weight: 800; font-size: 72px; line-height: 1;
-    color: #F7F1E8; margin-top: 22px; }
-  .cover-badge .sub { font-family: 'JetBrains Mono'; font-size: 24px; color: rgba(247,241,232,0.45); margin-top: 14px; }
+    color: #FFFFFF; margin-top: 22px; }
+  .cover-badge .sub { font-family: 'JetBrains Mono'; font-size: 24px; color: rgba(242,247,247,0.45); margin-top: 14px; }
   .cover-badge .cover-strike { position: absolute; left: -10px; right: -10px; top: 56%; height: 12px;
-    border-radius: 6px; background: #FF6A3D; transform: rotate(-9deg); box-shadow: 0 8px 30px rgba(255,106,61,0.5); }
+    border-radius: 6px; background: #50DCDC; transform: rotate(-9deg); box-shadow: 0 8px 30px rgba(80,220,220,0.5); }
 
   /* Cover anchor — NOC status grid */
   .cover-noc { width: 100%; max-width: 840px; }
   .cover-noc .grid { display: grid; gap: 14px; }
   .cover-noc .node { aspect-ratio: 1; border-radius: 14px; display: flex; align-items: center; justify-content: center; }
-  .cover-noc .node.down { background: rgba(193,59,26,0.16); border: 1.5px solid #C13B1A; box-shadow: inset 0 0 24px rgba(193,59,26,0.25); }
-  .cover-noc .node.up { background: rgba(78,158,92,0.14); border: 1.5px solid #4E9E5C; box-shadow: inset 0 0 24px rgba(78,158,92,0.20); }
+  .cover-noc .node.down { background: rgba(96,114,114,0.16); border: 1.5px solid #607272; box-shadow: inset 0 0 24px rgba(96,114,114,0.25); }
+  .cover-noc .node.up { background: rgba(31,140,110,0.14); border: 1.5px solid #16705A; box-shadow: inset 0 0 24px rgba(31,140,110,0.20); }
   .cover-noc .banner { margin-top: 28px; display: flex; align-items: center; justify-content: center; gap: 14px;
-    font-family: 'JetBrains Mono'; font-size: 38px; font-weight: 600; letter-spacing: 0.08em; color: #FF5A4D; }
+    font-family: 'JetBrains Mono'; font-size: 38px; font-weight: 600; letter-spacing: 0.08em; color: #8FA5A5; }
   .cover-noc .node svg { display: block; }
 
   /* Cover anchor — Norman door (pull handle contradicts the label) */
   .cover-door { position: relative; width: 340px; height: 460px; border-radius: 16px;
-    background: #1F1A15; border: 1.5px solid #2B241D; display: flex; align-items: center; justify-content: flex-end;
+    background: #0D1414; border: 1.5px solid #162020; display: flex; align-items: center; justify-content: flex-end;
     padding-right: 30px; box-shadow: 0 40px 90px rgba(0,0,0,0.55); }
   .cover-door .label { position: absolute; top: 34px; left: 0; right: 0; text-align: center;
-    font-family: 'JetBrains Mono'; font-size: 34px; font-weight: 600; letter-spacing: 0.22em; color: #FF6A3D; }
-  .cover-door .handle { width: 26px; height: 200px; border-radius: 13px; background: #F7F1E8; box-shadow: 0 8px 24px rgba(0,0,0,0.4); }
+    font-family: 'JetBrains Mono'; font-size: 34px; font-weight: 600; letter-spacing: 0.22em; color: #50DCDC; }
+  .cover-door .handle { width: 26px; height: 200px; border-radius: 13px; background: #FFFFFF; box-shadow: 0 8px 24px rgba(0,0,0,0.4); }
   .cover-door .hand { position: absolute; right: -6px; top: 50%; transform: translateY(-50%); }
   .cover-door .hand svg { display: block; }
 
   /* ═══ v1.0 Stage-B mockups — browser · quote · datatable · commandlist · timeline ═══ */
 
   /* Browser window */
-  .browser { width: 100%; border: 1.5px solid #1C0A05; border-radius: 24px; overflow: hidden;
-    box-shadow: 0 24px 60px rgba(28,10,5,0.10); background: #FFFDF9; }
-  .b-chrome { background: #FAF4EA; border-bottom: 1.5px solid rgba(28,10,5,0.14);
+  .browser { width: 100%; border: 1.5px solid #000000; border-radius: 24px; overflow: hidden;
+    box-shadow: 0 24px 60px rgba(0,0,0,0.10); background: #FFFFFF; }
+  .b-chrome { background: #F2F7F7; border-bottom: 1.5px solid rgba(0,0,0,0.14);
     padding: 20px 24px; display: flex; align-items: center; gap: 20px; }
   .b-dots { display: flex; gap: 8px; }
   .b-dots i { width: 14px; height: 14px; border-radius: 50%; display: block; }
-  .b-dots .r { background: #FF5F56; } .b-dots .y { background: #FFBD2E; } .b-dots .g { background: #27C93F; }
-  .b-url { flex: 1; background: #FBF6EF; border: 1px solid rgba(28,10,5,0.14); border-radius: 999px;
-    padding: 10px 24px; font-family: 'JetBrains Mono'; font-size: 20px; color: #6E4B3E; }
+  .b-dots .r { background: #1F5C5C; } .b-dots .y { background: #2E8F8F; } .b-dots .g { background: #50DCDC; }
+  .b-url { flex: 1; background: #F2F7F7; border: 1px solid rgba(0,0,0,0.14); border-radius: 999px;
+    padding: 10px 24px; font-family: 'JetBrains Mono'; font-size: 20px; color: #4A5C5C; }
   .b-main { padding: 32px; display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
-  .b-card { border: 1.5px solid rgba(28,10,5,0.14); border-radius: 16px; min-height: 150px;
-    background: #FBF6EF; display: flex; flex-direction: column; justify-content: flex-end; padding: 20px; }
-  .b-card .t { font-family: 'Sora'; font-weight: 700; font-size: 40px; color: #1C0A05; line-height: 1.1; }
-  .b-card .s { font-family: 'JetBrains Mono'; font-size: 20px; color: #6E4B3E; margin-top: 4px; }
+  .b-card { border: 1.5px solid rgba(0,0,0,0.14); border-radius: 16px; min-height: 150px;
+    background: #F2F7F7; display: flex; flex-direction: column; justify-content: flex-end; padding: 20px; }
+  .b-card .t { font-family: 'Sora'; font-weight: 700; font-size: 40px; color: #000000; line-height: 1.1; }
+  .b-card .s { font-family: 'JetBrains Mono'; font-size: 20px; color: #4A5C5C; margin-top: 4px; }
 
   /* Quote inset (EB Garamond) */
-  .quote-inset { width: 100%; border-left: 6px solid #EE4B1A; background: #EDE7DA;
+  .quote-inset { width: 100%; border-left: 6px solid #0F6666; background: #E4E9E9;
     border-radius: 4px; padding: 40px 48px; }
   .qi-body { font-family: 'EB Garamond', Georgia, serif; font-style: italic; font-weight: 500;
-    font-size: 48px; line-height: 1.35; color: #1C0A05; }
-  .qi-author { font-family: 'JetBrains Mono'; font-size: 24px; color: #EE4B1A; margin-top: 24px;
+    font-size: 48px; line-height: 1.35; color: #000000; }
+  .qi-author { font-family: 'JetBrains Mono'; font-size: 24px; color: #0F6666; margin-top: 24px;
     letter-spacing: 0.08em; text-transform: uppercase; }
 
   /* Data table ✗/✓ */
-  .dtable { width: 100%; border-top: 1.5px solid #1C0A05; }
+  .dtable { width: 100%; border-top: 1.5px solid #000000; }
   .dt-hr { display: grid; grid-template-columns: 1fr 1fr; gap: 32px; font-family: 'JetBrains Mono';
     font-size: 24px; letter-spacing: 0.1em; text-transform: uppercase; padding: 20px 0; }
-  .dt-hr .no { color: #C13B1A; } .dt-hr .ok { color: #4E9E5C; }
+  .dt-hr .no { color: #607272; } .dt-hr .ok { color: #16705A; }
   .dt-row { display: grid; grid-template-columns: 1fr 1fr; gap: 32px;
-    border-top: 1px solid rgba(28,10,5,0.10); padding: 26px 0; }
-  .dt-row .c { font-family: 'Inter'; font-size: 28px; line-height: 1.35; color: #3D2419; }
-  .dt-row .c.b { color: #1C0A05; font-weight: 600; }
+    border-top: 1px solid rgba(0,0,0,0.10); padding: 26px 0; }
+  .dt-row .c { font-family: 'Inter'; font-size: 28px; line-height: 1.35; color: #223131; }
+  .dt-row .c.b { color: #000000; font-weight: 600; }
 
   /* Command list */
   .clist { width: 100%; display: flex; flex-direction: column; }
   .clist .row { display: flex; align-items: baseline; gap: 32px; padding: 24px 0;
-    border-top: 1.5px solid rgba(28,10,5,0.10); }
+    border-top: 1.5px solid rgba(0,0,0,0.10); }
   .clist .row:first-child { border-top: none; }
-  .clist .cmd { font-family: 'JetBrains Mono'; font-size: 34px; color: #EE4B1A; min-width: 280px; }
-  .clist .desc { font-family: 'Inter'; font-size: 28px; color: #3D2419; }
+  .clist .cmd { font-family: 'JetBrains Mono'; font-size: 34px; color: #0F6666; min-width: 280px; }
+  .clist .desc { font-family: 'Inter'; font-size: 28px; color: #223131; }
 
   /* Timeline (then / now) */
   .timeline { width: 100%; display: grid; grid-template-columns: 1fr 1fr; gap: 24px; }
   .tl-card { border-radius: 20px; padding: 36px 32px; }
-  .tl-card.old { background: #EDE7DA; }
-  .tl-card.new { background: #FBE9D9; border: 2px solid #EE4B1A; }
+  .tl-card.old { background: #E4E9E9; }
+  .tl-card.new { background: #E2F4F4; border: 2px solid #0F6666; }
   .tl-card .d { font-family: 'JetBrains Mono'; font-size: 22px; letter-spacing: 0.12em;
-    text-transform: uppercase; color: #6E4B3E; }
-  .tl-card.new .d { color: #EE4B1A; }
-  .tl-card .h { font-family: 'Sora'; font-weight: 700; font-size: 36px; color: #1C0A05; margin-top: 14px; line-height: 1.15; }
-  .tl-card .t { font-family: 'Inter'; font-size: 26px; color: #3D2419; margin-top: 12px; line-height: 1.4; }
+    text-transform: uppercase; color: #4A5C5C; }
+  .tl-card.new .d { color: #0F6666; }
+  .tl-card .h { font-family: 'Sora'; font-weight: 700; font-size: 36px; color: #000000; margin-top: 14px; line-height: 1.15; }
+  .tl-card .t { font-family: 'Inter'; font-size: 26px; color: #223131; margin-top: 12px; line-height: 1.4; }
 
   /* ═══ v1.0 TASK-1 mockups — promptcard · foldertree · commandpalette · database · gitbranch ═══ */
 
   /* Prompt card — copy-paste AI prompt, 2px ember border + corner label */
-  .prompt { position: relative; border: 2px solid #EE4B1A; border-radius: 20px;
-    padding: 44px 40px 40px; background: #FFFDF9; }
-  .prompt .lbl { position: absolute; top: -16px; left: 32px; background: #FBF6EF; padding: 0 14px;
+  .prompt { position: relative; border: 2px solid #0F6666; border-radius: 20px;
+    padding: 44px 40px 40px; background: #FFFFFF; }
+  .prompt .lbl { position: absolute; top: -16px; left: 32px; background: #F2F7F7; padding: 0 14px;
     font-family: 'JetBrains Mono'; font-size: 20px; letter-spacing: 0.18em;
-    text-transform: uppercase; color: #EE4B1A; }
+    text-transform: uppercase; color: #0F6666; }
   .prompt pre { font-family: 'JetBrains Mono'; font-size: 30px; line-height: 1.55;
-    color: #1C0A05; white-space: pre-wrap; }
+    color: #000000; white-space: pre-wrap; }
 
-  /* Folder tree — mono directory listing, active row Ember */
-  .tree { width: 100%; background: #FFFDF9; border: 1.5px solid rgba(28,10,5,0.14);
+  /* Folder tree — mono directory listing, active row in the brand accent */
+  .tree { width: 100%; background: #FFFFFF; border: 1.5px solid rgba(0,0,0,0.14);
     border-radius: 20px; padding: 40px 44px; font-family: 'JetBrains Mono'; font-size: 30px;
-    line-height: 1.7; color: #3D2419; white-space: pre-wrap; }
-  .tree .on { color: #EE4B1A; font-weight: 600; }
+    line-height: 1.7; color: #223131; white-space: pre-wrap; }
+  .tree .on { color: #0F6666; font-weight: 600; }
 
   /* Command palette — Cmd+K menu on Ink surface */
-  .cmdp { width: 100%; background: #1F1A15; border: 1.5px solid #2B241D; border-radius: 20px;
+  .cmdp { width: 100%; background: #0D1414; border: 1.5px solid #162020; border-radius: 20px;
     overflow: hidden; box-shadow: 0 30px 70px rgba(0,0,0,0.4); }
-  .cmdp .search { padding: 28px 32px; border-bottom: 1px solid #2B241D;
+  .cmdp .search { padding: 28px 32px; border-bottom: 1px solid #162020;
     display: flex; align-items: center; gap: 16px; }
-  .cmdp .search .car { color: #FF6A3D; font-family: 'JetBrains Mono'; font-size: 30px; }
-  .cmdp .search .q { font-family: 'JetBrains Mono'; font-size: 30px; color: #F7F1E8; }
+  .cmdp .search .car { color: #50DCDC; font-family: 'JetBrains Mono'; font-size: 30px; }
+  .cmdp .search .q { font-family: 'JetBrains Mono'; font-size: 30px; color: #FFFFFF; }
   .cmdp .row { padding: 22px 32px; display: flex; align-items: center; gap: 20px;
-    font-family: 'JetBrains Mono'; font-size: 28px; color: rgba(247,241,232,0.72); }
-  .cmdp .row.on { background: #2B241D; color: #F7F1E8; }
+    font-family: 'JetBrains Mono'; font-size: 28px; color: rgba(242,247,247,0.72); }
+  .cmdp .row.on { background: #162020; color: #FFFFFF; }
   .cmdp .row svg { flex: none; }
-  .cmdp .row .k { margin-left: auto; font-size: 20px; color: rgba(247,241,232,0.45); }
+  .cmdp .row .k { margin-left: auto; font-size: 20px; color: rgba(242,247,247,0.45); }
 
   /* Database — two related tables + relation glyph */
   .db { width: 100%; display: flex; align-items: center; justify-content: center;
     gap: 48px; flex-wrap: wrap; }
-  .db .table { border: 1.5px solid #1C0A05; border-radius: 16px; overflow: hidden;
-    min-width: 300px; background: #FFFDF9; }
-  .db .table .th { background: #14110E; color: #F7F1E8; font-family: 'JetBrains Mono';
+  .db .table { border: 1.5px solid #000000; border-radius: 16px; overflow: hidden;
+    min-width: 300px; background: #FFFFFF; }
+  .db .table .th { background: #000000; color: #FFFFFF; font-family: 'JetBrains Mono';
     font-size: 26px; padding: 16px 24px; display: flex; align-items: center; gap: 12px; }
   .db .table .tr { padding: 14px 24px; font-family: 'JetBrains Mono'; font-size: 24px;
-    color: #3D2419; border-top: 1px solid rgba(28,10,5,0.10);
+    color: #223131; border-top: 1px solid rgba(0,0,0,0.10);
     display: flex; justify-content: space-between; gap: 24px; }
-  .db .table .tr .ty { color: #A48C7E; }
-  .db .rel { font-family: 'JetBrains Mono'; font-size: 28px; color: #EE4B1A; }
+  .db .table .tr .ty { color: #7E9494; }
+  .db .rel { font-family: 'JetBrains Mono'; font-size: 28px; color: #0F6666; }
 
   /* Git branch — fixed 2-branch SVG diagram */
   .git { width: 100%; position: relative; padding: 40px 20px; }
@@ -633,11 +665,11 @@ export const carouselExtraCss = String.raw`
 
   /* Screenshot evidence — uploaded real evidence image or pending placeholder */
   .diag-screenshot { width: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center; }
-  .diag-screenshot img { max-width: 100%; max-height: 480px; width: auto; height: auto; border-radius: 16px; border: 1.5px solid rgba(28,10,5,0.18); box-shadow: 0 16px 40px rgba(0,0,0,0.12); object-fit: contain; }
-  .diag-screenshot-placeholder { width: 100%; padding: 36px 32px; border: 2px dashed #EE4B1A; border-radius: 20px; background: rgba(238,75,26,0.04); display: flex; flex-direction: column; gap: 14px; text-align: left; }
-  .diag-screenshot-badge { font-family: 'JetBrains Mono'; font-weight: 700; font-size: 22px; color: #EE4B1A; letter-spacing: 0.08em; text-transform: uppercase; }
-  .diag-screenshot-source { font-size: 26px; line-height: 1.4; color: #1C0A05; font-weight: 600; }
-  .diag-screenshot-source span { color: #EE4B1A; }
-  .diag-screenshot-brief-item { font-size: 22px; line-height: 1.4; color: #524036; }
-  .diag-screenshot-brief-item strong { color: #1C0A05; }
+  .diag-screenshot img { max-width: 100%; max-height: 480px; width: auto; height: auto; border-radius: 16px; border: 1.5px solid rgba(0,0,0,0.18); box-shadow: 0 16px 40px rgba(0,0,0,0.12); object-fit: contain; }
+  .diag-screenshot-placeholder { width: 100%; padding: 36px 32px; border: 2px dashed #0F6666; border-radius: 20px; background: rgba(80,220,220,0.04); display: flex; flex-direction: column; gap: 14px; text-align: left; }
+  .diag-screenshot-badge { font-family: 'JetBrains Mono'; font-weight: 700; font-size: 22px; color: #0F6666; letter-spacing: 0.08em; text-transform: uppercase; }
+  .diag-screenshot-source { font-size: 26px; line-height: 1.4; color: #000000; font-weight: 600; }
+  .diag-screenshot-source span { color: #0F6666; }
+  .diag-screenshot-brief-item { font-size: 22px; line-height: 1.4; color: #8AA0A0; }
+  .diag-screenshot-brief-item strong { color: #000000; }
 `;
