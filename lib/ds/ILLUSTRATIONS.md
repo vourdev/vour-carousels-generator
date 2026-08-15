@@ -87,7 +87,7 @@ scale, position or variant field exists for it to set. A test asserts that stays
 ## Sizing
 
 Illustrations are sized by **height**, not by a square box: 108 of the 145 are landscape
-(median viewBox ratio 1.29, max 2.86). The previous `width:240px; height:240px` letterboxed
+(median viewBox ratio 1.29, max 2.86). The previous `width:500px; height:500px` letterboxed
 them — a 2.86-ratio drawing became 240×84 of art in a 240×240 slot, which is what read as
 "the illustration came out tiny". Pinning height and letting width follow the viewBox gives
 every slug the same visual weight. Measured on a point slide: `.diag-wrap` offers ~778px,

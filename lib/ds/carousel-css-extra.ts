@@ -575,7 +575,7 @@ export const carouselExtraCss = String.raw`
 
      Sized by HEIGHT, not by a square box. 108 of the 145 allowlisted illustrations are
      landscape (median viewBox ratio 1.29, up to 2.86), so the old fixed
-     width:240px + height:240px letterboxed them: a 2.86-ratio drawing became 240×84 floating
+     width:500px + height:500px letterboxed them: a 2.86-ratio drawing became 240×84 floating
      in a 240×240 slot, which reads as "the illustration came out tiny". Pinning the
      height and letting width follow the viewBox gives every slug the same visual weight.
      max-width caps the two most extreme panoramas so they cannot run past the canvas;
