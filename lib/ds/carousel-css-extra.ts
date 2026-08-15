@@ -12,6 +12,7 @@ import {
   VOUR_SLATE_FAINT,
   VOUR_TEAL,
   VOUR_TEAL_DEEP,
+  VOUR_TEAL_TEXT,
   VOUR_WHITE,
 } from "@/lib/ds/tokens";
 
@@ -149,9 +150,12 @@ export const carouselExtraCss = String.raw`
 
   /* Text + default elements coloring on the dark canvas. */
   body section:not(.paper) .counter { color: rgba(242,247,247,0.45); }
-  body section:not(.paper) .eyebrow { color: #50DCDC; }
+  /* Text accents on dark use the muted teal, not the logo teal: at 12.6:1 the logo
+     value out-shines the 9.8:1 body copy and steals the entry point. See the note on
+     VOUR_TEAL_TEXT. Chrome (borders, chips, nodes) keeps the full-strength teal. */
+  body section:not(.paper) .eyebrow { color: ${VOUR_TEAL_TEXT}; }
   body section:not(.paper) h1 { color: #FFFFFF; }
-  body section:not(.paper) h1 .a { color: #50DCDC; }
+  body section:not(.paper) h1 .a { color: ${VOUR_TEAL_TEXT}; }
   body section:not(.paper) .lede,
   body section:not(.paper) .body-text { color: rgba(242,247,247,0.72); }
   body section:not(.paper) .geser { color: rgba(242,247,247,0.45); }

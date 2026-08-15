@@ -28,6 +28,22 @@ export const VOUR_TEAL = "#50DCDC";
 export const VOUR_TEAL_BRIGHT = "#4DE1F3";
 
 /**
+ * Accent used for TEXT on dark surfaces (headline accent word, eyebrow).
+ *
+ * VOUR_TEAL is right for chrome — borders, chips, nodes, the illustration accent — but
+ * wrong for copy. Measured on logo black: the headline is 21:1, body text is 9.8:1
+ * (72% white), and VOUR_TEAL is 12.6:1. That makes the accent word BRIGHTER than the
+ * body it is supposed to serve — 1.29x — so the eye lands on the accent instead of on
+ * the sentence. Under the previous palette the same relationship was 0.76x: the accent
+ * was dimmer than the body and read as a highlight inside the headline, not as a rival
+ * to it.
+ *
+ * #3BB3B3 is 8.3:1 on black, which restores that ordering at 0.84x while staying well
+ * above AA and unmistakably the same hue as the logo.
+ */
+export const VOUR_TEAL_TEXT = "#3BB3B3";
+
+/**
  * Accent on LIGHT surfaces.
  *
  * The logo teals are far too light to sit on white: #50DCDC is 1.7:1 there. This is

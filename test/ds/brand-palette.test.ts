@@ -12,6 +12,7 @@ import {
   VOUR_TEAL,
   VOUR_TEAL_BRIGHT,
   VOUR_TEAL_DEEP,
+  VOUR_TEAL_TEXT,
   VOUR_WHITE,
   VOUR_TONES,
 } from "@/lib/ds/tokens";
@@ -198,5 +199,45 @@ describe("emoji cannot smuggle colour onto a slide", () => {
     });
     expect(html).not.toMatch(/[\u{1F300}-\u{1FAFF}\u{2600}-\u{27BF}]/u);
     expect(html).toContain("Data korup");
+  });
+});
+
+describe("accent never out-shouts the copy it serves", () => {
+  // Measured against the surface each element actually sits on. The failure this
+  // guards is not a contrast failure — every value here passes AA either way. It is a
+  // HIERARCHY failure: an accent brighter than the body text moves the reader's entry
+  // point off the sentence and onto the highlighted word.
+  const BODY_ON_DARK = "#AEB2B2"; // --ms-fg-muted, 72% mist over black, resolved
+  const HEADLINE_ON_DARK = VOUR_WHITE;
+
+  it("keeps the dark-surface text accent dimmer than the body copy", () => {
+    const accent = contrast(VOUR_TEAL_TEXT, VOUR_BLACK);
+    const body = contrast(BODY_ON_DARK, VOUR_BLACK);
+    expect(accent).toBeLessThan(body);
+    // and comfortably under the headline, which is the real primary
+    expect(accent).toBeLessThan(contrast(HEADLINE_ON_DARK, VOUR_BLACK));
+  });
+
+  it("still clears AA for the accent word at body size", () => {
+    expect(contrast(VOUR_TEAL_TEXT, VOUR_BLACK)).toBeGreaterThanOrEqual(4.5);
+    expect(contrast(VOUR_TEAL_TEXT, VOUR_CHARCOAL)).toBeGreaterThanOrEqual(4.5);
+  });
+
+  it("documents why the logo teal itself cannot be the text accent on dark", () => {
+    // If someone restores VOUR_TEAL here, this is the number that says why not.
+    expect(contrast(VOUR_TEAL, VOUR_BLACK)).toBeGreaterThan(contrast(BODY_ON_DARK, VOUR_BLACK));
+  });
+
+  it("keeps the light-surface ordering headline > body > accent", () => {
+    const headline = contrast(VOUR_BLACK, VOUR_MIST);
+    const body = contrast("#223131", VOUR_MIST);
+    const accent = contrast(VOUR_TEAL_DEEP, VOUR_MIST);
+    expect(headline).toBeGreaterThan(body);
+    expect(body).toBeGreaterThan(accent);
+  });
+
+  it("leaves the full-strength logo teal in use for chrome", () => {
+    // Dimming the accent must not quietly drain the brand out of the deck.
+    expect(CSS).toContain(VOUR_TEAL);
   });
 });
