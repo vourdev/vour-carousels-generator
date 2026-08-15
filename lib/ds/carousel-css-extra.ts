@@ -573,39 +573,50 @@ export const carouselExtraCss = String.raw`
 
   /* Illustration — unDraw SVG for abstract concepts / analogies.
 
-     Sized by HEIGHT, not by a square box. 108 of the 145 allowlisted illustrations are
-     landscape (median viewBox ratio 1.29, up to 2.86), so the old fixed
+     Sized by HEIGHT, not by a square box. 123 of the 145 allowlisted illustrations are
+     landscape (median viewBox ratio 1.29, up to 2.86), so a fixed
      width:500px + height:500px letterboxed them: a 2.86-ratio drawing became 240×84 floating
      in a 240×240 slot, which reads as "the illustration came out tiny". Pinning the
      height and letting width follow the viewBox gives every slug the same visual weight.
-     max-width caps the two most extreme panoramas so they cannot run past the canvas;
-     that is the only case where height ends up below the nominal value. */
-  .diag-illustration { width: 100%; display: flex; flex-direction: column;
+
+     The height is a CEILING, not a fixed value. align-self:stretch hands
+     .diag-illustration the full height of .diag-wrap, which flex has already made
+     definite; the group then takes what the caption leaves and max-height:100% clamps
+     the drawing to it. A fixed height cannot work here because the space a point slide
+     leaves swings with the headline: measured on the real 1080×1350 canvas, .diag-wrap
+     is 920×733 under a two-line headline but only 920×459 under a four-line one. The
+     previous fixed 440px looked right in the roomy case and, in the tight one, pushed a
+     626px block out of a 459px well — overlapping the body text above and running 4px
+     off the bottom of the canvas. */
+  .diag-illustration { width: 100%; align-self: stretch; min-height: 0;
+    display: flex; flex-direction: column;
     align-items: center; justify-content: center; gap: 16px; padding: 16px 0; }
+  /* The caption keeps its natural height; the illustration is what gives way. */
+  .diag-illustration > .catatan { flex: none; width: 100%; }
 
   /* One layout for 1 and 2 illustrations — the count only changes the size class, so
      the single and pair cases cannot drift apart. justify-content:center (NOT
      space-between) keeps a pair together instead of shoving each to an edge. */
   .illustration-group { display: flex; flex-direction: row;
     align-items: center; justify-content: center; gap: 28px; flex-wrap: nowrap;
-    width: 100%; }
+    width: 100%; flex: 1 1 auto; min-height: 0; }
   .illustration-group .illus-item { display: flex; flex-direction: column;
-    align-items: center; gap: 10px; flex-shrink: 0; min-width: 0; }
+    align-items: center; justify-content: center; gap: 10px;
+    flex-shrink: 0; min-width: 0; height: 100%; min-height: 0; }
   .illustration-group .illus-item svg { display: block; flex-shrink: 0;
-    width: auto; }
-  /* Heights are tuned against the free space a point slide actually leaves, measured
-     rather than guessed: .diag-wrap is 920x778 on a two-line headline and 920x555 on a
-     four-line one, and illustration + 16px gap + caption must fit inside the smaller of
-     those. 440px is the practical ceiling for a single — a literal doubling to 680px
-     puts the block at 794px and overflows even the roomy case.
+    width: auto; max-height: 100%; }
+  /* max-width caps the panoramas (up to 2.86:1) so they cannot run past the 920px
+     content column (1080 canvas − 80px padding per side).
 
-     max-width caps the panoramas (up to 2.86:1) so they cannot run past the 920px
-     content column. For a pair the cap binds first: two items plus the 28px gap must
-     fit 920px, so 440px each. A landscape slug at 300px tall wants 453px, so it
-     letterboxes by ~9px inside its box — invisible, and the alternative is unequal
-     heights across the pair. */
-  .illustration-group.is-single .illus-item svg { height: 440px; max-width: 860px; }
-  .illustration-group.is-pair   .illus-item svg { height: 300px; max-width: 440px; }
+     Single: 500px tall, capped at 900px wide so even a 2.86:1 panorama keeps a 20px
+     margin inside the column.
+
+     Pair: the width cap binds first — two items plus the 28px gap must fit 920px, so
+     446px each. 420px of height is what a portrait slug can use before that cap takes
+     over; a 1.29:1 slug wants 542px at that height and letterboxes down to ~346px
+     inside its box. Equal boxes across the pair are worth the letterboxing. */
+  .illustration-group.is-single .illus-item svg { height: 500px; max-width: 900px; }
+  .illustration-group.is-pair   .illus-item svg { height: 420px; max-width: 446px; }
 
   /* Screenshot evidence — uploaded real evidence image or pending placeholder */
   .diag-screenshot { width: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center; }

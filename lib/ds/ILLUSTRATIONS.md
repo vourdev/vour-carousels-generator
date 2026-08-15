@@ -86,13 +86,31 @@ scale, position or variant field exists for it to set. A test asserts that stays
 
 ## Sizing
 
-Illustrations are sized by **height**, not by a square box: 108 of the 145 are landscape
-(median viewBox ratio 1.29, max 2.86). The previous `width:500px; height:500px` letterboxed
-them — a 2.86-ratio drawing became 240×84 of art in a 240×240 slot, which is what read as
+Illustrations are sized by **height**, not by a square box: 123 of the 145 are landscape
+(median viewBox ratio 1.29, max 2.86). A `width:500px; height:500px` box letterboxes them —
+a 2.86-ratio drawing becomes 240×84 of art in a 240×240 slot, which is what read as
 "the illustration came out tiny". Pinning height and letting width follow the viewBox gives
-every slug the same visual weight. Measured on a point slide: `.diag-wrap` offers ~778px,
-a single illustration takes 440px and a pair 300px each, leaving 220–320px of slack for
-longer headlines.
+every slug the same visual weight.
+
+The height is a **ceiling, not a fixed value**. The slide is 1080×1350 with `padding:
+96px 80px 80px`, so the content column is **920px** wide — but the vertical space left for
+a mockup swings with the headline. Measured on the real canvas at 1080×1350:
+
+| headline | `.diag-wrap` | single | pair (each) |
+| --- | --- | --- | --- |
+| 2 lines | 920×733 | 646×**500** | 446×**420** |
+| 5 lines | 920×459 | 353×273 | 446×273 |
+
+`align-self: stretch` gives `.diag-illustration` the wrap's full (flex-definite) height, the
+group takes what the caption leaves, and `max-height: 100%` clamps the drawing to it. A fixed
+height cannot satisfy both rows of that table: the previous fixed 440px looked right in the
+roomy case and, in the tight one, pushed a 626px block through a 459px well — overlapping the
+body text above it and running 4px past the bottom of the canvas.
+
+Width caps: single 900px (a 2.86:1 panorama then keeps a 20px margin inside the column), pair
+446px each, since two items plus the 28px gap must fit 920px. For a pair the width cap
+usually binds before the height does — a 1.29:1 slug letterboxes to ~346px inside its 420px
+box. Equal boxes across the pair are worth that.
 
 The `node:fs` import in `illustrations.server.ts` is the guard: Next.js fails the build if a
 client component reaches it. `render-slide.ts` → `assemble.ts` are therefore server-only, and

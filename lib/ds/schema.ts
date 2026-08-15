@@ -212,8 +212,9 @@ const mockupGitBranch = z.object({
  * spacing and surface variant are resolved by the renderer — there is deliberately no
  * field to override any of them, because a model-supplied colour cannot be re-scoped
  * per surface the way a CSS token can (see the surface-token note in
- * carousel-css-extra.ts). Capped at 2: a third 180px illustration plus gaps overflows
- * the 1080px canvas.
+ * carousel-css-extra.ts). Capped at 2: the content column is 920px wide, so two items
+ * plus the 28px gap already fill it at 446px each — a third would have to shrink below
+ * the width where an unDraw drawing stays readable.
  */
 const mockupIllustration = z.object({
   type: z.literal("illustration"),
