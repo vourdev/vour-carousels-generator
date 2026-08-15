@@ -33,7 +33,9 @@ export function ArtifactPanel({
   children: React.ReactNode;
 }) {
   return (
-    <aside className="flex flex-col h-full min-h-0 w-full bg-card border border-hairline rounded-xl overflow-hidden">
+    // No border or radius of its own: the studio is one container now, and the split
+    // handle to the left of this panel is the only divider between the two panes.
+    <aside className="flex flex-col h-full min-h-0 w-full bg-card overflow-hidden">
       <header className="flex items-center justify-between gap-2 px-2 py-1.5 border-b border-hairline shrink-0">
         <div className="flex items-center gap-0.5 min-w-0 overflow-x-auto">
           {tabs.map((t) => (

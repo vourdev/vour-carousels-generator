@@ -9,7 +9,17 @@ const SLIDE_H = 1350;
 
 /** Renders the 1080-wide carousel scaled to the card's full width — every
     slide fully visible, no clipping. Scale = containerWidth / 1080. */
-export function PreviewFrame({ html, slideCount }: { html: string; slideCount: number }) {
+export function PreviewFrame({
+  html,
+  slideCount,
+  maxWidthClass = "max-w-[540px]",
+}: {
+  html: string;
+  slideCount: number;
+  /** Cap on the rendered slide width. Overridden where the panel is user-resizable,
+      since a fixed cap would make dragging the divider wider do nothing. */
+  maxWidthClass?: string;
+}) {
   const ref = useRef<HTMLDivElement>(null);
   const [width, setWidth] = useState(0);
   const [currentSlide, setCurrentSlide] = useState(0);
@@ -42,7 +52,7 @@ export function PreviewFrame({ html, slideCount }: { html: string; slideCount: n
   const viewportH = SLIDE_H * scale;
 
   return (
-    <Card className="w-full max-w-[540px]">
+    <Card className={`w-full ${maxWidthClass}`}>
       <CardContent className="p-4 flex flex-col gap-4">
         
         {/* Slide Frame (Viewport height of 1 slide) */}

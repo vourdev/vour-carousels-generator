@@ -26,6 +26,7 @@ export function Composer({
   topics,
   onPickTopic,
   hint,
+  footer,
 }: {
   value: string;
   onChange: (v: string) => void;
@@ -39,6 +40,8 @@ export function Composer({
   topics: Topic[];
   onPickTopic: (t: Topic) => void;
   hint?: React.ReactNode;
+  /** Bottom-left slot under the input — where the model selector lives. */
+  footer?: React.ReactNode;
 }) {
   const [attachOpen, setAttachOpen] = useState(false);
   const [topicSearch, setTopicSearch] = useState("");
@@ -159,9 +162,14 @@ export function Composer({
           </div>
         </div>
 
-        <p className="px-1 text-[10px] text-muted-foreground/70 text-center">
-          ↵ kirim · Shift+↵ baris baru · ↑↓ riwayat prompt
-        </p>
+        {/* One footer line, not two stacked bars: model on the left, key hints on the
+            right. On narrow widths the hints drop out before the model selector does. */}
+        <div className="flex items-center justify-between gap-3 px-0.5">
+          <div className="min-w-0 flex-1">{footer}</div>
+          <p className="hidden shrink-0 text-[10px] text-muted-foreground/70 sm:block">
+            ↵ kirim · Shift+↵ baris baru · ↑↓ riwayat
+          </p>
+        </div>
 
       </div>
     </div>

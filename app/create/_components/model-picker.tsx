@@ -5,10 +5,6 @@ import { Check, ChevronDown, Search } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import type { ModelId } from "@/lib/ai/registry";
 
-const VourLogoIcon = () => (
-  <img src="/vourdev-logo.jpeg" alt="Vour" className="size-4 rounded-full object-cover shrink-0 border border-hairline" />
-);
-
 export const modelDetails: Record<string, { label: string; vendor: string; description: string }> = {
   gemini: { label: "Gemini Flash", vendor: "Google AI", description: "Model cepat & cerdas dari Google (Gratis)" },
   deepseek: { label: "DeepSeek Chat", vendor: "DeepSeek AI", description: "Reasoning & content model dari DeepSeek" },
@@ -20,22 +16,25 @@ export const modelDetails: Record<string, { label: string; vendor: string; descr
 };
 
 /**
- * Model chooser, reduced to a quiet header control.
+ * Model chooser: the line of text under the composer, the way a chat app does it.
  *
- * It used to sit inside the chat sidebar header where it competed with the session
- * status for attention. Most sessions never change the model, so it now reads as a
- * label until you click it.
+ * Text only — the label plus a one-line description, no avatar. Most sessions never
+ * change the model, so it should read as a status line and only behave like a control
+ * once you point at it. `dropUp` exists because it now sits at the bottom of the pane:
+ * a menu opening downward would fall off the viewport.
  */
 export function ModelPicker({
   models,
   model,
   onChange,
   disabled,
+  dropUp = false,
 }: {
   models: ModelId[];
   model: ModelId | "";
   onChange: (m: ModelId) => void;
   disabled?: boolean;
+  dropUp?: boolean;
 }) {
   const [open, setOpen] = useState(false);
   const [search, setSearch] = useState("");
@@ -67,24 +66,30 @@ export function ModelPicker({
   });
 
   return (
-    <div className="relative" ref={ref}>
+    <div className="relative min-w-0" ref={ref}>
       <button
         type="button"
         disabled={disabled}
         onClick={() => setOpen((o) => !o)}
         aria-haspopup="listbox"
         aria-expanded={open}
-        className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-colors disabled:opacity-50"
+        className="group flex w-full items-baseline gap-1.5 rounded-lg px-1.5 py-1 text-left text-[11px] transition-colors hover:bg-muted/50 disabled:opacity-50"
       >
-        <VourLogoIcon />
-        <span className="font-medium truncate max-w-[110px]">{info?.label || model || "Pilih model"}</span>
-        <ChevronDown className="size-3 opacity-60" />
+        <span className="shrink-0 font-medium text-foreground">
+          {info?.label || model || "Pilih model"}
+        </span>
+        <span className="truncate text-muted-foreground/80">{info?.description}</span>
+        <ChevronDown className="size-3 shrink-0 self-center text-muted-foreground/50 transition-colors group-hover:text-muted-foreground" />
       </button>
 
       {open && (
         <div
           role="listbox"
-          className="absolute right-0 top-full mt-1.5 z-50 w-72 bg-card border border-hairline rounded-xl shadow-xl p-2 animate-in fade-in slide-in-from-top-1 duration-150"
+          className={`absolute left-0 z-50 w-72 bg-card border border-hairline rounded-xl shadow-xl p-2 animate-in fade-in duration-150 ${
+            dropUp
+              ? "bottom-full mb-1.5 slide-in-from-bottom-1"
+              : "top-full mt-1.5 slide-in-from-top-1"
+          }`}
         >
           {models.length > 4 && (
             <div className="relative mb-1.5">

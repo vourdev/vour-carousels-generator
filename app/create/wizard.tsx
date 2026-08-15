@@ -28,6 +28,7 @@ import { PublishPanel, type PublishState } from "./_components/publish-panel";
 import { ScreenshotUploads } from "./_components/screenshot-uploads";
 import { ModelPicker } from "./_components/model-picker";
 import { ProgressStrip } from "./_components/progress-strip";
+import { PANEL_DEFAULT, SplitHandle } from "./_components/split-handle";
 
 const STARTERS = [
   "Kenapa index database nggak selalu bikin query cepat",
@@ -94,6 +95,13 @@ export function Wizard({
   const [draftId, setDraftId] = useState<string>(() => crypto.randomUUID());
   // Mobile shows one panel at a time (desktop keeps the 2-col layout).
   const [mobilePanel, setMobilePanel] = useState<"chat" | "canvas">("chat");
+  /**
+   * Preview pane width as a % of the studio shell, driven by the split handle.
+   * Session-local on purpose: it is a viewing preference, not part of the draft, so it
+   * is deliberately absent from both the draft payload and the database.
+   */
+  const [panelPct, setPanelPct] = useState(PANEL_DEFAULT);
+  const splitRef = useRef<HTMLDivElement>(null);
 
   const [editableTitle, setEditableTitle] = useState("");
   const [editableCaption, setEditableCaption] = useState("");
@@ -1107,8 +1115,6 @@ export function Wizard({
         <ProgressStrip step={step} />
 
         <div className="flex items-center gap-0.5 shrink-0">
-          <ModelPicker models={models} model={model} onChange={setModel} disabled={busy} />
-
           {hasArtifact && !panelOpen && (
             <Button
               variant="ghost"
@@ -1134,9 +1140,15 @@ export function Wizard({
         </div>
       </div>
 
-      <div className="flex-1 min-h-0 flex gap-3">
+      {/* One shell, two panes. The border and radius belong to this container now — the
+          panes inside it are separated by the drag handle, not by a gap between cards. */}
+      <div
+        ref={splitRef}
+        style={{ "--panel-w": `${panelPct}%` } as React.CSSProperties}
+        className="flex-1 min-h-0 flex rounded-xl border border-hairline overflow-hidden"
+      >
         <div
-          className={`flex-1 min-w-0 min-h-0 flex-col rounded-xl border border-hairline bg-card/40 overflow-hidden ${
+          className={`flex-1 min-w-0 min-h-0 flex-col bg-card/40 ${
             panelOpen ? (mobilePanel === "canvas" ? "hidden lg:flex" : "flex") : "flex"
           }`}
         >
@@ -1196,74 +1208,82 @@ export function Wizard({
                 </p>
               ) : null
             }
+            footer={
+              <ModelPicker models={models} model={model} onChange={setModel} disabled={busy} dropUp />
+            }
           />
         </div>
 
         {panelOpen && hasArtifact && (
-          <div
-            className={`min-h-0 w-full lg:w-[46%] xl:w-[540px] lg:shrink-0 ${
-              mobilePanel === "canvas" ? "flex" : "hidden lg:flex"
-            }`}
-          >
-            <ArtifactPanel
-              tabs={tabs}
-              active={activeArtifactTab}
-              onSelect={setActiveTab}
-              onClose={() => {
-                setPanelOpen(false);
-                setMobilePanel("chat");
-              }}
-              loadingJob={loadingJob}
+          <>
+            <SplitHandle containerRef={splitRef} value={panelPct} onCommit={setPanelPct} />
+            <div
+              className={`min-h-0 w-full lg:w-(--panel-w) lg:shrink-0 ${
+                mobilePanel === "canvas" ? "flex" : "hidden lg:flex"
+              }`}
             >
-              {activeArtifactTab === "brief" && (
-                <BriefEditor
-                  brief={brief}
-                  onChange={setBrief}
-                  mode={mdMode as MdMode}
-                  onModeChange={setMdMode}
-                  disabled={busy || isTyping}
-                  onPolish={handleHumanVoicePolish}
-                  polishDisabled={busy || isTyping || !brief.trim() || !model}
-                />
-              )}
+              <ArtifactPanel
+                tabs={tabs}
+                active={activeArtifactTab}
+                onSelect={setActiveTab}
+                onClose={() => {
+                  setPanelOpen(false);
+                  setMobilePanel("chat");
+                }}
+                loadingJob={loadingJob}
+              >
+                {activeArtifactTab === "brief" && (
+                  <BriefEditor
+                    brief={brief}
+                    onChange={setBrief}
+                    mode={mdMode as MdMode}
+                    onModeChange={setMdMode}
+                    disabled={busy || isTyping}
+                    onPolish={handleHumanVoicePolish}
+                    polishDisabled={busy || isTyping || !brief.trim() || !model}
+                  />
+                )}
 
-              {activeArtifactTab === "preview" && (
-                <div className="flex-1 min-h-0 overflow-y-auto p-3 flex flex-col gap-3">
-                  <div className="flex justify-center">
-                    <PreviewFrame html={html} slideCount={slideCount} />
+                {activeArtifactTab === "preview" && (
+                  <div className="flex-1 min-h-0 overflow-y-auto p-3 flex flex-col gap-3">
+                    <div className="flex justify-center">
+                      {/* Wider cap than the default 540px: the divider exists so this can
+                          actually grow when the user drags it. */}
+                      <PreviewFrame html={html} slideCount={slideCount} maxWidthClass="max-w-[720px]" />
+                    </div>
+                    {plan && <ScreenshotUploads plan={plan} onUpdate={handleUpdateScreenshot} />}
                   </div>
-                  {plan && <ScreenshotUploads plan={plan} onUpdate={handleUpdateScreenshot} />}
-                </div>
-              )}
+                )}
 
-              {activeArtifactTab === "images" && (
-                <ExportPanel
-                  images={exportedImages}
-                  pending={exportPending}
-                  expectedCount={slideCount}
-                  canDownload={!exportPending && blobs.length > 0}
-                  onDownloadAll={handleDownloadAll}
-                />
-              )}
+                {activeArtifactTab === "images" && (
+                  <ExportPanel
+                    images={exportedImages}
+                    pending={exportPending}
+                    expectedCount={slideCount}
+                    canDownload={!exportPending && blobs.length > 0}
+                    onDownloadAll={handleDownloadAll}
+                  />
+                )}
 
-              {activeArtifactTab === "publish" && (
-                <PublishPanel
-                  dueAt={dueAt}
-                  onDueAtChange={setDueAt}
-                  title={editableTitle}
-                  onTitleChange={setEditableTitle}
-                  caption={editableCaption}
-                  onCaptionChange={setEditableCaption}
-                  onCommitEdits={handleSaveEdits}
-                  config={pubConfig}
-                  state={publishState as PublishState}
-                  onPublish={handlePublish}
-                  onSaveToStock={handleSaveToStock}
-                  onReset={handleReset}
-                />
-              )}
-            </ArtifactPanel>
-          </div>
+                {activeArtifactTab === "publish" && (
+                  <PublishPanel
+                    dueAt={dueAt}
+                    onDueAtChange={setDueAt}
+                    title={editableTitle}
+                    onTitleChange={setEditableTitle}
+                    caption={editableCaption}
+                    onCaptionChange={setEditableCaption}
+                    onCommitEdits={handleSaveEdits}
+                    config={pubConfig}
+                    state={publishState as PublishState}
+                    onPublish={handlePublish}
+                    onSaveToStock={handleSaveToStock}
+                    onReset={handleReset}
+                  />
+                )}
+              </ArtifactPanel>
+            </div>
+          </>
         )}
       </div>
 
