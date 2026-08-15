@@ -9,7 +9,7 @@ import { coverDoorTemplate } from "@/lib/ds/templates/cover-door";
 import { sanitizeHookHtml } from "@/lib/ds/sanitize";
 import { scopeCss } from "@/lib/ds/scope-css";
 import { renderIcon } from "@/lib/ds/icons";
-import { renderIllustration } from "@/lib/ds/illustrations";
+import { renderIllustration } from "@/lib/ds/illustrations.server";
 import { pointTemplate } from "@/lib/ds/templates/point";
 import { outroTemplate } from "@/lib/ds/templates/outro";
 import { terminalTemplate } from "@/lib/ds/templates/terminal";

@@ -12,13 +12,12 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { assembleCarousel } from "@/lib/ds/assemble";
 import { PreviewFrame } from "@/components/preview-frame";
 import { namedBlobs, downloadNamedBlobs } from "@/lib/export/download";
 import { captureCarousel } from "@/lib/export/capture";
 import type { ModelId } from "@/lib/ai/registry";
 import type { SlidePlan } from "@/lib/ds/schema";
-import { planAction, reviseAction, reviseBriefAction, humanVoiceEditorAction, clearRevisionMemoryAction, uploadSingleImageAction, publishAction, getPublishingConfigAction } from "./actions";
+import { planAction, reviseAction, reviseBriefAction, humanVoiceEditorAction, clearRevisionMemoryAction, uploadSingleImageAction, publishAction, getPublishingConfigAction, assembleAction } from "./actions";
 import { saveExportedCarouselAction, markCarouselStatusAction, deleteCarouselAction } from "@/app/history/actions";
 import {
   expandTopicBriefAction,
@@ -706,10 +705,31 @@ export function Wizard({
     }
   }
 
-  const html = useMemo(
-    () => uploadedHtml ?? (plan ? assembleCarousel(plan) : ""),
-    [uploadedHtml, plan]
-  );
+  // The deck HTML is assembled on the server: render-slide reads ~1.5 MB of unDraw SVGs
+  // off disk, and importing it here shipped all of that to the browser. Only the finished
+  // HTML for the current plan crosses the wire now, so this is async instead of a useMemo.
+  // Keyed by the plan it was built from, so a result that arrives after the plan moved on
+  // is ignored rather than briefly shown as the current deck.
+  const [assembled, setAssembled] = useState<{ plan: SlidePlan; html: string } | null>(null);
+
+  useEffect(() => {
+    if (uploadedHtml || !plan) return;
+    let cancelled = false;
+    assembleAction(plan)
+      .then((out) => {
+        if (!cancelled) setAssembled({ plan, html: out });
+      })
+      .catch((err) => {
+        if (cancelled) return;
+        const msg = err instanceof Error ? err.message : "failed";
+        toast.error(`Gagal menyusun preview: ${summarizeError(msg)}`);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [uploadedHtml, plan]);
+
+  const html = uploadedHtml ?? (assembled?.plan === plan ? assembled.html : "");
   const slideCount = useMemo(
     () => (uploadedHtml ? countSections(uploadedHtml) : plan?.slides.length ?? 0),
     [uploadedHtml, plan]
