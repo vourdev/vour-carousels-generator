@@ -1,7 +1,7 @@
 import { describe, it, expect } from "vitest";
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
-import { ILLUSTRATION_SLUGS } from "@/lib/ds/illustrations.slugs.generated";
+import { ILLUSTRATION_SLUGS, ILLUSTRATION_VARIANTS } from "@/lib/ds/illustrations.slugs.generated";
 import { ILLUSTRATION_CATEGORIES, normalizeIllustration } from "@/lib/ds/illustrations";
 import { renderIllustration } from "@/lib/ds/illustrations.server";
 import manifest from "@/lib/ds/illustrations.manifest.json";
@@ -10,14 +10,17 @@ import { repairSlidePlan } from "@/lib/ds/repair";
 import { renderSlide } from "@/lib/ds/render-slide";
 
 describe("unDraw Illustration System", () => {
-  it("every generated slug has an SVG file on disk, recolored to the brand accent", () => {
+  it("every slug has both surface variants on disk, recolored to that surface's accent", () => {
     expect(ILLUSTRATION_SLUGS.length).toBeGreaterThan(0);
 
     const dir = join(process.cwd(), "lib", "ds", "assets", "illustrations");
+    const accent = { onLight: "#EE4B1A", onDark: "#FF6A3D" } as const;
     for (const slug of ILLUSTRATION_SLUGS) {
-      const svg = readFileSync(join(dir, `${slug}.svg`), "utf-8");
-      expect(svg).toContain("<svg");
-      expect(svg).toContain("#EE4B1A"); // Brand Ember accent recolored
+      for (const variant of ILLUSTRATION_VARIANTS) {
+        const svg = readFileSync(join(dir, `${slug}.${variant}.svg`), "utf-8");
+        expect(svg).toContain("<svg");
+        expect(svg).toContain(accent[variant]);
+      }
     }
   });
 
@@ -66,32 +69,78 @@ describe("unDraw Illustration System", () => {
   });
 
   it("renderIllustration returns valid SVG and never throws", () => {
-    const validSvg = renderIllustration("server_9eix");
+    const validSvg = renderIllustration("server_9eix", "onDark");
     expect(validSvg).toContain("<svg");
     // Guards the fs read itself: a broken asset path would still return the fallback
     // SVG and pass a bare "<svg" assertion, hiding the failure behind a valid render.
-    expect(validSvg).not.toEqual(renderIllustration("online-learning_tgmv"));
+    expect(validSvg).not.toEqual(renderIllustration("online-learning_tgmv", "onDark"));
 
-    const fallbackSvg = renderIllustration("typo_slug_123");
+    const fallbackSvg = renderIllustration("typo_slug_123", "onDark");
     expect(fallbackSvg).toContain("<svg");
-    expect(fallbackSvg).toEqual(renderIllustration("online-learning_tgmv"));
+    expect(fallbackSvg).toEqual(renderIllustration("online-learning_tgmv", "onDark"));
+  });
+
+  it("serves a differently-recolored SVG per surface variant", () => {
+    const light = renderIllustration("server_9eix", "onLight");
+    const dark = renderIllustration("server_9eix", "onDark");
+    expect(light).not.toEqual(dark);
+    // unDraw's near-black structural fills must not survive onto the Ink canvas —
+    // that is exactly what made illustrations dissolve into the background.
+    expect(light).toContain("#EE4B1A"); // Paper accent
+    expect(dark).toContain("#FF6A3D"); // Ink accent
+    for (const undrawDark of ["#090814", "#2f2e41", "#3f3d56"]) {
+      expect(dark.toLowerCase()).not.toContain(undrawDark);
+      expect(light.toLowerCase()).not.toContain(undrawDark);
+    }
+  });
+
+  it("gives the AI no control over colour, size or spacing", () => {
+    // The whole point of the two-variant split: the model picks slugs and nothing else.
+    // If a styling field ever reappears in the schema, this fails.
+    const src = readFileSync(join(process.cwd(), "lib", "ds", "schema.ts"), "utf-8");
+    const block = src.slice(
+      src.indexOf("const mockupIllustration"),
+      src.indexOf("function migrateLegacyIllustration")
+    );
+    for (const banned of ["color", "colour", "size", "scale", "width", "height", "position", "gap"]) {
+      expect(block.toLowerCase()).not.toContain(`${banned}:`);
+    }
   });
 
   it("validates mockupIllustration schema with automatic slug normalization", () => {
-    const rawMockup = {
+    const parsed = mockupSchema.safeParse({
       type: "illustration",
-      illustrationSlug: "SERVER_9EIX",
+      illustrationSlugs: ["SERVER_9EIX", " Team_85hs "],
       caption: "Server cluster analogy",
-    };
-
-    const parsed = mockupSchema.safeParse(rawMockup);
+    });
     expect(parsed.success).toBe(true);
-    if (parsed.success) {
-      expect(parsed.data.type).toBe("illustration");
-      if (parsed.data.type === "illustration") {
-        expect(parsed.data.illustrationSlug).toBe("server_9eix");
-      }
+    if (parsed.success && parsed.data.type === "illustration") {
+      expect(parsed.data.illustrationSlugs).toEqual(["server_9eix", "team_85hs"]);
     }
+  });
+
+  it("migrates the legacy illustrationSlug / illustrationSlug2 shape", () => {
+    // Decks already stored in the carousels history table still carry the old keys.
+    const parsed = mockupSchema.safeParse({
+      type: "illustration",
+      illustrationSlug: "server_9eix",
+      illustrationSlug2: "server-cluster_7ugi",
+      caption: "before / after",
+    });
+    expect(parsed.success).toBe(true);
+    if (parsed.success && parsed.data.type === "illustration") {
+      expect(parsed.data.illustrationSlugs).toEqual(["server_9eix", "server-cluster_7ugi"]);
+    }
+  });
+
+  it("caps illustrations at 2 per slide", () => {
+    const three = mockupSchema.safeParse({
+      type: "illustration",
+      illustrationSlugs: ["server_9eix", "server-cluster_7ugi", "team_85hs"],
+    });
+    expect(three.success).toBe(false);
+    const none = mockupSchema.safeParse({ type: "illustration", illustrationSlugs: [] });
+    expect(none.success).toBe(false);
   });
 
   it("repairSlidePlan passes valid illustration mockups through intact", () => {
@@ -109,7 +158,7 @@ describe("unDraw Illustration System", () => {
           body: "Bikin pencarian data jauh lebih cepat.",
           mockup: {
             type: "illustration",
-            illustrationSlug: "file-manager_ivlr",
+            illustrationSlugs: ["file-manager_ivlr"],
             caption: "Analogi daftar isi di buku",
           },
         },
@@ -124,24 +173,52 @@ describe("unDraw Illustration System", () => {
     }
   });
 
-  it("renders illustration mockup in assembleCarousel / renderSlide without errors", () => {
-    const slide = {
+  function illustrationSlide(slugs: string[], surface?: "paper" | "ink") {
+    return {
       role: "point" as const,
       counter: "03 / 08",
       eyebrow: "ANALOGI",
       headline: "Server sebagai pelayan restoran",
       accentWord: "pelayan restoran",
       body: "Menerima request dan mengembalikan response.",
+      ...(surface ? { surface } : {}),
       mockup: {
         type: "illustration" as const,
-        illustrationSlug: normalizeIllustration("server_9eix"),
+        illustrationSlugs: slugs.map(normalizeIllustration),
         caption: "Analogi pelayan",
       },
     };
+  }
 
-    const html = renderSlide(slide, 2);
+  it("renders illustration mockup in assembleCarousel / renderSlide without errors", () => {
+    const html = renderSlide(illustrationSlide(["server_9eix"]), 2);
     expect(html).toContain("diag-illustration");
+    expect(html).toContain("illustration-group is-single");
     expect(html).toContain("<svg");
     expect(html).toContain("Analogi pelayan");
+  });
+
+  it("picks the surface variant from the slide, not from the model", () => {
+    // Ink is the deck default, so an unset surface must resolve to the onDark artwork.
+    const inkDefault = renderSlide(illustrationSlide(["server_9eix"]), 2);
+    const ink = renderSlide(illustrationSlide(["server_9eix"], "ink"), 2);
+    const paper = renderSlide(illustrationSlide(["server_9eix"], "paper"), 2);
+
+    expect(inkDefault).toContain("#FF6A3D");
+    expect(ink).toContain("#FF6A3D");
+    expect(paper).toContain("#EE4B1A");
+    expect(paper).not.toContain("#FF6A3D");
+  });
+
+  it("lays two illustrations out as one centered group, never space-between", () => {
+    const html = renderSlide(illustrationSlide(["server_9eix", "server-cluster_7ugi"]), 2);
+    expect(html).toContain("illustration-group is-pair");
+    expect((html.match(/<div class="illus-item">/g) ?? []).length).toBe(2);
+
+    const css = readFileSync(join(process.cwd(), "lib", "ds", "carousel-css-extra.ts"), "utf-8");
+    const group = css.slice(css.indexOf(".illustration-group {"), css.indexOf(".illustration-group.is-pair"));
+    expect(group).toContain("justify-content: center");
+    expect(group).toContain("gap: 28px");
+    expect(group).not.toContain("space-between");
   });
 });

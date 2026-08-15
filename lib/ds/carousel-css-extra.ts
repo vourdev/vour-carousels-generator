@@ -542,20 +542,35 @@ export const carouselExtraCss = String.raw`
   .git { width: 100%; position: relative; padding: 40px 20px; }
   .git svg { width: 100%; height: 300px; display: block; }
 
-  /* Illustration — unDraw SVG for abstract concepts / analogies */
-  /* Single illustration: fixed 240×240px — not flexible so small SVGs don't render tiny */
+  /* Illustration — unDraw SVG for abstract concepts / analogies.
+
+     Sized by HEIGHT, not by a square box. 108 of the 145 allowlisted illustrations are
+     landscape (median viewBox ratio 1.29, up to 2.86), so the old fixed
+     width:240px + height:240px letterboxed them: a 2.86-ratio drawing became 240×84 floating
+     in a 240×240 slot, which reads as "the illustration came out tiny". Pinning the
+     height and letting width follow the viewBox gives every slug the same visual weight.
+     max-width caps the two most extreme panoramas so they cannot run past the canvas;
+     that is the only case where height ends up below the nominal value. */
   .diag-illustration { width: 100%; display: flex; flex-direction: column;
     align-items: center; justify-content: center; gap: 16px; padding: 16px 0; }
-  .diag-illustration > svg { width: 240px; height: 240px;
-    display: block; flex-shrink: 0; }
-  /* Pair illustration: 2 SVGs side-by-side at 180×180px, gap 24px */
-  /* justify-content:center (NOT space-between) so 2 items stay close together */
-  .diag-illustration-pair { width: 100%; display: flex; flex-direction: row;
-    align-items: center; justify-content: center; gap: 24px; padding: 16px 0; flex-wrap: nowrap; }
-  .diag-illustration-pair .illus-item { display: flex; flex-direction: column;
-    align-items: center; gap: 10px; }
-  .diag-illustration-pair .illus-item svg { width: 180px; height: 180px;
-    display: block; flex-shrink: 0; }
+
+  /* One layout for 1 and 2 illustrations — the count only changes the size class, so
+     the single and pair cases cannot drift apart. justify-content:center (NOT
+     space-between) keeps a pair together instead of shoving each to an edge. */
+  .illustration-group { display: flex; flex-direction: row;
+    align-items: center; justify-content: center; gap: 28px; flex-wrap: nowrap;
+    width: 100%; }
+  .illustration-group .illus-item { display: flex; flex-direction: column;
+    align-items: center; gap: 10px; flex-shrink: 0; min-width: 0; }
+  .illustration-group .illus-item svg { display: block; flex-shrink: 0;
+    width: auto; }
+  /* Heights are tuned against the free space a point slide actually leaves: .diag-wrap
+     measures ~778px on a two-line headline, and illustration + 16px gap + caption must
+     fit inside it with slack for a longer headline. max-width caps the panoramas (up to
+     2.86:1) so they cannot run past the 1080px canvas; a pair is capped so both items
+     plus the 28px gap stay inside it. */
+  .illustration-group.is-single .illus-item svg { height: 340px; max-width: 780px; }
+  .illustration-group.is-pair   .illus-item svg { height: 260px; max-width: 380px; }
 
   /* Screenshot evidence — uploaded real evidence image or pending placeholder */
   .diag-screenshot { width: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center; }

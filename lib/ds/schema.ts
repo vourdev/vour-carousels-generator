@@ -205,14 +205,44 @@ const mockupGitBranch = z.object({
   mergeLabel: z.string().max(12).default("merge"),
 });
 
-/** Illustration — unDraw editorial SVG for abstract concepts / analogies */
+/**
+ * Illustration — unDraw editorial SVG for abstract concepts / analogies.
+ *
+ * The model's entire vocabulary here is: which slugs, and how many. Colour, size,
+ * spacing and surface variant are resolved by the renderer — there is deliberately no
+ * field to override any of them, because a model-supplied colour cannot be re-scoped
+ * per surface the way a CSS token can (see the surface-token note in
+ * carousel-css-extra.ts). Capped at 2: a third 180px illustration plus gaps overflows
+ * the 1080px canvas.
+ */
 const mockupIllustration = z.object({
   type: z.literal("illustration"),
-  illustrationSlug: z.string().transform(normalizeIllustration),
-  /** Optional second slug for a side-by-side pair layout (180×180px each, 24px gap). */
-  illustrationSlug2: z.string().transform(normalizeIllustration).optional(),
+  illustrationSlugs: z
+    .array(z.string().transform(normalizeIllustration))
+    .min(1)
+    .max(2),
   caption: z.string().max(90).optional(),
 });
+
+/**
+ * Accept the pre-array shape ({ illustrationSlug, illustrationSlug2 }) and fold it into
+ * illustrationSlugs. Plans are persisted in the carousels history table and re-parsed on
+ * load, so dropping the old keys outright would break every deck already saved. It also
+ * absorbs a model that still emits the old field names from a stale prompt.
+ */
+function migrateLegacyIllustration(raw: unknown): unknown {
+  if (!raw || typeof raw !== "object") return raw;
+  const m = raw as Record<string, unknown>;
+  if (m.type !== "illustration" || Array.isArray(m.illustrationSlugs)) return raw;
+  const legacy = [m.illustrationSlug, m.illustrationSlug2].filter(
+    (s): s is string => typeof s === "string" && s.trim() !== ""
+  );
+  if (!legacy.length) return raw;
+  const rest: Record<string, unknown> = { ...m };
+  delete rest.illustrationSlug;
+  delete rest.illustrationSlug2;
+  return { ...rest, illustrationSlugs: legacy };
+}
 
 export const screenshotBriefSchema = z.object({
   source: z.string().max(120),
@@ -240,7 +270,7 @@ const mockupCustom = z.object({
   css: z.string().max(8000).optional(),
 });
 
-export const mockupSchema = z.discriminatedUnion("type", [
+const mockupUnion = z.discriminatedUnion("type", [
   mockupCard,
   mockupTerminal,
   mockupComparison,
@@ -266,7 +296,9 @@ export const mockupSchema = z.discriminatedUnion("type", [
   mockupCustom,
 ]);
 
-export type Mockup = z.infer<typeof mockupSchema>;
+export const mockupSchema = z.preprocess(migrateLegacyIllustration, mockupUnion);
+
+export type Mockup = z.infer<typeof mockupUnion>;
 
 /* ── Cover hook (intro scroll-stopper) ────────────────────────── */
 

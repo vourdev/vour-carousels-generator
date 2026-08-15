@@ -9,7 +9,7 @@ import { coverDoorTemplate } from "@/lib/ds/templates/cover-door";
 import { sanitizeHookHtml } from "@/lib/ds/sanitize";
 import { scopeCss } from "@/lib/ds/scope-css";
 import { renderIcon } from "@/lib/ds/icons";
-import { renderIllustration } from "@/lib/ds/illustrations.server";
+import { renderIllustration, type IllustrationVariant } from "@/lib/ds/illustrations.server";
 import { pointTemplate } from "@/lib/ds/templates/point";
 import { outroTemplate } from "@/lib/ds/templates/outro";
 import { terminalTemplate } from "@/lib/ds/templates/terminal";
@@ -373,19 +373,18 @@ function renderDoorHook(h: Extract<CoverHook, { kind: "door" }>): string {
     .replace("HAND_INJECT", () => handIcon);
 }
 
-function renderIllustrationMockup(m: Extract<Mockup, { type: "illustration" }>): string {
+function renderIllustrationMockup(
+  m: Extract<Mockup, { type: "illustration" }>,
+  variant: IllustrationVariant
+): string {
   const caption = m.caption ? `<div class="catatan mt-20"><div class="catatan-body">${escapeHtml(m.caption)}</div></div>` : "";
-
-  if (m.illustrationSlug2) {
-    // Pair layout: two SVGs side-by-side at fixed 180×180px each (via CSS)
-    const svg1 = renderIllustration(m.illustrationSlug);
-    const svg2 = renderIllustration(m.illustrationSlug2);
-    return `<div class="diag-wrap"><div class="diag-illustration-pair"><div class="illus-item">${svg1}</div><div class="illus-item">${svg2}</div></div>${caption}</div>`;
-  }
-
-  // Single illustration: fixed 240×240px via CSS
-  const svg = renderIllustration(m.illustrationSlug);
-  return `<div class="diag-wrap"><div class="diag-illustration">${svg}${caption}</div></div>`;
+  // One markup shape for 1 and 2 illustrations. The count only picks a size class, so
+  // there is no layout branch that can drift between the two cases.
+  const sizeClass = m.illustrationSlugs.length > 1 ? "is-pair" : "is-single";
+  const items = m.illustrationSlugs
+    .map((slug) => `<div class="illus-item">${renderIllustration(slug, variant)}</div>`)
+    .join("");
+  return `<div class="diag-wrap"><div class="diag-illustration"><div class="illustration-group ${sizeClass}">${items}</div>${caption}</div></div>`;
 }
 
 function renderScreenshotMockup(m: Extract<Mockup, { type: "screenshot" }>): string {
@@ -406,7 +405,7 @@ function renderScreenshotMockup(m: Extract<Mockup, { type: "screenshot" }>): str
 }
 
 /** Render any mockup type to an HTML fragment. `scopeId` scopes `custom` CSS. */
-function renderMockup(m: Mockup, scopeId: string): string {
+function renderMockup(m: Mockup, scopeId: string, variant: IllustrationVariant): string {
   switch (m.type) {
     case "terminal":
       return renderTerminalMockup(m);
@@ -447,7 +446,7 @@ function renderMockup(m: Mockup, scopeId: string): string {
     case "gitbranch":
       return renderGitBranchMockup(m);
     case "illustration":
-      return renderIllustrationMockup(m);
+      return renderIllustrationMockup(m, variant);
     case "screenshot":
       return renderScreenshotMockup(m);
     case "custom":
@@ -547,7 +546,7 @@ export function renderSlide(slide: Slide, slideIndex = 0): string {
       }
 
       // For non-card mockups, render the mockup fragment and inject it after the body
-      const mockupHtml = renderMockup(mockup, scopeId);
+      const mockupHtml = renderMockup(mockup, scopeId, surfaceClass === "paper" ? "onLight" : "onDark");
       const base = fillTemplate(pointTemplate, {
         brand,
         surfaceClass,

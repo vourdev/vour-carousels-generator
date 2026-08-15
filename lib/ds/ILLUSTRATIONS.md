@@ -59,8 +59,40 @@ The split now is:
 | `illustrations.manifest.json` | anywhere | ~4 KB |
 | `illustrations.slugs.generated.ts` | anywhere | ~3.6 KB (slug union only) |
 | `illustrations.ts` | anywhere — client-safe | vocabulary + `normalizeIllustration` |
-| `illustrations.server.ts` | server only | reads `assets/illustrations/<slug>.svg` via `fs.readFileSync`, memoized |
-| `assets/illustrations/*.svg` | read at runtime, never imported | ~1.5 MB on disk |
+| `illustrations.server.ts` | server only | reads `assets/illustrations/<slug>.<variant>.svg` via `fs.readFileSync`, memoized |
+| `assets/illustrations/*.svg` | read at runtime, never imported | ~3.0 MB on disk (145 slugs × 2 variants) |
+
+## Two surface variants, and why the model has no say
+
+Slides render on two surfaces: **Ink** (`#14110E`, the deck default) and **Paper** (cream,
+the explicit `surface: "paper"` opt-out). unDraw ships one palette built for white pages —
+`#090814`, `#2f2e41`, `#3f3d56` carry the hair, clothes and outlines. On Ink those are
+within a few points of the background, so the illustration dissolves. That is the whole
+contrast bug.
+
+CSS cannot fix it: `carousel-css-extra.ts` already documents the rule that a mockup must
+never name a literal ink/paper colour, but an SVG `fill` is not a token and cannot be
+re-scoped per surface. So the remap happens at codegen. Each slug is written twice:
+
+- `<slug>.onLight.svg` — unDraw's value ordering kept, neutrals warmed into the brand ramp, accent `#EE4B1A`
+- `<slug>.onDark.svg` — neutral ramp **inverted** (darkest becomes lightest), accent `#FF6A3D`
+
+Skin tones (`#ed9da0`, `#ffb8b8`, `#a0616a` …) are deliberately left alone — they are
+mid-tone and legible on both, and inverting them turns people green.
+
+`render-slide.ts` picks the variant from `slide.surface`. The model's entire vocabulary is
+`illustrationSlugs: string[]` (1–2 entries) plus an optional caption: no colour, size,
+scale, position or variant field exists for it to set. A test asserts that stays true.
+
+## Sizing
+
+Illustrations are sized by **height**, not by a square box: 108 of the 145 are landscape
+(median viewBox ratio 1.29, max 2.86). The previous `width:240px; height:240px` letterboxed
+them — a 2.86-ratio drawing became 240×84 of art in a 240×240 slot, which is what read as
+"the illustration came out tiny". Pinning height and letting width follow the viewBox gives
+every slug the same visual weight. Measured on a point slide: `.diag-wrap` offers ~778px,
+a single illustration takes 340px and a pair 260px each, leaving 320–400px of slack for
+longer headlines.
 
 The `node:fs` import in `illustrations.server.ts` is the guard: Next.js fails the build if a
 client component reaches it. `render-slide.ts` → `assemble.ts` are therefore server-only, and
