@@ -264,10 +264,17 @@ const mockupScreenshot = z.object({
   evidenceStatus: z.enum(["pending", "captured", "fallback_used"]).default("pending"),
 });
 
+/**
+ * Custom — structural escape hatch for content that fits none of the built-in mockups.
+ *
+ * There is no `css` field and no styling channel of any kind: whatever HTML arrives is
+ * run through sanitizeCustomHtml at render time, which strips <style>, inline style=,
+ * presentational attributes, and every class outside CUSTOM_CLASS_WHITELIST. Structure
+ * and copy are the model's; appearance is the design system's.
+ */
 const mockupCustom = z.object({
   type: z.literal("custom"),
   html: z.string().max(8000),
-  css: z.string().max(8000).optional(),
 });
 
 const mockupUnion = z.discriminatedUnion("type", [
@@ -325,10 +332,10 @@ const coverHookImage = z.object({
   label: z.string().max(40).optional(),
 });
 
+// Same contract as mockupCustom: structure only, no styling channel.
 const coverHookCustom = z.object({
   kind: z.literal("custom"),
   html: z.string().max(4000),
-  css: z.string().max(4000).optional(),
 });
 
 /** Cover anchor — an ID badge (contrarian "X is not a job title" angle) */

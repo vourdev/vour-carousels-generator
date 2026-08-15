@@ -378,6 +378,35 @@ export const carouselExtraCss = String.raw`
   .diag-wrap > .cm > *,
   .anchor-wrap > .cm > * { max-width: 100%; }
 
+  /* Readable defaults for a sanitized custom fragment.
+
+     sanitizeCustomHtml strips every style= attribute, every <style> block and every
+     non-whitelisted class, so a fragment arrives with no appearance of its own. Without
+     these rules it would render as browser-default black Times on the Ink canvas —
+     invisible, and the reason "just strip the styling" needs a floor under it. Everything
+     here reads surface tokens, so it is correct on Ink and Paper with no per-surface rule. */
+  .cm-base { flex-direction: column; gap: 16px; text-align: left;
+    font-family: 'Inter', system-ui, sans-serif; color: var(--ms-fg);
+    font-size: 30px; line-height: 1.45; }
+  .cm-base p, .cm-base li, .cm-base td, .cm-base th, .cm-base div, .cm-base span {
+    color: var(--ms-fg); font-size: inherit; line-height: inherit; }
+  .cm-base h1, .cm-base h2, .cm-base h3, .cm-base h4, .cm-base h5, .cm-base h6 {
+    color: var(--ms-fg); font-weight: 700; font-size: 38px; line-height: 1.2; margin: 0; }
+  .cm-base strong, .cm-base b { color: var(--ms-accent); font-weight: 700; }
+  .cm-base code, .cm-base pre, .cm-base kbd {
+    font-family: 'JetBrains Mono', monospace; font-size: 26px;
+    background: var(--ms-panel-deep); color: var(--ms-fg);
+    border: 1px solid var(--ms-line); border-radius: 8px; padding: 2px 8px; }
+  .cm-base pre { padding: 16px 20px; overflow: hidden; white-space: pre-wrap; }
+  .cm-base ul, .cm-base ol { margin: 0; padding-left: 32px; display: flex;
+    flex-direction: column; gap: 10px; }
+  .cm-base table { width: 100%; border-collapse: collapse; }
+  .cm-base th, .cm-base td { border: 1px solid var(--ms-line); padding: 12px 16px;
+    text-align: left; }
+  .cm-base th { font-weight: 700; background: var(--ms-panel-deep); }
+  .cm-base img, .cm-base svg { max-width: 100%; height: auto; }
+  .cm-base hr { border: 0; border-top: 1px solid var(--ms-line); width: 100%; }
+
   /* Cover CTA follows the cover-slides.html prototype: the last FLOW child, not an
      absolutely-positioned overlay. carousel-css.ts (DO-NOT-EDIT) pins .geser with
      position:absolute, which takes it out of the column — .anchor-wrap{flex:1} then

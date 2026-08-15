@@ -1,5 +1,6 @@
 import { ICON_SLUGS } from "@/lib/ds/icons";
 import { ILLUSTRATION_CATEGORIES } from "@/lib/ds/illustrations";
+import { CUSTOM_CLASS_WHITELIST } from "@/lib/ds/sanitize";
 import { VOICE_SAMPLES, VOICE_PATTERNS, SENTENCE_TEMPLATES } from "./voice-samples";
 
 /* ── Shared fragments (single-sourced across brief / plan / revise) ────── */
@@ -310,7 +311,7 @@ CATEGORY → allowed mockup types (choose by the slide's actual content):
 - CODE_DEMO  (real code / command / config)      → terminal · commandlist · commandpalette · promptcard · database
 - EVIDENCE   (a real product / UI you built)     → browser
 - ABSTRACT   (concept / principle / analogy)     → illustration · concept · hub · quote · card · custom
-- BESPOKE    (a layout none of the above can draw)→ custom (hand-written HTML + CSS)
+- BESPOKE    (a layout none of the above can draw)→ custom (hand-written HTML, structure only — no styling)
 
 KRITERIA WAJIB mockup: "illustration" — cek berurutan, begitu SALAH SATU match WAJIB illustration:
 1. Slide TIDAK menampilkan kode/command/terminal output secara langsung, DAN
@@ -352,29 +353,27 @@ ANTI-REPETITION (hard rules):
    If a typed mockup fits, use the typed mockup.
 
 WRITING A custom MOCKUP (when you do reach for it):
-- Ship self-contained markup plus its own CSS. Invent your own class names.
-- The renderer wraps your fragment in the flex slot and SCOPES your CSS to it,
-  so your rules cannot touch anything outside your own markup.
-- Therefore: never style shared chrome (section, body, h1, .eyebrow, .counter,
-  .geser, .diag-wrap, .anchor-wrap) — those rules are scoped away and do nothing.
-- COLOUR — use the surface tokens, NEVER a literal hex for text/panel/border:
-    var(--ms-fg)         primary text on this slide's surface
-    var(--ms-fg-muted)   secondary text
-    var(--ms-fg-faint)   labels, captions
-    var(--ms-panel)      a raised panel / card background
-    var(--ms-panel-deep) a recessed well inside a panel
-    var(--ms-line)       hairline borders and dividers
-    var(--ms-accent)     the Ember accent (ONE per mockup)
-  You do NOT know whether your slide renders on the cream Paper surface or the
-  near-black Ink surface — the deck alternates them. A hard-coded #1C0A05 is
-  invisible on Ink and a hard-coded #F7F1E8 is invisible on Paper. The tokens
-  resolve to the right value on both, so a token-only mockup is always legible.
-  Literal hex is allowed ONLY for a deliberate always-dark device (a terminal
-  window) or an always-Ember fill.
-- No backdrop-filter (dies on screenshot export). Max 3 colours.
+- You control STRUCTURE and COPY. You do not control appearance — at all.
+- There is NO css field. Inline style="..." attributes, <style> blocks, <link> tags,
+  and presentational attributes (width, height, bgcolor, color, align, size, fill,
+  stroke, opacity, transform) are STRIPPED by the renderer before anything is drawn.
+  Writing them does not fail loudly; they simply vanish.
+- class= is filtered against a whitelist. Anything else is dropped. The only classes
+  that survive are:
+    ${CUSTOM_CLASS_WHITELIST.join(", ")}
+- Plain semantic HTML is what you should write: p, ul/ol/li, table/tr/th/td, h2-h4,
+  strong, code, pre, div, span, figure, hr. The design system styles all of it to the
+  slide's surface automatically — type scale, colour, borders, mono for code, accent
+  for <strong>. It is legible on Ink and Paper without you doing anything.
+- If you find yourself wanting a specific colour or size that no whitelisted class
+  gives you, that is the signal that this content needs a NEW typed mockup — not a
+  reason to reach for custom. Say so in your reasoning: name what the content is and
+  which typed mockup came closest and why it fell short.
 - Size it to fit: the slot is ~920px wide and gets roughly the lower half of the
   1080×1350 canvas. Keep it to a handful of elements and short labels; a custom
   mockup that needs a dense grid is the wrong call for the slide.
+- If everything you wrote is stripped and nothing renderable is left, the slide falls
+  back to a plain summary card. That is a worse slide than a typed mockup would be.
 
 NOT AVAILABLE in auto-generation — do NOT fake these; pick the closest above:
 - real screenshots / photographic evidence → use browser (a rebuilt UI, not a
@@ -652,11 +651,11 @@ SLIDE ROLES
       badge   — { kind: "badge", role: "DevOps Engineer", sub?: "// one aside", struck?: true } (CONTRARIAN: "X is not a job title")
       nocgrid — { kind: "nocgrid", cols?: 6, rows?: 3, state?: "down"|"up", banner?: "100% PACKET LOSS" } (URGENCY/RISK: everything is down)
       door    — { kind: "door", label?: "DORONG", pull?: true } (MISCONCEPTION: pretty but unusable — pull handle labeled push)
-      custom  — { kind: "custom", html: "...", css?: "..." } (BESPOKE: the visual metaphor the
-                 four anchors above cannot draw — a struck-out invoice, a split gauge, a stacked
-                 receipt. Same rules as the custom mockup: self-contained markup + your own class
-                 names, the renderer wraps and scopes it, never style shared chrome, max 3 brand
-                 colors, no backdrop-filter.)
+      custom  — { kind: "custom", html: "..." } (BESPOKE: the visual metaphor the four anchors
+                 above cannot draw — a struck-out invoice, a split gauge, a stacked receipt.
+                 Same contract as the custom mockup: STRUCTURE ONLY. No css field, no
+                 style attributes, no <style>; classes filtered to the whitelist. Plain
+                 semantic HTML, styled automatically to the surface.)
 - "point": { counter (e.g. "02 / 05"), eyebrow, headline, accentWord?, body, surface?: "paper"|"ink", mockup: <one of the types below> }
 - "outro": { eyebrow?, headline, accentWord?, body?, cta } — cta is REQUIRED:
     cta: { strong: "<the action, e.g. Simpan & bagikan>", sub?: "<why/how, 1 short line>" }
@@ -751,8 +750,8 @@ MOCKUP TYPES — every "point" slide MUST include a "mockup" object with one of 
 21. { type: "screenshot", screenshotBrief: { source: "AWS CloudWatch Metrics graph", mustShow: "504 Gateway Timeout spike at 14:02", mustHide: "Account ID and Secret Key", cropRatio: "4:5" }, evidenceStatus: "pending" }
    → Real user upload evidence screenshot. MANDATORY for real case studies, incident reports, or real-world proof. Must specify source (as specific as possible), mustShow, mustHide, cropRatio ("4:5"), and set evidenceStatus: "pending".
 
-22. { type: "custom", html: "...", css?: "..." }
-   → Hand-written HTML + CSS. The escape hatch for a layout none of types 1-21 can draw (a bespoke split view, an unusual structural block, a visual metaphor). Write self-contained markup with your OWN class names and put the matching rules in 'css'. The renderer wraps your fragment in the flex slot and SCOPES your CSS to it, so do NOT add a '.diag-wrap' wrapper and do NOT style shared chrome (section, body, h1, .eyebrow, .counter, .geser) — those rules are scoped away and do nothing. Colours MUST come from the surface tokens (var(--ms-fg), --ms-fg-muted, --ms-fg-faint, --ms-panel, --ms-panel-deep, --ms-line, --ms-accent) — a literal hex breaks on the surface you did not picture. See "WRITING A custom MOCKUP" above. Max 3 colors, no backdrop-filter, max ~1 per deck.
+22. { type: "custom", html: "..." }
+   → Hand-written HTML, STRUCTURE ONLY. The escape hatch for a layout none of types 1-21 can draw (a bespoke split view, an unusual structural block, a visual metaphor). There is no 'css' field. style attributes, <style> blocks and presentational attributes are stripped by the renderer; class is filtered to a whitelist (${CUSTOM_CLASS_WHITELIST.join(", ")}). Write plain semantic HTML — the design system styles it to the slide surface for you. Wanting a colour or size you cannot express is the signal that this content needs a new typed mockup; say so in your reasoning. See "WRITING A custom MOCKUP" above. Max ~1 per deck.
 
 23. { type: "illustration", illustrationSlugs: ["online-learning_tgmv"] | ["server_9eix", "server-cluster_7ugi"], caption?: "..." }
    → unDraw editorial SVG — the MANDATORY choice for analogy/metaphor slides and abstract concepts with no natural technical visual. Pick a slug from ILLUSTRATION_CATEGORIES.

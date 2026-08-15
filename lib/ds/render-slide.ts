@@ -6,8 +6,7 @@ import { coverCompactTemplate } from "@/lib/ds/templates/cover-compact";
 import { coverBadgeTemplate } from "@/lib/ds/templates/cover-badge";
 import { coverNocGridTemplate } from "@/lib/ds/templates/cover-nocgrid";
 import { coverDoorTemplate } from "@/lib/ds/templates/cover-door";
-import { sanitizeHookHtml } from "@/lib/ds/sanitize";
-import { scopeCss } from "@/lib/ds/scope-css";
+import { sanitizeCustomHtml } from "@/lib/ds/sanitize";
 import { renderIcon } from "@/lib/ds/icons";
 import { renderIllustration, type IllustrationVariant } from "@/lib/ds/illustrations.server";
 import { pointTemplate } from "@/lib/ds/templates/point";
@@ -74,16 +73,17 @@ function injectSentinels(template: string, map: Record<string, string>): string 
  */
 function renderCustomFragment(
   html: string,
-  css: string | undefined,
   scopeId: string,
   wrapper: "diag-wrap" | "anchor-wrap"
-): string {
+): string | null {
+  const safe = sanitizeCustomHtml(html);
+  if (!safe) return null;
   const cls = `cm-${scopeId}`;
-  const styleBlock = css ? `<style>${scopeCss(css, `.${cls}`)}</style>` : "";
   // The `.cm` class makes the scope div transparent to layout (see
   // carousel-css-extra.ts) — without it the div shrink-wraps as a flex item and
   // a `width:100%` inside the fragment resolves against its own content.
-  return `${styleBlock}<div class="${wrapper}"><div class="cm ${cls}">${sanitizeHookHtml(html)}</div></div>`;
+  // `.cm-base` supplies the readable defaults the fragment no longer carries itself.
+  return `<div class="${wrapper}"><div class="cm cm-base ${cls}">${safe}</div></div>`;
 }
 
 /* ── Mockup renderers ─────────────────────────────────────────── */
@@ -450,7 +450,9 @@ function renderMockup(m: Mockup, scopeId: string, variant: IllustrationVariant):
     case "screenshot":
       return renderScreenshotMockup(m);
     case "custom":
-      return renderCustomFragment(m.html, m.css, scopeId, "diag-wrap");
+      // resolveMockup already rejected fragments that sanitize to nothing, so a null
+      // here would mean the mockup bypassed it; render nothing rather than a broken hull.
+      return renderCustomFragment(m.html, scopeId, "diag-wrap") ?? "";
     case "card":
       // Card is rendered inline via the point template's {{#card}} block, not here.
       return "";
@@ -462,7 +464,12 @@ function renderMockup(m: Mockup, scopeId: string, variant: IllustrationVariant):
  * Priority: slide.mockup > slide.card (wrapped as card type) > auto-fallback.
  */
 function resolveMockup(slide: Extract<Slide, { role: "point" }>): Mockup {
-  if (slide.mockup) return slide.mockup;
+  // A custom fragment whose entire body was styling leaves nothing to render once
+  // sanitizeCustomHtml has run. Fall through to the auto-card rather than emit an
+  // empty diagram well — the slide still says something either way.
+  const customIsEmpty =
+    slide.mockup?.type === "custom" && sanitizeCustomHtml(slide.mockup.html) === null;
+  if (slide.mockup && !customIsEmpty) return slide.mockup;
   if (slide.card) return { type: "card" as const, ...slide.card };
   // Auto-fallback: generate a card from slide data so no slide is ever flat
   return {
@@ -502,7 +509,9 @@ export function renderSlide(slide: Slide, slideIndex = 0): string {
       let fragment = "";
       if (h.kind === "device") fragment = renderDeviceHook(h);
       else if (h.kind === "custom")
-        fragment = renderCustomFragment(h.html, h.css, scopeId, "anchor-wrap");
+        // A cover hook that sanitizes away leaves the cover with no anchor, which the
+        // template already handles as an empty fragment.
+        fragment = renderCustomFragment(h.html, scopeId, "anchor-wrap") ?? "";
       else if (h.kind === "image") fragment = renderImageHook(h);
       else if (h.kind === "badge") fragment = renderBadgeHook(h);
       else if (h.kind === "nocgrid") fragment = renderNocGridHook(h);
