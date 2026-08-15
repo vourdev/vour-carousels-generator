@@ -2,6 +2,7 @@ import { describe, it, expect } from "vitest";
 import { sanitizeCustomHtml, CUSTOM_CLASS_WHITELIST } from "@/lib/ds/sanitize";
 import { mockupSchema, coverHookSchema } from "@/lib/ds/schema";
 import { renderSlide } from "@/lib/ds/render-slide";
+import { carouselExtraCss } from "@/lib/ds/carousel-css-extra";
 
 describe("custom fragment sanitizer", () => {
   it("strips inline style attributes in every quoting form", () => {
@@ -139,5 +140,27 @@ describe("custom fragment rendering", () => {
     // resolveMockup's auto-fallback card, built from the slide's own copy.
     expect(html).toContain("BESPOKE");
     expect(html).toContain("Body copy.");
+  });
+});
+
+describe("custom mockup base styling (TASK 6)", () => {
+  it("gives the sanitized fragment a real panel, not bare text on the canvas", () => {
+    // Everything the fragment carried was stripped, so these defaults are the only
+    // appearance it has. Without them it renders as a floating paragraph.
+    const base = carouselExtraCss.slice(carouselExtraCss.indexOf(".cm-base {"));
+    const rule = base.slice(0, base.indexOf("}") + 1);
+    expect(rule).toMatch(/padding:\s*36px 40px/);
+    expect(rule).toMatch(/background:\s*var\(--ms-panel\)/);
+    expect(rule).toMatch(/border-radius:\s*20px/);
+    expect(rule).toMatch(/border:\s*1\.5px solid var\(--ms-line\)/);
+    expect(rule).toMatch(/font-family:\s*'Inter'/);
+  });
+
+  it("keeps every panel colour on a surface token, so Ink and Paper both work", () => {
+    const from = carouselExtraCss.indexOf(".cm-base {");
+    const to = carouselExtraCss.indexOf(".cm-base hr");
+    const block = carouselExtraCss.slice(from, to);
+    // A literal hex here would be correct on one surface and invisible on the other.
+    expect(block).not.toMatch(/#[0-9a-fA-F]{3,6}\b/);
   });
 });

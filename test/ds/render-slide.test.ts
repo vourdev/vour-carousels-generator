@@ -171,7 +171,9 @@ describe("renderSlide", () => {
     expect(html).toContain('class="node filled big"');
     expect(html).toContain('class="children"');
     expect(html).toContain('class="lines"');
-    expect(html).toContain("DELETE");
+    // Capped at 3: the renderer drops a 4th child rather than crowding the row.
+    expect(html).toContain("PUT");
+    expect(html).not.toContain("DELETE");
     expect(html).toContain('class="catatan');
     expect(html).not.toContain("CONCEPT_CHILDREN_INJECT");
     expect(html).not.toContain("CONCEPT_LINES_INJECT");

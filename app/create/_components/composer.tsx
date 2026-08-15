@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { FileText, Paperclip, Search, Send, Square, Upload } from "lucide-react";
+import { Paperclip, Search, Send, Square } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -25,8 +25,6 @@ export function Composer({
   placeholder,
   topics,
   onPickTopic,
-  onImportMarkdown,
-  onImportHtml,
   hint,
 }: {
   value: string;
@@ -40,15 +38,11 @@ export function Composer({
   placeholder: string;
   topics: Topic[];
   onPickTopic: (t: Topic) => void;
-  onImportMarkdown: (e: React.ChangeEvent<HTMLInputElement>) => void;
-  onImportHtml: (e: React.ChangeEvent<HTMLInputElement>) => void;
   hint?: React.ReactNode;
 }) {
   const [attachOpen, setAttachOpen] = useState(false);
   const [topicSearch, setTopicSearch] = useState("");
   const attachRef = useRef<HTMLDivElement>(null);
-  const mdRef = useRef<HTMLInputElement>(null);
-  const htmlRef = useRef<HTMLInputElement>(null);
   const taRef = useRef<HTMLTextAreaElement>(null);
 
   useEffect(() => {
@@ -100,7 +94,7 @@ export function Composer({
                 variant="ghost"
                 size="icon"
                 onClick={() => setAttachOpen((o) => !o)}
-                aria-label="Tambah dari Topic Bank atau impor berkas"
+                aria-label="Ambil topik dari Topic Bank"
                 className="size-8 rounded-lg text-muted-foreground hover:text-foreground"
               >
                 <Paperclip className="size-4" />
@@ -141,32 +135,13 @@ export function Composer({
                           </button>
                         ))}
                       </div>
-                      <div className="h-px bg-border/60 my-1" />
                     </>
                   )}
-
-                  <button
-                    type="button"
-                    onClick={() => {
-                      mdRef.current?.click();
-                      setAttachOpen(false);
-                    }}
-                    className="w-full flex items-center gap-2.5 p-2 rounded-lg text-xs text-left hover:bg-muted/50 transition-colors"
-                  >
-                    <Upload className="size-3.5 text-muted-foreground shrink-0" />
-                    <span>Impor brief <span className="font-mono">.md</span></span>
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      htmlRef.current?.click();
-                      setAttachOpen(false);
-                    }}
-                    className="w-full flex items-center gap-2.5 p-2 rounded-lg text-xs text-left hover:bg-muted/50 transition-colors"
-                  >
-                    <FileText className="size-3.5 text-muted-foreground shrink-0" />
-                    <span>Impor carousel <span className="font-mono">.html</span></span>
-                  </button>
+                  {topics.length === 0 && (
+                    <p className="px-2 py-3 text-xs text-muted-foreground text-center">
+                      Topic Bank masih kosong.
+                    </p>
+                  )}
                 </div>
               )}
             </div>
@@ -188,8 +163,6 @@ export function Composer({
           ↵ kirim · Shift+↵ baris baru · ↑↓ riwayat prompt
         </p>
 
-        <input type="file" accept=".md" ref={mdRef} onChange={onImportMarkdown} className="hidden" />
-        <input type="file" accept=".html,text/html" ref={htmlRef} onChange={onImportHtml} className="hidden" />
       </div>
     </div>
   );

@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState, useTransition, useEffect, useRef } from "react";
+import { useState, useTransition, useEffect, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { PreviewFrame } from "@/components/preview-frame";
@@ -17,7 +17,7 @@ import type { Topic } from "@/lib/topics/bank";
 import { AlertCircle, ArrowRight, Images, LayoutGrid, PanelRightOpen, RotateCcw, Sparkles } from "lucide-react";
 import { toast } from "sonner";
 
-import { compressImageBlob, countSections, parseMeta, revealedLength, summarizeError } from "./_components/utils";
+import { compressImageBlob, revealedLength, summarizeError } from "./_components/utils";
 import { LOADING_JOBS, type LoadingKind } from "./_components/step-loader";
 import { ChatFeed, type ArtifactCard, type Message } from "./_components/chat-feed";
 import { Composer } from "./_components/composer";
@@ -92,7 +92,6 @@ export function Wizard({
    * reload; cleared once the draft is scheduled, stocked, or reset.
    */
   const [draftId, setDraftId] = useState<string>(() => crypto.randomUUID());
-  const [uploadedHtml, setUploadedHtml] = useState<string | null>(null);
   // Mobile shows one panel at a time (desktop keeps the 2-col layout).
   const [mobilePanel, setMobilePanel] = useState<"chat" | "canvas">("chat");
 
@@ -212,11 +211,6 @@ export function Wizard({
     setChatInput("");
     setIdea("");
 
-    if (uploadedHtml) {
-      toast.error("Revisi AI tidak tersedia untuk HTML upload — langsung export.");
-      return;
-    }
-
     if (step === 1 || !brief.trim()) {
       runBriefGeneration(
         (signal) => fetchBrief(textToSubmit, signal),
@@ -267,7 +261,7 @@ export function Wizard({
   const [assembled, setAssembled] = useState<{ plan: SlidePlan; html: string } | null>(null);
 
   useEffect(() => {
-    if (uploadedHtml || !plan) return;
+    if (!plan) return;
     let cancelled = false;
     assembleAction(plan)
       .then((out) => {
@@ -281,9 +275,9 @@ export function Wizard({
     return () => {
       cancelled = true;
     };
-  }, [uploadedHtml, plan]);
+  }, [plan]);
 
-  const html = uploadedHtml ?? (assembled?.plan === plan ? assembled.html : "");
+  const html = assembled?.plan === plan ? assembled.html : "";
 
   /** Any long-running job is in flight. Drives the composer, title and unload guard. */
   const busy = pending || briefPending || exportPending;
@@ -321,10 +315,7 @@ export function Wizard({
     window.addEventListener("beforeunload", warn);
     return () => window.removeEventListener("beforeunload", warn);
   }, [busy]);
-  const slideCount = useMemo(
-    () => (uploadedHtml ? countSections(uploadedHtml) : plan?.slides.length ?? 0),
-    [uploadedHtml, plan]
-  );
+  const slideCount = plan?.slides.length ?? 0;
 
   // Sync editable Title & Caption when plan changes
   useEffect(() => {
@@ -357,7 +348,6 @@ export function Wizard({
         if (parsed.activeTab) setActiveTab(parsed.activeTab);
         if (parsed.messages) setMessages(parsed.messages);
         if (parsed.mdMode) setMdMode(parsed.mdMode);
-        if (parsed.uploadedHtml) setUploadedHtml(parsed.uploadedHtml);
         if (parsed.carouselId) setCarouselId(parsed.carouselId);
         if (parsed.draftId) setDraftId(parsed.draftId);
         if (parsed.dueAt) setDueAt(parsed.dueAt);
@@ -387,7 +377,6 @@ export function Wizard({
       activeTab,
       messages,
       mdMode,
-      uploadedHtml,
       carouselId,
       draftId,
       dueAt,
@@ -422,7 +411,6 @@ export function Wizard({
     messages,
     mdMode,
     mounted,
-    uploadedHtml,
     carouselId,
     draftId,
     dueAt,
@@ -595,12 +583,12 @@ export function Wizard({
         try {
           const thumb = generatedBlobs[0] ? await compressImageBlob(generatedBlobs[0], 120) : null;
           const id = await saveExportedCarouselAction({
-            source: uploadedHtml ? "upload" : "ai",
+            source: "ai",
             title: editableTitle || plan.title,
             caption: editableCaption || plan.caption,
             hashtags: plan.hashtags,
             slideCount,
-            model: uploadedHtml ? null : model || null,
+            model: model || null,
             thumbnail: thumb,
             imageUrls: [], // Defer upload to Cloudinary until publishing
           });
@@ -861,7 +849,6 @@ export function Wizard({
     setDueAt("");
     setCarouselId(null);
     setDraftId(crypto.randomUUID());
-    setUploadedHtml(null);
     setTopicId(null);
     setTopicTitle(null);
     setPublishState({ status: "idle", progressMsg: "" });
@@ -887,56 +874,9 @@ export function Wizard({
     ]);
   }
 
-  function handleFileUpload(e: React.ChangeEvent<HTMLInputElement>) {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    const reader = new FileReader();
-    reader.onload = (event) => {
-      const text = event.target?.result as string;
-      if (text) {
-        setBrief(text);
-        setFinalBrief(text);
-        setUploadedHtml(null);
-        setStep(2);
-        setActiveTab("brief");
-        setMdMode("split");
-        addMessage("user", `Upload file markdown: ${file.name}`);
-        addMessage("ai", `Markdown berhasil dimuat. Anda berada pada langkah 2. Silakan tinjau dan edit outline brief Anda, lalu klik "Approve & Render Slide" jika sudah siap.`);
-        toast.success(`File ${file.name} loaded successfully`);
-      }
-    };
-    reader.readAsText(file);
-  }
-
-  function handleHtmlUpload(e: React.ChangeEvent<HTMLInputElement>) {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    const reader = new FileReader();
-    reader.onload = (event) => {
-      const text = event.target?.result as string;
-      if (!text) return;
-      const meta = parseMeta(text);
-      setUploadedHtml(text);
-      // Synthetic plan carries the caption/title/hashtags for export + publish.
-      setPlan({ title: meta.title, caption: meta.caption, hashtags: meta.hashtags, slides: [] } as SlidePlan);
-      setApproved(false);
-      setStep(3);
-      setActiveTab("preview");
-      addMessage("user", `Upload HTML: ${file.name}`);
-      addMessage(
-        "ai",
-        `HTML carousel dimuat (${countSections(text)} slide). Lewati AI — langsung klik "Approve & Export JPEGs", lalu Publish.`
-      );
-      toast.success(`HTML ${file.name} loaded`);
-    };
-    reader.readAsText(file);
-    e.target.value = "";
-  }
-
   function applyBriefResult(res: string) {
     setFinalBrief(res);
     setIsTyping(true);
-    setUploadedHtml(null);
     setStep(2);
     setActiveTab("brief");
     setPanelOpen(true);
@@ -1067,8 +1007,7 @@ export function Wizard({
         setPlan(generatedPlan);
         setPanelOpen(true);
         setApproved(false);
-        setUploadedHtml(null);
-        setStep(3);
+            setStep(3);
         setActiveTab("preview");
         addMessage("ai", "Slide deck HTML berhasil dirender! Anda sekarang dapat meninjau visualnya pada tab 'Live Design Preview'. Jika butuh penyesuaian, ketik revisi Anda di kolom chat.");
       } catch (e) {
@@ -1250,8 +1189,6 @@ export function Wizard({
             placeholder={composerPlaceholder}
             topics={bankTopics}
             onPickTopic={startBriefFromTopic}
-            onImportMarkdown={handleFileUpload}
-            onImportHtml={handleHtmlUpload}
             hint={
               topicTitle ? (
                 <p className="text-[11px] text-muted-foreground text-center truncate">

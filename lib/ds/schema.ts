@@ -77,10 +77,21 @@ const mockupFlow = z.object({
 });
 
 /** Concept hub — parent node → 3–4 child pills (term glossaries) */
+/**
+ * Parent term broken into sub-concepts.
+ *
+ * Capped at 3 children by slicing rather than by `.max()`: a 4th child makes the row
+ * too dense to read at 1080px, but rejecting the plan over it would throw away an
+ * otherwise good deck — and would break re-parsing the older plans in the carousels
+ * history table, which were generated when the cap was 4.
+ */
 const mockupConcept = z.object({
   type: z.literal("concept"),
   parent: z.string().max(20),
-  children: z.array(z.string().max(18)).min(2).max(4),
+  children: z
+    .array(z.string().max(18))
+    .min(2)
+    .transform((c) => c.slice(0, 3)),
   note: z.string().max(90).optional(),
 });
 

@@ -27,7 +27,7 @@ const MOCKUP_BUDGETS = `- Terminal: filename + 4-6 code lines max (≤ 45 chars 
 - Card: card title (≤ 40 chars), card body (≤ 100 chars).
 - Flow: 2-5 step labels (≤ 24 chars each), optional note (≤ 90 chars).
 - Hub: center (≤ 20 chars), MUST have 3-4 tools (never fewer than 2; label ≤ 16 chars), optional note (≤ 90 chars).
-- Concept: parent (≤ 20 chars), MUST have 3-4 children (never fewer than 2; ≤ 18 chars each), optional note (≤ 90 chars).
+- Concept: parent (≤ 20 chars), 2-3 children (MAX 3 — a 4th is dropped by the renderer; ≤ 18 chars each), optional note (≤ 90 chars).
 - Checklist: 3-6 items (never fewer than 2; ≤ 48 chars each), optional note (≤ 90 chars).
 - Browser: url (≤ 40 chars), 2-4 stat cards (label ≤ 24, value ≤ 16) — product/dashboard mockup, "here's what I built".
 - Quote: quote (≤ 180 chars), optional author (≤ 40) — expert claim / principle / testimonial.
@@ -328,7 +328,7 @@ JIKA SALAH SATU dari 3 kriteria di atas terpenuhi:
 → mockup WAJIB "illustration" — JANGAN pilih concept/hub/card/quote meski terasa "lebih aman"
 → Pilih illustrationSlugs dari ILLUSTRATION_CATEGORIES yang paling relevan secara semantik
 → 1 slug untuk satu konsep; 2 slug untuk konsep berpasangan. Maksimal 2 — lebih dari itu ditolak schema.
-→ Slide dengan 1 slug: ukuran 240×240px. Slide dengan 2 slug: masing-masing 180×180px, gap 24px — sizing ini FIXED di renderer, bukan dari AI
+→ Ukuran, warna, jarak dan varian terang/gelap SEMUA ditentukan renderer dari ruang yang tersisa di slide. Tidak ada field untuk mengaturnya.
 
 Contoh few-shot wajib illustration:
 - "Index itu kayak daftar isi di buku" → mockup: "illustration", illustrationSlugs: ["file-manager_ivlr"]
@@ -351,6 +351,34 @@ ANTI-REPETITION (hard rules):
 7. custom — MAX ~1 per deck. It is the escape hatch for a layout the typed
    mockups genuinely cannot draw, not a shortcut around picking the right type.
    If a typed mockup fits, use the typed mockup.
+
+LOG / OUTPUT / TERMINAL CONTENT → ALWAYS "terminal", NEVER custom (HARD RULE)
+Any content that reads as lines of machine output belongs in the typed "terminal"
+mockup. This includes log lines with timestamps, request/response traces, stack traces,
+CLI sessions, and diff-style before/after code — and it still includes them when the
+lines carry extra annotation: emoji markers (⚡ 💥 ⚠️ ✅), severity labels, arrows,
+inline commentary, or a made-up prefix like [REQ A]. Annotation is just text inside a
+line; it is not a reason to hand-draw a layout.
+The ONLY escape is a structure "terminal" genuinely cannot express — e.g. two log
+streams that must sit side by side to make the point. "It would look nicer with my own
+markup" is not that. Note also that terminal is a dark mockup: it counts against the
+MAX 1 per 5 slides budget in rule 3 above.
+Few-shot — race-condition log, WITH annotations, still terminal:
+  content: "10:00:00.100 [REQ A] read saldo = 100 / 10:00:00.150 [REQ B] read saldo = 100
+  / ⚡ OVERLAP / 10:00:00.220 [REQ A] write saldo = 90 / 💥 DATA CORRUPT"
+  → {
+      "type": "terminal",
+      "filename": "race.log",
+      "lines": [
+        { "text": "10:00:00.100 [REQ A] read saldo = 100", "style": "plain" },
+        { "text": "10:00:00.150 [REQ B] read saldo = 100", "style": "plain" },
+        { "text": "# ⚡ OVERLAP — dua request baca nilai sama", "style": "cmt" },
+        { "text": "10:00:00.220 [REQ A] write saldo = 90", "style": "num" },
+        { "text": "10:00:00.240 [REQ B] write saldo = 90", "style": "num" },
+        { "text": "# 💥 DATA CORRUPT — satu write hilang", "style": "cmt" }
+      ]
+    }
+  NOT { "type": "custom", "html": "<div>10:00:00.100 [REQ A]...</div>" }.
 
 WRITING A custom MOCKUP (when you do reach for it):
 - You control STRUCTURE and COPY. You do not control appearance — at all.
@@ -508,7 +536,7 @@ Grouped by VISUAL DIRECTOR category (pick by the slide's content):
 **PROCESS** (flow / step-by-step / structure):
 - Flow — pipelines, sequences (request → handler → db)
 - Steps — 2-4 numbered tutorial steps
-- Concept — parent term broken into 3-4 sub-concepts
+- Concept — parent term broken into 2-3 sub-concepts
 - Hub — center concept wiring to 3-4 related items
 - FolderTree — project/file structure (mono directory listing)
 - GitBranch — branch/merge feature-branch workflow
@@ -543,7 +571,7 @@ Grouped by VISUAL DIRECTOR category (pick by the slide's content):
 - Steps: 2-4 steps (title ≤35, body ≤55)
 - Flow: 2-5 step labels (≤24), note (≤90)
 - Hub: center + 3-4 tools (icon + label ≤16)
-- Concept: parent + 3-4 children (≤18)
+- Concept: parent + 2-3 children (≤18, MAX 3)
 - FolderTree: 3-8 lines (≤48 each, one optional active)
 - GitBranch: main 2-6 commits + branch {name, at} + mergeLabel
 - BigStat: number (≤6), unit (≤20), caption (≤70)
@@ -711,8 +739,8 @@ MOCKUP TYPES — every "point" slide MUST include a "mockup" object with one of 
 8. { type: "hub", center: "...", tools: [{ icon: "<allowlisted-slug>", label: "..." }], note?: "..." }
    → Center node wired to 3-4 tools. Use for "X connects to A, B, C, D" (services, integrations).
 
-9. { type: "concept", parent: "...", children: ["...", "..."], note?: "..." }
-   → Parent term broken into 3-4 sub-concepts. Use for glossaries / foundational concept breakdowns.
+9. { type: "concept", parent: "...", children: ["...", "..."], note?: "..." }   // 2-3 children
+   → Parent term broken into 2-3 sub-concepts (MAX 3 children — a 4th makes the row unreadable at 1080px; a 4th sent anyway is dropped). Use for glossaries / foundational concept breakdowns.
 
 10. { type: "checklist", items: ["...", "..."], note?: "..." }
    → 3-6 ticked recap items. Use for "what you learned" / summary slides.
@@ -751,11 +779,11 @@ MOCKUP TYPES — every "point" slide MUST include a "mockup" object with one of 
    → Real user upload evidence screenshot. MANDATORY for real case studies, incident reports, or real-world proof. Must specify source (as specific as possible), mustShow, mustHide, cropRatio ("4:5"), and set evidenceStatus: "pending".
 
 22. { type: "custom", html: "..." }
-   → Hand-written HTML, STRUCTURE ONLY. The escape hatch for a layout none of types 1-21 can draw (a bespoke split view, an unusual structural block, a visual metaphor). There is no 'css' field. style attributes, <style> blocks and presentational attributes are stripped by the renderer; class is filtered to a whitelist (${CUSTOM_CLASS_WHITELIST.join(", ")}). Write plain semantic HTML — the design system styles it to the slide surface for you. Wanting a colour or size you cannot express is the signal that this content needs a new typed mockup; say so in your reasoning. See "WRITING A custom MOCKUP" above. Max ~1 per deck.
+   → Hand-written HTML, STRUCTURE ONLY. The escape hatch for a layout none of types 1-21 can draw (a bespoke split view, an unusual structural block, a visual metaphor). There is no 'css' field. style attributes, <style> blocks and presentational attributes are stripped by the renderer; class is filtered to a whitelist (${CUSTOM_CLASS_WHITELIST.join(", ")}). Write plain semantic HTML — the design system styles it to the slide surface for you. Wanting a colour or size you cannot express is the signal that this content needs a new typed mockup; say so in your reasoning. See "WRITING A custom MOCKUP" above. Max ~1 per deck. NEVER for log/terminal/output content, however annotated — that is always type "terminal"; see the HARD RULE above.
 
 23. { type: "illustration", illustrationSlugs: ["online-learning_tgmv"] | ["server_9eix", "server-cluster_7ugi"], caption?: "..." }
    → unDraw editorial SVG — the MANDATORY choice for analogy/metaphor slides and abstract concepts with no natural technical visual. Pick a slug from ILLUSTRATION_CATEGORIES.
-   RENDERER SIZES THESE AUTOMATICALLY — do NOT specify width/height/gap. Single slug renders at 240×240px; two slugs (pair) renders side-by-side at 180×180px each with 24px gap.
+   RENDERER SIZES THESE AUTOMATICALLY — do NOT specify width/height/gap. A single slug fills the free space up to 500px tall; two slugs render side by side, up to 420px each. Both shrink on their own when the headline is long.
    WAJIB untuk: slide dengan kata "kayak/ibarat/mirip/bayangkan", topik psikologis (burnout, mindset), atau konsep abstrak yang lebih baik sebagai gambar editorial daripada diagram teknis.
 
 ${MOCKUP_VARIETY_RULE}
@@ -769,7 +797,7 @@ VARIETY EXAMPLE (a good, non-monotone deck — mirror this diversity, not the co
 - cover (text-only, no hook): eyebrow "AI 101", headline "istilah AI yang wajib lo tau"
   (accentWord "tau"), lede "biar lo gak cuma nge-prompt doang tapi ngerti cara kerjanya.",
   stamp "Engineering Notes", ghostNumeral "01"
-- point → concept (parent + 3-4 children)
+- point → concept (parent + 2-3 children)
 - point → flow (3-4 steps, one focus)
 - point → hub (center + 3-4 tool icons)
 - point → terminal (only if a real code scene — max 1)
@@ -907,6 +935,194 @@ CRITICAL INSTRUCTIONS FOR REVISION:
 3. You MUST include the '# Carousel Content — <Title>', '# Caption', and '# Hashtag' sections in the output. If the revision request doesn't ask to change them, preserve them or update them to reflect the slide changes. Do not output just the slides.
 4. Keep every earlier revision in the history above intact — never undo an accepted change while applying the new one. If the new request contradicts an earlier one, the new request wins.
 5. Output the full Markdown document matching the required structure start-to-finish.`;
+}
+
+/* ── Scoped revision · patch ONLY what the request targets ─────────────── */
+
+/**
+ * Classifier prompt, used only when the deterministic parser finds no target.
+ * Kept tiny and mechanical: it decides WHERE a change goes, never WHAT the change is.
+ */
+export const scopeClassifierSystem = `You route a carousel revision request to the part of the deck it targets.
+You do NOT perform the revision. You only decide where it applies.
+
+Return:
+- slides: 1-based indices of the slides the request changes. Empty if none.
+- globals: any of "title", "caption", "hashtags" the request changes. Empty if none.
+- wholeDeck: true ONLY when the request applies to every slide at once ("bikin semua
+  headline lebih pendek"), or changes how many slides there are (add/remove/reorder/merge),
+  or you genuinely cannot tell what it targets.
+
+Rules:
+- Be precise. Naming a slide that the request does not touch means an untouched slide gets
+  rewritten; missing a slide the request does touch means the user's change is dropped.
+- "cover" is slide 1. "outro"/"penutup" is the last slide.
+- A request about the deck's own title/caption/hashtags is a global, not a slide.
+- When a request names something by content ("slide soal race condition"), find the slide
+  whose text matches and return its index.
+- If in doubt, set wholeDeck: true. A whole-deck revision is slower but never silently
+  drops half the request.`;
+
+export function scopeClassifierPrompt(message: string, plan: { slides: { role: string; headline?: string; eyebrow?: string }[] }): string {
+  const outline = plan.slides
+    .map((s, i) => `${i + 1}. [${s.role}] ${s.eyebrow ?? ""} — ${s.headline ?? ""}`)
+    .join("\n");
+  return `DECK OUTLINE:
+${outline}
+
+REVISION REQUEST:
+"${message}"
+
+Which slides and/or global fields does this request change?`;
+}
+
+/** Rules shared by both scoped editors. */
+const SCOPED_REVISION_RULES = `${HUMAN_VOICE_EDITOR}
+
+COPY CAPS
+${COPY_CAPS}
+
+MOCKUP FIELD REFERENCE (use when the revision changes a mockup)
+${MOCKUP_BUDGETS}
+
+Tones: ${TONES}
+${HASHTAG_RULE}
+
+HONOUR THE REVISION HISTORY
+- The prompt may carry a REVISION HISTORY: every earlier change the user asked for on this
+  same draft, oldest first. Never undo or re-litigate an earlier accepted revision while
+  applying the new one.
+- Resolve a vague request ("shorter again", "same for that one") against the history; the
+  latest entry is the most likely referent.
+- If the new request genuinely contradicts an earlier one, the NEW request wins.
+
+USER INSTRUCTION PRECEDENCE
+- An explicit instruction from the user beats every default guideline above. If they ask
+  for a longer headline or specific phrasing, give them exactly that.`;
+
+export const scopedSlideReviseSystem = `ROLE
+You are an expert presentation editor for @vourdev carousels.
+You are given the full slide plan as READ-ONLY CONTEXT and a list of TARGET SLIDES.
+You rewrite ONLY the target slides and return only those.
+
+WHAT YOU RETURN
+- An array of { index, slide } for EXACTLY the target indices you were given — no more, no
+  fewer. \`index\` is the 1-based slide number, copied from the target list.
+- Each \`slide\` is the COMPLETE slide object, including the fields you did not change.
+- Never return a slide that is not in the target list. The caller ignores extras, so
+  returning them only wastes the turn — the deck's other slides, title, caption and
+  hashtags are carried over in code and cannot be edited from here.
+
+CHANGING A SLIDE'S MOCKUP TYPE IS EXPLICITLY SUPPORTED
+- "ganti mockup slide 4 jadi illustration", "bikin slide 3 pakai terminal", "ubah jadi
+  comparison" — replace the whole \`mockup\` object with a valid one of the requested type,
+  with all the fields that type requires. Do not try to keep the old type's fields.
+- For type "illustration": \`illustrationSlugs\` MUST be 1-2 slugs copied VERBATIM from the
+  ILLUSTRATION_CATEGORIES list above. A slug that is not on that list is silently replaced
+  with a generic fallback image, which looks like the revision worked when it did not.
+- Do NOT return the slide unchanged. If you were given a target, something in it changes.
+
+STAY VALID
+- Keep the slide's \`role\`. A point slide keeps a valid \`mockup\`; an outro keeps its \`cta\`.
+- Whenever you edit a headline, pick ONE word from the NEW headline as \`accentWord\` — it
+  must appear verbatim inside the new headline string.
+- Cover slides may carry a \`hook\` (device / badge / nocgrid / door / custom) and a \`stamp\`.
+  Set, swap or remove the hook when asked to change the intro visual; never blank the stamp.
+- custom html is STRUCTURE ONLY — no style attributes, no <style>, no css field. They are
+  stripped before rendering.
+
+${SCOPED_REVISION_RULES}`;
+
+export function scopedSlideRevisePrompt(
+  planJson: string,
+  targets: { index: number; slideJson: string }[],
+  message: string,
+  history: { request: string; outcome?: string | null }[] = []
+): string {
+  const targetBlock = targets
+    .map((t) => `--- SLIDE ${t.index} (target) ---\n${t.slideJson}`)
+    .join("\n\n");
+  const indices = targets.map((t) => t.index).join(", ");
+  return `${revisionHistoryBlock(history)}FULL PLAN — READ-ONLY CONTEXT (for consistency of voice and continuity; you cannot edit this):
+${planJson}
+
+TARGET SLIDES — the only thing you may return (1-based indices: ${indices}):
+${targetBlock}
+
+NEW USER REVISION REQUEST:
+"${message}"
+
+Apply the request to slide ${indices} and return { slides: [{ index, slide }, ...] } for exactly those indices.`;
+}
+
+export const scopedGlobalReviseSystem = `ROLE
+You are an expert presentation editor for @vourdev carousels.
+You are given the full slide plan as READ-ONLY CONTEXT and a list of TARGET FIELDS —
+some subset of the deck's own title, caption and hashtags.
+You return ONLY those fields.
+
+WHAT YOU RETURN
+- Exactly the target fields, nothing else. The slides are carried over in code and cannot
+  be edited from here, so do not return them.
+- Omitting a target field means "leave it alone", which is almost never what the user asked
+  for — if a field is a target, give it a new value.
+
+FIELD RULES
+- title: the deck's own title. Informative and specific, not a slogan.
+- caption: the Instagram/TikTok caption. Muhammad's voice, ends with a save/share nudge.
+- hashtags: ${HASHTAG_RULE}
+
+${SCOPED_REVISION_RULES}`;
+
+export function scopedGlobalRevisePrompt(
+  planJson: string,
+  fields: string[],
+  message: string,
+  history: { request: string; outcome?: string | null }[] = []
+): string {
+  return `${revisionHistoryBlock(history)}FULL PLAN — READ-ONLY CONTEXT (you cannot edit the slides):
+${planJson}
+
+TARGET FIELDS: ${fields.join(", ")}
+
+NEW USER REVISION REQUEST:
+"${message}"
+
+Return only ${fields.join(" and ")}.`;
+}
+
+/**
+ * Gate-1 scoped brief editor. Same contract as the plan editor: full document as
+ * read-only context, only the targeted `#` sections come back, everything else is
+ * spliced in code by lib/ai/brief-sections.ts.
+ */
+export function scopedBriefRevisePrompt(
+  brief: string,
+  targetSections: string[],
+  message: string,
+  history: { request: string; outcome?: string | null }[] = []
+): string {
+  return `${revisionHistoryBlock(history)}FULL BRIEF — READ-ONLY CONTEXT (do not return this):
+${brief}
+
+TARGET SECTIONS — the only thing you may return:
+${targetSections.map((h) => `- ${h}`).join("\n")}
+
+NEW USER REVISION REQUEST:
+"${message}"
+
+RULES
+1. Return ONLY the target sections listed above, each starting with its own "# " heading,
+   in the same order. Do NOT return the rest of the document — the untouched sections are
+   spliced back in by the caller and anything else you send is discarded.
+2. Keep each section's internal structure exactly as it is in the brief above: the same
+   "## " sub-headings, in the same order. You are rewriting the content under them, not
+   redesigning the section.
+3. Keep the "# " heading line itself recognisable — "# Slide 4 — ..." must stay slide 4.
+4. Apply the revision request and nothing else. A detail the request did not mention keeps
+   its current wording.
+5. Never undo an earlier revision from the history above. If the new request contradicts
+   one, the new request wins.`;
 }
 
 /* ── Human Voice Editor · Anti-Agentic Copywriting Pass ───────────────── */

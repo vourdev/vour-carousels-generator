@@ -229,3 +229,23 @@ describe("checklist mockup", () => {
     expect(() => mockupSchema.parse({ type: "checklist", items })).toThrow();
   });
 });
+
+describe("concept mockup child cap", () => {
+  it("keeps 2 and 3 children as-is", () => {
+    for (const children of [["A", "B"], ["A", "B", "C"]]) {
+      const out = mockupSchema.parse({ type: "concept", parent: "P", children });
+      expect(out).toMatchObject({ children });
+    }
+  });
+
+  it("slices a 4th child away instead of rejecting the plan", () => {
+    // Rejecting would throw away an otherwise valid deck, and would break re-parsing
+    // the plans in the history table that were generated when the cap was 4.
+    const out = mockupSchema.parse({ type: "concept", parent: "P", children: ["A", "B", "C", "D"] });
+    expect(out).toMatchObject({ children: ["A", "B", "C"] });
+  });
+
+  it("still rejects fewer than 2 children", () => {
+    expect(() => mockupSchema.parse({ type: "concept", parent: "P", children: ["A"] })).toThrow();
+  });
+});

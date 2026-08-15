@@ -1,7 +1,17 @@
 import { generateText, generateObject, type LanguageModel } from "ai";
-import { slidePlanSchema, type SlidePlan } from "@/lib/ds/schema";
+import { z } from "zod";
+import { slidePlanSchema, slideSchema, type SlidePlan } from "@/lib/ds/schema";
 import { repairSlidePlan } from "@/lib/ds/repair";
 import { normalizeIllustration } from "@/lib/ds/illustrations";
+import {
+  assertScopePreserved,
+  mergeScopedRevision,
+  parseRevisionScope,
+  scopeFromClassifier,
+  scopedChangeSummary,
+  type RevisionScope,
+  type ScopedPatch,
+} from "@/lib/ai/revision-scope";
 import {
   briefSystem,
   briefUserPrompt,
@@ -9,6 +19,12 @@ import {
   planUserPrompt,
   reviseSystem,
   reviseUserPrompt,
+  scopeClassifierSystem,
+  scopeClassifierPrompt,
+  scopedSlideReviseSystem,
+  scopedSlideRevisePrompt,
+  scopedGlobalReviseSystem,
+  scopedGlobalRevisePrompt,
   humanVoiceEditorSystem,
   humanVoiceEditorUserPrompt,
 } from "@/lib/ai/prompts";
@@ -157,6 +173,161 @@ export async function reviseSlidePlan(
       return repairSlidePlan(parsed);
     }
   });
+}
+
+/* ── Scoped revision ──────────────────────────────────────────────────────
+ * The model is only ever asked for the slides/fields the request targets, and the
+ * result is merged into the previous plan in code. See lib/ai/revision-scope.ts for
+ * why whole-plan regeneration was the wrong shape.
+ *
+ * Note what is deliberately NOT applied here: enforceIllustrationForAnalogySlides.
+ * That safety net is for first generation. On a revision it would fight the user —
+ * "ganti slide 4 jadi terminal" on a slide whose body says "kayak" would be silently
+ * flipped back to illustration. */
+
+const scopeClassificationSchema = z.object({
+  slides: z.array(z.number().int()).default([]),
+  globals: z.array(z.enum(["title", "caption", "hashtags"])).default([]),
+  wholeDeck: z.boolean().default(false),
+});
+
+const slidePatchSchema = z.object({
+  slides: z.array(z.object({ index: z.number().int(), slide: slideSchema })),
+});
+
+/**
+ * Work out what the request targets: regex first, model only if that finds nothing.
+ *
+ * The regex handles the common shapes ("slide 4", "cover", "caption") for free and
+ * deterministically. The classifier exists for content-addressed requests like "slide
+ * soal race condition". A classifier failure degrades to whole-plan revision rather
+ * than to a wrong scope.
+ */
+export async function resolveRevisionScope(
+  plan: SlidePlan,
+  message: string,
+  model: LanguageModel
+): Promise<RevisionScope> {
+  const parsed = parseRevisionScope(message, plan.slides.length);
+  if (parsed.resolved || parsed.reasonCode !== "no-target") return parsed;
+
+  try {
+    const { object } = await generateObject({
+      model,
+      schema: scopeClassificationSchema,
+      system: scopeClassifierSystem,
+      prompt: scopeClassifierPrompt(message, plan),
+    });
+    return scopeFromClassifier(object, plan.slides.length);
+  } catch (err: unknown) {
+    console.warn("[revision-scope] classifier failed, falling back to whole-plan revision:", err);
+    return parsed;
+  }
+}
+
+async function reviseTargetSlides(
+  plan: SlidePlan,
+  scope: RevisionScope,
+  message: string,
+  model: LanguageModel,
+  history: RevisionHistory
+): Promise<ScopedPatch["slides"]> {
+  const targets = scope.slides.map((i) => ({
+    index: i + 1,
+    slideJson: JSON.stringify(plan.slides[i], null, 2),
+  }));
+  const prompt = scopedSlideRevisePrompt(JSON.stringify(plan), targets, message, history);
+
+  return withRetry(async () => {
+    try {
+      const { object } = await generateObject({
+        model,
+        schema: slidePatchSchema,
+        system: scopedSlideReviseSystem,
+        prompt,
+      });
+      return object.slides.map((s) => ({ index: s.index - 1, slide: s.slide }));
+    } catch (err: unknown) {
+      console.warn("[revision-scope] scoped slide generateObject failed, retrying as text:", err);
+      const { text } = await generateText({
+        model,
+        system: scopedSlideReviseSystem + "\nIMPORTANT: Return ONLY valid JSON matching the schema. No markdown codeblocks or extra text.",
+        prompt,
+      });
+      const parsed = slidePatchSchema.parse(extractAndParseJson(text));
+      return parsed.slides.map((s) => ({ index: s.index - 1, slide: s.slide }));
+    }
+  });
+}
+
+async function reviseGlobalFields(
+  plan: SlidePlan,
+  scope: RevisionScope,
+  message: string,
+  model: LanguageModel,
+  history: RevisionHistory
+): Promise<ScopedPatch> {
+  // Built from the scope so the model has no field to fill in that it was not asked for.
+  const shape: Record<string, z.ZodTypeAny> = {};
+  if (scope.globals.includes("title")) shape.title = z.string();
+  if (scope.globals.includes("caption")) shape.caption = z.string();
+  if (scope.globals.includes("hashtags")) shape.hashtags = z.array(z.string()).length(5);
+  const schema = z.object(shape);
+
+  const prompt = scopedGlobalRevisePrompt(JSON.stringify(plan), scope.globals, message, history);
+
+  return withRetry(async () => {
+    try {
+      const { object } = await generateObject({
+        model,
+        schema,
+        system: scopedGlobalReviseSystem,
+        prompt,
+      });
+      return object as ScopedPatch;
+    } catch (err: unknown) {
+      console.warn("[revision-scope] scoped global generateObject failed, retrying as text:", err);
+      const { text } = await generateText({
+        model,
+        system: scopedGlobalReviseSystem + "\nIMPORTANT: Return ONLY valid JSON matching the schema. No markdown codeblocks or extra text.",
+        prompt,
+      });
+      return schema.parse(extractAndParseJson(text)) as ScopedPatch;
+    }
+  });
+}
+
+export interface ScopedRevisionResult {
+  plan: SlidePlan;
+  scope: RevisionScope;
+  /** Which in-scope slides/fields actually came back different. Empty means a no-op. */
+  changed: string[];
+}
+
+export async function reviseSlidePlanScoped(
+  plan: SlidePlan,
+  message: string,
+  model: LanguageModel,
+  history: RevisionHistory = []
+): Promise<ScopedRevisionResult> {
+  const scope = await resolveRevisionScope(plan, message, model);
+
+  if (!scope.resolved) {
+    // Nothing to protect: the request legitimately covers the whole deck.
+    const revised = await reviseSlidePlan(plan, message, model, history);
+    return { plan: revised, scope, changed: [] };
+  }
+
+  // Independent calls — a request can target a slide and the caption at once.
+  const [slidePatch, globalPatch] = await Promise.all([
+    scope.slides.length ? reviseTargetSlides(plan, scope, message, model, history) : Promise.resolve(undefined),
+    scope.globals.length ? reviseGlobalFields(plan, scope, message, model, history) : Promise.resolve({}),
+  ]);
+
+  const merged = mergeScopedRevision(plan, { ...globalPatch, slides: slidePatch }, scope);
+  assertScopePreserved(plan, merged, scope);
+
+  return { plan: merged, scope, changed: scopedChangeSummary(plan, merged, scope) };
 }
 
 export async function polishBriefVoice(brief: string, model: LanguageModel): Promise<string> {

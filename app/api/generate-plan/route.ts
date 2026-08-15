@@ -1,7 +1,8 @@
 import { NextResponse } from "next/server";
 import { requireSession } from "@/lib/session";
 import { resolveModel, type ModelId } from "@/lib/ai/registry";
-import { generateSlidePlan, reviseSlidePlan } from "@/lib/ai/generate";
+import { generateSlidePlan, reviseSlidePlanScoped } from "@/lib/ai/generate";
+import { describeScope, RevisionScopeViolation } from "@/lib/ai/revision-scope";
 import { appendRevision, listRevisions } from "@/lib/memory/repo";
 import { summarizePlanDiff } from "@/lib/memory/diff";
 import type { SlidePlan } from "@/lib/ds/schema";
@@ -27,22 +28,44 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "Missing message" }, { status: 400 });
     }
     const model = resolveModel(body.modelId);
-    // Same replay-and-record contract as reviseAction; draftId is optional so an
-    // older client that does not send one still gets a stateless revision.
+    // Same scoping, merge and guard contract as reviseAction — this route is a second
+    // door into the same operation, so it must not be the one that skips the guard.
     const history = body.draftId
       ? await listRevisions(session.user.id, body.draftId, "plan")
       : [];
-    const plan = await reviseSlidePlan(body.plan, body.message, model, history);
+
+    let revised;
+    try {
+      revised = await reviseSlidePlanScoped(body.plan, body.message, model, history);
+    } catch (err) {
+      if (err instanceof RevisionScopeViolation) {
+        console.error("[revision-guard] blocked an out-of-scope revision:", err.violations);
+        return NextResponse.json(
+          { error: "Revision touched fields outside its scope; the plan was not changed.", violations: err.violations },
+          { status: 422 }
+        );
+      }
+      throw err;
+    }
+
+    const { plan, scope, changed } = revised;
+    if (scope.resolved && changed.length === 0) {
+      return NextResponse.json(
+        { error: `Revision changed nothing in ${describeScope(scope)}.`, scope: describeScope(scope) },
+        { status: 422 }
+      );
+    }
+
     if (body.draftId) {
       await appendRevision({
         userId: session.user.id,
         draftId: body.draftId,
         stage: "plan",
         request: body.message,
-        outcome: summarizePlanDiff(body.plan, plan),
+        outcome: `[${describeScope(scope)}] ${summarizePlanDiff(body.plan, plan)}`,
       });
     }
-    return NextResponse.json({ plan });
+    return NextResponse.json({ plan, scope: describeScope(scope), changed });
   }
 
   return NextResponse.json({ error: "Invalid type" }, { status: 400 });

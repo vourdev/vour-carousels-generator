@@ -2,8 +2,10 @@
 
 import { requireSession } from "@/lib/session";
 import { availableModels, resolveModel, type ModelId } from "@/lib/ai/registry";
-import { generateBrief, generateSlidePlan, reviseSlidePlan, polishBriefVoice } from "@/lib/ai/generate";
-import { briefRevisionPrompt } from "@/lib/ai/prompts";
+import { generateBrief, generateSlidePlan, reviseSlidePlanScoped, polishBriefVoice } from "@/lib/ai/generate";
+import { briefRevisionPrompt, scopedBriefRevisePrompt } from "@/lib/ai/prompts";
+import { describeScope, parseRevisionScope, RevisionScopeViolation } from "@/lib/ai/revision-scope";
+import { briefScopeViolations, briefTargets, mergeBriefSections, splitBrief } from "@/lib/ai/brief-sections";
 import { appendRevision, listRevisions, clearRevisions } from "@/lib/memory/repo";
 import { summarizePlanDiff } from "@/lib/memory/diff";
 import type { SlidePlan } from "@/lib/ds/schema";
@@ -54,7 +56,32 @@ export async function reviseAction(
   const model = await guardModel(id);
 
   const history = draftId ? await listRevisions(session.user.id, draftId, "plan") : [];
-  const revised = await reviseSlidePlan(plan, message, model, history);
+
+  let result: Awaited<ReturnType<typeof reviseSlidePlanScoped>>;
+  try {
+    result = await reviseSlidePlanScoped(plan, message, model, history);
+  } catch (err) {
+    if (err instanceof RevisionScopeViolation) {
+      // Blocked, not merged: the caller keeps the plan it already had. Detail goes to the
+      // server log because the whole point is that this failure used to be invisible.
+      console.error("[revision-guard] blocked a revision that reached outside its scope:", err.violations);
+      throw new Error(
+        `Revisi dibatalkan: perubahan menyentuh bagian yang tidak diminta (${err.violations.join("; ")}). Rancangan slide dikembalikan ke kondisi sebelumnya.`
+      );
+    }
+    throw err;
+  }
+
+  const { plan: revised, scope, changed } = result;
+
+  // A scoped revision that changed nothing in scope is a failed revision. It used to be
+  // indistinguishable from a successful one, because the plan was replaced wholesale.
+  if (scope.resolved && changed.length === 0) {
+    console.warn(`[revision-guard] no-op revision on ${describeScope(scope)}: "${message}"`);
+    throw new Error(
+      `Revisi tidak menghasilkan perubahan apa pun pada ${describeScope(scope)}. Coba sebutkan lebih spesifik apa yang mau diubah.`
+    );
+  }
 
   if (draftId) {
     // Recorded from the actual before/after plans, not from a model self-report.
@@ -63,13 +90,19 @@ export async function reviseAction(
       draftId,
       stage: "plan",
       request: message,
-      outcome: summarizePlanDiff(plan, revised),
+      outcome: `[${describeScope(scope)}] ${summarizePlanDiff(plan, revised)}`,
     });
   }
   return revised;
 }
 
-/** Gate-1 counterpart: revise the Markdown brief with the same replayed memory. */
+/**
+ * Gate-1 counterpart: revise the Markdown brief.
+ *
+ * Same scoping contract as the plan: when the request names a slide or a deck field, only
+ * that `#` section is regenerated and the rest of the document is spliced back verbatim.
+ * A request that has no identifiable target still falls through to the whole-brief rewrite.
+ */
 export async function reviseBriefAction(
   brief: string,
   message: string,
@@ -80,7 +113,44 @@ export async function reviseBriefAction(
   const model = await guardModel(id);
 
   const history = draftId ? await listRevisions(session.user.id, draftId, "brief") : [];
-  const revised = await generateBrief(briefRevisionPrompt(brief, message, history), model);
+  const sections = splitBrief(brief);
+  const slideCount = sections.filter((s) => s.kind === "slide").length;
+  const scope = parseRevisionScope(message, slideCount);
+  const targets = scope.resolved ? briefTargets(sections, scope) : [];
+
+  let revised: string;
+  let outcome: string;
+
+  if (targets.length === 0) {
+    revised = await generateBrief(briefRevisionPrompt(brief, message, history), model);
+    outcome = `whole brief rewritten (${brief.length} to ${revised.length} chars)`;
+  } else {
+    const headings = targets.map((i) => sections[i].heading);
+    const rewritten = await generateBrief(
+      scopedBriefRevisePrompt(brief, headings, message, history),
+      model
+    );
+    const merged = mergeBriefSections(sections, targets, rewritten);
+
+    if (merged.applied.length === 0) {
+      console.error("[revision-guard] brief revision returned none of the target sections:", merged.missing);
+      throw new Error(
+        `Revisi dibatalkan: model tidak mengembalikan bagian yang diminta (${headings.join(", ")}). Brief dikembalikan ke kondisi sebelumnya.`
+      );
+    }
+
+    const violations = briefScopeViolations(sections, merged.brief, merged.applied);
+    if (violations.length) {
+      console.error("[revision-guard] brief revision reached outside its scope:", violations);
+      throw new Error(
+        `Revisi dibatalkan: perubahan menyentuh bagian yang tidak diminta (${violations.join("; ")}). Brief dikembalikan ke kondisi sebelumnya.`
+      );
+    }
+
+    revised = merged.brief;
+    outcome = `${merged.applied.map((i) => sections[i].heading).join(", ")} rewritten`;
+    if (merged.missing.length) outcome += ` (not returned: ${merged.missing.join(", ")})`;
+  }
 
   if (draftId) {
     await appendRevision({
@@ -88,7 +158,7 @@ export async function reviseBriefAction(
       draftId,
       stage: "brief",
       request: message,
-      outcome: `brief rewritten (${brief.length} to ${revised.length} chars)`,
+      outcome,
     });
   }
   return revised;

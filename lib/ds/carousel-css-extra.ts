@@ -387,7 +387,20 @@ export const carouselExtraCss = String.raw`
      here reads surface tokens, so it is correct on Ink and Paper with no per-surface rule. */
   .cm-base { flex-direction: column; gap: 16px; text-align: left;
     font-family: 'Inter', system-ui, sans-serif; color: var(--ms-fg);
-    font-size: 30px; line-height: 1.45; }
+    font-size: 30px; line-height: 1.45;
+    /* The fragment is a panel, not loose text on the canvas. Without this it renders as
+       a bare paragraph floating in the diagram well, which reads as a slide that failed
+       to render rather than as a deliberate mockup. Every value is a surface token, so
+       one rule is correct on both Ink and Paper. */
+    width: 100%; padding: 36px 40px;
+    background: var(--ms-panel); border: 1.5px solid var(--ms-line);
+    border-radius: 20px;
+    /* Tinted to the canvas, never pure black — see the shadow note in DESIGN.md. */
+    box-shadow: 0 16px 40px rgba(28, 10, 5, 0.10); }
+  /* justify-content:center on .cm would push a short fragment's children apart once
+     .cm-base makes it a real box; keep the content stacked from the top. */
+  .diag-wrap > .cm.cm-base,
+  .anchor-wrap > .cm.cm-base { justify-content: flex-start; align-items: stretch; }
   .cm-base p, .cm-base li, .cm-base td, .cm-base th, .cm-base div, .cm-base span {
     color: var(--ms-fg); font-size: inherit; line-height: inherit; }
   .cm-base h1, .cm-base h2, .cm-base h3, .cm-base h4, .cm-base h5, .cm-base h6 {

@@ -6,6 +6,12 @@ import {
   planUserPrompt,
   reviseSystem,
   reviseUserPrompt,
+  scopeClassifierSystem,
+  scopedSlideReviseSystem,
+  scopedSlideRevisePrompt,
+  scopedGlobalReviseSystem,
+  scopedGlobalRevisePrompt,
+  scopedBriefRevisePrompt,
   humanVoiceEditorSystem,
   humanVoiceEditorUserPrompt,
 } from "@/lib/ai/prompts";
@@ -128,5 +134,89 @@ describe("humanVoiceEditorSystem", () => {
     const prompt = humanVoiceEditorUserPrompt("# Draft Brief");
     expect(prompt).toContain("# Draft Brief");
     expect(prompt).toContain("Perform the Human Voice Editor pass now");
+  });
+});
+
+describe("mockup classification rules", () => {
+  it("routes log/terminal content to the terminal mockup, annotations included", () => {
+    // TASK 5: annotated log output was being drawn as a custom fragment.
+    expect(planSystem).toMatch(/LOG \/ OUTPUT \/ TERMINAL CONTENT → ALWAYS "terminal", NEVER custom/);
+    expect(planSystem).toContain("⚡");
+    expect(planSystem).toContain("💥");
+    expect(planSystem).toMatch(/\[REQ A\]/);
+    // and the few-shot shows the shape it must produce
+    expect(planSystem).toContain('"filename": "race.log"');
+    expect(planSystem).toMatch(/NOT \{ "type": "custom"/);
+  });
+
+  it("tells the custom escape hatch to stay out of log content", () => {
+    expect(planSystem).toMatch(/NEVER for log\/terminal\/output content/);
+  });
+
+  it("caps concept children at 3 everywhere it is described", () => {
+    expect(planSystem).not.toMatch(/concept[^.]{0,40}3-4 children/i);
+    expect(planSystem).toMatch(/MAX 3 children/);
+  });
+
+  it("no longer promises the model a fixed illustration pixel size", () => {
+    // The renderer sizes illustrations from the free space now; a stale "240×240px"
+    // here would teach the model that it has a size to reason about.
+    expect(planSystem).not.toContain("240×240");
+    expect(planSystem).not.toContain("180×180");
+  });
+});
+
+describe("scoped revision prompts", () => {
+  it("asks only for the target slides and forbids returning the rest", () => {
+    expect(scopedSlideReviseSystem).toMatch(/EXACTLY the target indices/);
+    expect(scopedSlideReviseSystem).toMatch(/Never return a slide that is not in the target list/);
+    expect(scopedSlideReviseSystem).toMatch(/carried over in code/);
+  });
+
+  it("states that changing a mockup type is supported, and names the slug trap", () => {
+    expect(scopedSlideReviseSystem).toMatch(/CHANGING A SLIDE'S MOCKUP TYPE IS EXPLICITLY SUPPORTED/);
+    expect(scopedSlideReviseSystem).toMatch(/silently replaced\s+with a generic fallback image/);
+  });
+
+  it("carries the illustration allowlist, which the old revise prompt did not", () => {
+    // Without the catalog the model invents a slug, normalizeIllustration coerces it to
+    // the fallback, and "tambahkan illustration" looks like it worked.
+    expect(scopedSlideReviseSystem).toContain("online-learning_tgmv");
+  });
+
+  it("puts the full plan in the prompt as read-only context", () => {
+    const p = scopedSlideRevisePrompt('{"title":"T"}', [{ index: 2, slideJson: "{}" }], "perpendek", []);
+    expect(p).toMatch(/READ-ONLY CONTEXT/);
+    expect(p).toContain('{"title":"T"}');
+    expect(p).toMatch(/SLIDE 2 \(target\)/);
+  });
+
+  it("scopes the global editor to the named fields only", () => {
+    const p = scopedGlobalRevisePrompt("{}", ["caption"], "lebih pendek", []);
+    expect(p).toMatch(/TARGET FIELDS: caption/);
+    expect(p).toMatch(/Return only caption/);
+    expect(scopedGlobalReviseSystem).toMatch(/do not return them/);
+  });
+
+  it("replays revision history into the scoped prompts too", () => {
+    const p = scopedSlideRevisePrompt("{}", [{ index: 1, slideJson: "{}" }], "lagi", [
+      { request: "perpendek headline slide 1", outcome: "slide 1: headline" },
+    ]);
+    expect(p).toMatch(/REVISION HISTORY/);
+    expect(p).toContain("perpendek headline slide 1");
+  });
+
+  it("keeps the classifier out of the business of editing", () => {
+    expect(scopeClassifierSystem).toMatch(/You do NOT perform the revision/);
+    expect(scopeClassifierSystem).toMatch(/If in doubt, set wholeDeck: true/);
+  });
+});
+
+describe("scoped brief revision prompt", () => {
+  it("names the target sections and forbids returning the document", () => {
+    const p = scopedBriefRevisePrompt("# Slide 1\n", ["# Slide 1 — Cover"], "perpendek", []);
+    expect(p).toMatch(/TARGET SECTIONS/);
+    expect(p).toContain("# Slide 1 — Cover");
+    expect(p).toMatch(/Do NOT return the rest of the document/);
   });
 });

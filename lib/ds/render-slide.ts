@@ -163,9 +163,16 @@ function renderFlowMockup(m: Extract<Mockup, { type: "flow" }>): string {
   });
 }
 
+/** Children shown in a concept diagram. A 4th node makes the row unreadable at 1080px. */
+const CONCEPT_MAX_CHILDREN = 3;
+
 function renderConceptMockup(m: Extract<Mockup, { type: "concept" }>): string {
-  const children = m.children.map((c) => `<div class="node">${escapeHtml(c)}</div>`).join("");
-  const lines = diagLines(m.children.length, { viewH: 380, midY: 200, endY: 300 });
+  // The schema already slices to 3 on parse; this repeats it because the renderer is
+  // also called with plans that were built in code (samples, tests, imported decks)
+  // and never went through zod.
+  const kids = m.children.slice(0, CONCEPT_MAX_CHILDREN);
+  const children = kids.map((c) => `<div class="node">${escapeHtml(c)}</div>`).join("");
+  const lines = diagLines(kids.length, { viewH: 380, midY: 200, endY: 300 });
   return injectSentinels(conceptTemplate, {
     CONCEPT_PARENT_INJECT: escapeHtml(m.parent),
     CONCEPT_LINES_INJECT: lines,
