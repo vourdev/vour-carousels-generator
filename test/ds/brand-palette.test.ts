@@ -3,6 +3,8 @@ import { readFileSync, readdirSync } from "node:fs";
 import { join } from "node:path";
 import { carouselCss } from "@/lib/ds/carousel-css";
 import { carouselExtraCss } from "@/lib/ds/carousel-css-extra";
+import { stripEmoji } from "@/lib/ds/strip-emoji";
+import { renderSlide } from "@/lib/ds/render-slide";
 import {
   VOUR_BLACK,
   VOUR_CHARCOAL,
@@ -161,5 +163,40 @@ describe("background variety is preserved", () => {
   it("keeps all six card tones distinct", () => {
     const backgrounds = Object.values(VOUR_TONES).map((t) => t.bg);
     expect(new Set(backgrounds).size).toBe(6);
+  });
+});
+
+describe("emoji cannot smuggle colour onto a slide", () => {
+  it("strips pictographic emoji from copy", () => {
+    expect(stripEmoji("❌ Jangan index semua kolom")).toBe("Jangan index semua kolom");
+    expect(stripEmoji("⚡ OVERLAP 💥 CORRUPT")).toBe("OVERLAP CORRUPT");
+    expect(stripEmoji("selesai ✅")).toBe("selesai");
+    expect(stripEmoji("👩‍💻 developer")).toBe("developer");
+  });
+
+  it("keeps the typographic marks the mockups rely on", () => {
+    // These take their colour from CSS, so they are already themed.
+    for (const mark of ["✓", "✗", "→", "─"]) {
+      expect(stripEmoji(`a ${mark} b`)).toBe(`a ${mark} b`);
+    }
+  });
+
+  it("leaves ordinary copy untouched, including Indonesian punctuation", () => {
+    const s = "Planner milih jalur termurah — bukan niat kamu (100%).";
+    expect(stripEmoji(s)).toBe(s);
+  });
+
+  it("removes them from rendered slide HTML, not just from the helper", () => {
+    const html = renderSlide({
+      role: "point",
+      counter: "02 / 08",
+      eyebrow: "TEST",
+      headline: "Jangan ❌ begitu",
+      accentWord: "begitu",
+      body: "⚡ Planner milih jalur termurah.",
+      mockup: { type: "callout", icon: "zap", text: "💥 Data korup" },
+    });
+    expect(html).not.toMatch(/[\u{1F300}-\u{1FAFF}\u{2600}-\u{27BF}]/u);
+    expect(html).toContain("Data korup");
   });
 });

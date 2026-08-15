@@ -352,6 +352,13 @@ ANTI-REPETITION (hard rules):
    mockups genuinely cannot draw, not a shortcut around picking the right type.
    If a typed mockup fits, use the typed mockup.
 
+NO EMOJI IN SLIDE COPY (HARD RULE)
+Emoji are the only thing on a slide that ignores the design system: a font paints ❌ red,
+⚡ yellow and 💥 orange from its own bitmaps, and no colour token can reach them. On a deck
+with no warm colour anywhere else they read as a mistake. The renderer strips them, so an
+emoji you write is simply deleted — write the word, or use an allowlisted icon, instead.
+Typographic marks that take their colour from CSS (✓ ✗ → ─) are fine and are kept.
+
 LOG / OUTPUT / TERMINAL CONTENT → ALWAYS "terminal", NEVER custom (HARD RULE)
 Any content that reads as lines of machine output belongs in the typed "terminal"
 mockup. This includes log lines with timestamps, request/response traces, stack traces,

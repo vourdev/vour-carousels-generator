@@ -1,5 +1,14 @@
+import { stripEmoji } from "@/lib/ds/strip-emoji";
+
+/**
+ * Escape a value for HTML, and drop colour emoji on the way through.
+ *
+ * Every piece of model-authored copy reaches the page through here, which makes it the
+ * one place that can guarantee no glyph paints its own colour onto a deck whose palette
+ * is otherwise fully controlled. See lib/ds/strip-emoji.ts for why CSS cannot do it.
+ */
 export function escapeHtml(s: string): string {
-  return s
+  return stripEmoji(s)
     .replace(/&/g, "&amp;")
     .replace(/</g, "&lt;")
     .replace(/>/g, "&gt;")
