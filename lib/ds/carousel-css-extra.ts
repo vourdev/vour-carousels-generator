@@ -593,13 +593,19 @@ export const carouselExtraCss = String.raw`
     align-items: center; gap: 10px; flex-shrink: 0; min-width: 0; }
   .illustration-group .illus-item svg { display: block; flex-shrink: 0;
     width: auto; }
-  /* Heights are tuned against the free space a point slide actually leaves: .diag-wrap
-     measures ~778px on a two-line headline, and illustration + 16px gap + caption must
-     fit inside it with slack for a longer headline. max-width caps the panoramas (up to
-     2.86:1) so they cannot run past the 1080px canvas; a pair is capped so both items
-     plus the 28px gap stay inside it. */
-  .illustration-group.is-single .illus-item svg { height: 340px; max-width: 780px; }
-  .illustration-group.is-pair   .illus-item svg { height: 260px; max-width: 380px; }
+  /* Heights are tuned against the free space a point slide actually leaves, measured
+     rather than guessed: .diag-wrap is 920x778 on a two-line headline and 920x555 on a
+     four-line one, and illustration + 16px gap + caption must fit inside the smaller of
+     those. 440px is the practical ceiling for a single — a literal doubling to 680px
+     puts the block at 794px and overflows even the roomy case.
+
+     max-width caps the panoramas (up to 2.86:1) so they cannot run past the 920px
+     content column. For a pair the cap binds first: two items plus the 28px gap must
+     fit 920px, so 440px each. A landscape slug at 300px tall wants 453px, so it
+     letterboxes by ~9px inside its box — invisible, and the alternative is unequal
+     heights across the pair. */
+  .illustration-group.is-single .illus-item svg { height: 440px; max-width: 860px; }
+  .illustration-group.is-pair   .illus-item svg { height: 300px; max-width: 440px; }
 
   /* Screenshot evidence — uploaded real evidence image or pending placeholder */
   .diag-screenshot { width: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center; }
