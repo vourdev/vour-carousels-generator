@@ -6,8 +6,11 @@ export const stepsTemplate = String.raw`<div class="diag-wrap mt-40">
   </div>`;
 
 // Single step card partial — used by render-slide.ts to build stepsHtml.
-export const stepCardPartial = String.raw`<div class="card card-amber" style="padding:18px 22px;display:flex;align-items:flex-start;gap:16px">
-      <div style="min-width:36px;height:36px;border-radius:50%;background:#0F6666;color:#FFF;display:flex;align-items:center;justify-content:center;font-family:'Sora',sans-serif;font-weight:700;font-size:18px;flex:none">{{stepN}}</div>
+// The badge is the `.badge` component now rather than an inline circle, so the amber
+// alternation lives in one CSS rule instead of in a string here. {{stepTone}} and
+// {{badgeAlt}} are filled per step index by renderStepsMockup.
+export const stepCardPartial = String.raw`<div class="card {{stepTone}}" style="padding:18px 22px;display:flex;align-items:flex-start;gap:16px">
+      <div class="badge {{badgeAlt}}" style="min-width:36px;width:36px;height:36px;font-size:18px">{{stepN}}</div>
       <div>
         <div style="font-family:'Sora',sans-serif;font-weight:700;font-size:26px;color:#000000;line-height:1.2">{{stepTitle}}</div>
         <div style="font-family:'Inter',sans-serif;font-weight:500;font-size:22px;color:#4A5C5C;margin-top:4px;line-height:1.3">{{stepBody}}</div>

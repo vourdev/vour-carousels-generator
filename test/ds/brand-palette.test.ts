@@ -16,6 +16,10 @@ import {
   VOUR_WHITE,
   VOUR_TONES,
   VOUR_POSITIVE_ON_DARK,
+  VOUR_AMBER,
+  VOUR_AMBER_DEEP,
+  VOUR_AMBER_WASH,
+  VOUR_PAPER,
 } from "@/lib/ds/tokens";
 
 const CSS = carouselCss + carouselExtraCss;
@@ -84,36 +88,90 @@ describe("Vour palette contrast", () => {
   });
 });
 
-describe("no warm colour survives anywhere", () => {
-  // Warm = red/orange/yellow. Hue 0-100 and 320-360 with any real saturation.
-  const isWarm = (hex: string) => {
-    const h = hue(hex);
-    if (h < 0) return false; // grey
-    const c = hex.replace("#", "");
-    const [r, g, b] = [0, 2, 4].map((i) => parseInt(c.slice(i, i + 2), 16));
-    const sat = Math.max(r, g, b) - Math.min(r, g, b);
-    if (sat < 12) return false; // near-neutral, hue is noise
-    return h < 100 || h > 320;
-  };
+describe("exactly one warm accent exists, and only in its own values", () => {
+  /**
+   * The deck was all-cool after the rebrand and read as newsprint. Amber was added to
+   * give it magazine colour — but "one accent" is only a real constraint if something
+   * checks it. This is that check: any warm value in the CSS that is not one of the
+   * three amber tokens is a second accent sneaking in.
+   */
+  const AMBER_ALLOWED = new Set(
+    // The three accent values, plus the cream SURFACE. Cream is warm by construction
+    // and is not an accent — it is the second sheet of paper, listed here so the guard
+    // stays a whitelist of exactly what was decided rather than a hue rule with holes.
+    [VOUR_AMBER, VOUR_AMBER_DEEP, VOUR_AMBER_WASH, VOUR_PAPER].map((h) => h.toLowerCase())
+  );
+  const AMBER_RGB = new Set(["232,163,61", "148,100,10", "247,233,207"]);
 
   const expand = (hex: string) =>
     hex.length === 4 ? `#${hex[1]}${hex[1]}${hex[2]}${hex[2]}${hex[3]}${hex[3]}` : hex;
+  const isWarm = (hex: string) => {
+    const h = hue(hex);
+    if (h < 0) return false;
+    const c = hex.replace("#", "");
+    const [r, g, b] = [0, 2, 4].map((i) => parseInt(c.slice(i, i + 2), 16));
+    if (Math.max(r, g, b) - Math.min(r, g, b) < 12) return false;
+    return h < 100 || h > 320;
+  };
 
-  it("has no warm hex in the assembled carousel CSS", () => {
+  it("allows no warm hex in the carousel CSS other than the amber tokens", () => {
     const hexes = [...new Set(CSS.match(/#[0-9a-fA-F]{6}\b|#[0-9a-fA-F]{3}\b/g) ?? [])].map(expand);
-    expect(hexes.filter(isWarm)).toEqual([]);
+    const strays = hexes.filter((h) => isWarm(h) && !AMBER_ALLOWED.has(h.toLowerCase()));
+    expect(strays).toEqual([]);
   });
 
-  it("has no warm rgb() triple in the assembled carousel CSS", () => {
-    const warm: string[] = [];
+  it("allows no warm rgb() triple other than the amber tokens", () => {
+    const strays: string[] = [];
     for (const m of CSS.matchAll(/rgba?\(\s*(\d{1,3})\s*,\s*(\d{1,3})\s*,\s*(\d{1,3})/g)) {
       const [r, g, b] = [m[1], m[2], m[3]].map(Number);
       const hex = "#" + [r, g, b].map((v) => v.toString(16).padStart(2, "0")).join("");
-      if (isWarm(hex)) warm.push(m[0]);
+      if (isWarm(hex) && !AMBER_RGB.has(`${r},${g},${b}`)) strays.push(m[0]);
     }
-    expect(warm).toEqual([]);
+    expect(strays).toEqual([]);
   });
 
+  it("keeps amber out of the headline accent word on both surfaces", () => {
+    // The primary accent stays teal. A brand with two primary accents has none.
+    const accentRules = CSS.split("\n").filter((l) => /h1 \.a\b/.test(l));
+    expect(accentRules.length).toBeGreaterThan(0);
+    for (const rule of accentRules) {
+      expect(rule.toLowerCase()).not.toContain(VOUR_AMBER.toLowerCase());
+      expect(rule.toLowerCase()).not.toContain(VOUR_AMBER_DEEP.toLowerCase());
+    }
+  });
+
+  it("pins each amber value to the surface where it is legible", () => {
+    // #E8A33D is 1.99:1 on Mist — unusable on light even as a fill. #94640A is 4.09:1
+    // on black — the dull one on dark. Neither may be used on the wrong surface.
+    expect(contrast(VOUR_AMBER, VOUR_MIST)).toBeLessThan(3);
+    expect(contrast(VOUR_AMBER_DEEP, VOUR_MIST)).toBeGreaterThanOrEqual(4.5);
+    expect(contrast(VOUR_AMBER_DEEP, VOUR_PAPER)).toBeGreaterThanOrEqual(4.5);
+    expect(contrast(VOUR_AMBER, VOUR_BLACK)).toBeGreaterThanOrEqual(4.5);
+    expect(contrast(VOUR_AMBER, VOUR_CHARCOAL)).toBeGreaterThanOrEqual(4.5);
+  });
+
+  it("keeps text on every solid accent block readable", () => {
+    // A filled badge is only an upgrade if the numeral inside it survives.
+    expect(contrast(VOUR_WHITE, VOUR_TEAL_DEEP)).toBeGreaterThanOrEqual(4.5); // light surface
+    expect(contrast(VOUR_BLACK, VOUR_TEAL)).toBeGreaterThanOrEqual(4.5); // dark surface
+    expect(contrast(VOUR_WHITE, VOUR_AMBER_DEEP)).toBeGreaterThanOrEqual(4.5); // light badge
+    expect(contrast(VOUR_BLACK, VOUR_AMBER)).toBeGreaterThanOrEqual(4.5); // dark badge
+    // White on the bright values is the mistake this guards against.
+    expect(contrast(VOUR_WHITE, VOUR_AMBER)).toBeLessThan(4.5);
+    expect(contrast(VOUR_WHITE, VOUR_TEAL)).toBeLessThan(4.5);
+  });
+
+  it("keeps the second light surface from weakening any contrast", () => {
+    // Cream is deliberately a shade LIGHTER than Mist, so Mist stays the binding
+    // surface and nothing already checked against it needs rechecking here.
+    expect(luminance(VOUR_PAPER)).toBeGreaterThanOrEqual(luminance(VOUR_MIST));
+    expect(contrast(VOUR_BLACK, VOUR_PAPER)).toBeGreaterThanOrEqual(7);
+    expect(contrast("#223131", VOUR_PAPER)).toBeGreaterThanOrEqual(7);
+    expect(contrast(VOUR_TEAL_DEEP, VOUR_PAPER)).toBeGreaterThanOrEqual(4.5);
+  });
+});
+
+describe("illustrations carry no stale accent", () => {
   it("has no warm accent left in any generated illustration", () => {
     // The generator rewrites unDraw's #6c63ff to the surface accent. A stale asset
     // directory would still carry the old Ember accent, and nothing else would notice.

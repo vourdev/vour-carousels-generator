@@ -1,8 +1,12 @@
 // Additive carousel styles that must NOT live in the verbatim DS-bundle block
 // (lib/ds/carousel-css.ts mirrors the design-system template). Appended after it in assemble.
 import {
+  VOUR_AMBER,
+  VOUR_AMBER_DEEP,
+  VOUR_AMBER_WASH,
   VOUR_BLACK,
   VOUR_CHARCOAL,
+  VOUR_PAPER,
   VOUR_LINE_DARK,
   VOUR_LINE_LIGHT,
   VOUR_MIST,
@@ -39,10 +43,19 @@ export const carouselExtraCss = String.raw`
     --ms-panel-deep: ${VOUR_MIST};
     --ms-line: ${VOUR_LINE_LIGHT};
     --ms-accent: ${VOUR_TEAL_DEEP};
+    /* Text/glyph that sits ON a solid --ms-accent block. White on teal deep is 6.75:1. */
+    --ms-accent-on: ${VOUR_WHITE};
+    /* The one warm accent, in its light-surface value. Roles are fixed: numbered badge
+       and pull-quote mark. Never the headline accent word. */
+    --ms-amber: ${VOUR_AMBER_DEEP};
+    --ms-amber-on: ${VOUR_WHITE};
     /* Callout inverts against its surface — that inversion IS the emphasis. */
     --ms-invert-bg: ${VOUR_BLACK};
     --ms-invert-fg: ${VOUR_WHITE};
     --ms-invert-chip: rgba(242, 247, 247, 0.10);
+    /* Accent for a chip sitting on --ms-invert-bg, and the knockout colour inside it.
+       On a black callout that is the bright logo teal with a black glyph (12.6:1). */
+    --ms-invert-accent: ${VOUR_TEAL};
   }
   body section:not(.paper) {
     --ms-fg: ${VOUR_WHITE};
@@ -52,9 +65,74 @@ export const carouselExtraCss = String.raw`
     --ms-panel-deep: ${VOUR_BLACK};
     --ms-line: ${VOUR_LINE_DARK};
     --ms-accent: ${VOUR_TEAL};
+    --ms-accent-on: ${VOUR_BLACK};
+    --ms-amber: ${VOUR_AMBER};
+    --ms-amber-on: ${VOUR_BLACK};
     --ms-invert-bg: ${VOUR_MIST};
     --ms-invert-fg: ${VOUR_BLACK};
     --ms-invert-chip: rgba(0, 0, 0, 0.08);
+    --ms-invert-accent: ${VOUR_TEAL_DEEP};
+  }
+
+  /* ═══ Second light surface: warm cream ═══
+     The dark half of the deck has had two surfaces since the rebrand (logo black and
+     charcoal). The light half had one, so every paper slide in a deck looked identical.
+     This is the paper stock to Mist's cool sheet — same dot grid and same corner washes,
+     shifted warm, so it belongs to the same system rather than reading as a second theme.
+
+     WHICH paper a slide gets is decided by the renderer from the slide index, not by the
+     model. Same rule as the illustration variant: the model picks content, the renderer
+     owns rhythm. Handing this to the model would be handing it a colour choice, which is
+     the one thing the palette guard exists to prevent. */
+  body section.paper.warm {
+    background:
+      radial-gradient(circle at 1px 1px, rgba(148,100,10,0.055) 1.5px, transparent 1.6px) 0 0 / 32px 32px,
+      radial-gradient(55% 40% at 100% 0%, rgba(232,163,61,0.10), transparent 65%),
+      radial-gradient(60% 50% at 10% 100%, rgba(15,102,102,0.05), transparent 70%),
+      ${VOUR_PAPER};
+  }
+
+  /* ═══ Filled accents ═══
+     A deck whose only colour is thin teal text and 1.5px teal rules reads as newsprint.
+     These rules move the recurring small components from outline to SOLID BLOCK, which
+     is what separates a magazine page from a broadsheet. Everything below is a fill of a
+     token that already existed, or of the single new amber — no component invents a hue.
+
+     .card and .step are pale panels on BOTH surfaces (their tone backgrounds are literal
+     light colours, not tokens), so chips inside them are pinned to the light-surface
+     accent rather than to --ms-accent. On a dark slide the token would resolve to the
+     bright logo teal and a #50DCDC chip on a #E2F4F4 card is 1.35:1 — invisible. */
+  /* Warm panel tone. Not a seventh entry in the tone enum the model can pick from — it
+     is only ever applied by the renderer, on alternating step cards. */
+  .card-warm { background: ${VOUR_AMBER_WASH}; }
+
+  .card-ico { background: ${VOUR_TEAL_DEEP}; }
+  .card-ico svg { stroke: ${VOUR_WHITE}; }
+
+  /* The callout DOES invert with the surface, so its chip follows the tokens: a bright
+     teal chip on the black callout, a deep teal chip on the Mist one, with the glyph
+     knocked out in the callout's own background colour. */
+  .callout-ico { background: var(--ms-invert-accent); }
+  .callout-ico svg { stroke: var(--ms-invert-bg); }
+
+  /* Numbered badges. Teal is the default; amber alternates onto the odd ones, which is
+     the one place the second accent is allowed to carry a repeated element. */
+  .badge.alt { background: ${VOUR_AMBER_DEEP}; color: ${VOUR_WHITE}; }
+
+  /* Eyebrow as a filled chip. Used on alternating slides rather than everywhere: the
+     point is variation between slides, and a chip on every slide is just a new default. */
+  .eyebrow.chip {
+    display: inline-block; align-self: flex-start;
+    background: var(--ms-accent); color: var(--ms-accent-on);
+    padding: 12px 22px 10px; border-radius: 999px;
+    font-size: 22px; letter-spacing: 0.16em;
+  }
+
+  /* CATATAN recap: the label becomes a solid tab instead of coloured text on nothing. */
+  .catatan-label.chip {
+    display: inline-block;
+    background: var(--ms-accent); color: var(--ms-accent-on);
+    padding: 8px 16px 6px; border-radius: 8px; font-size: 20px;
   }
 
   /* Text-only editorial cover: brand-row pinned top, "Geser" pinned bottom,
@@ -360,11 +438,13 @@ export const carouselExtraCss = String.raw`
 
   body section:not(.paper) .quote-inset {
     background: #0D1414;
-    border-left-color: #0F6666;
+    border-left-color: ${VOUR_AMBER};
   }
+  body section:not(.paper) .quote-inset::before { color: ${VOUR_AMBER}; }
   body section:not(.paper) .qi-body {
     color: #FFFFFF;
   }
+  body section:not(.paper) .qi-author { color: ${VOUR_MIST_MUTED}; }
 
   body section:not(.paper) .mock {
     background: #0D1414;
@@ -536,12 +616,24 @@ export const carouselExtraCss = String.raw`
   .b-card .t { font-family: 'Sora'; font-weight: 700; font-size: 40px; color: #000000; line-height: 1.1; }
   .b-card .s { font-family: 'JetBrains Mono'; font-size: 20px; color: #4A5C5C; margin-top: 4px; }
 
-  /* Quote inset (EB Garamond) */
-  .quote-inset { width: 100%; border-left: 6px solid #0F6666; background: #E4E9E9;
-    border-radius: 4px; padding: 40px 48px; }
+  /* Quote inset (EB Garamond) — a warm colour panel with an oversized quote mark, the
+     most recognisably magazine object in the set. The mark is amber's second and last
+     role. It is decorative (the quote reads without it), so 3:1 is its bar: amber deep
+     on the wash is 4.29:1, amber on charcoal is 8.6:1. The attribution stays neutral —
+     amber deep on the wash is under the 4.5:1 that TEXT needs. */
+  .quote-inset { position: relative; width: 100%; border-left: 6px solid ${VOUR_AMBER_DEEP};
+    background: ${VOUR_AMBER_WASH};
+    border-radius: 4px; padding: 40px 48px 40px 96px; }
+  .quote-inset::before {
+    content: "\201C";
+    position: absolute; top: 6px; left: 26px;
+    font-family: 'EB Garamond', Georgia, serif; font-weight: 700;
+    font-size: 150px; line-height: 1; color: ${VOUR_AMBER_DEEP};
+    pointer-events: none;
+  }
   .qi-body { font-family: 'EB Garamond', Georgia, serif; font-style: italic; font-weight: 500;
     font-size: 48px; line-height: 1.35; color: #000000; }
-  .qi-author { font-family: 'JetBrains Mono'; font-size: 24px; color: #0F6666; margin-top: 24px;
+  .qi-author { font-family: 'JetBrains Mono'; font-size: 24px; color: ${VOUR_SLATE}; margin-top: 24px;
     letter-spacing: 0.08em; text-transform: uppercase; }
 
   /* Data table ✗/✓ */

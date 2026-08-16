@@ -354,8 +354,8 @@ ANTI-REPETITION (hard rules):
 
 NO EMOJI IN SLIDE COPY (HARD RULE)
 Emoji are the only thing on a slide that ignores the design system: a font paints ❌ red,
-⚡ yellow and 💥 orange from its own bitmaps, and no colour token can reach them. On a deck
-with no warm colour anywhere else they read as a mistake. The renderer strips them, so an
+⚡ yellow and 💥 orange from its own bitmaps, and no colour token can reach them. The deck
+has exactly two accents, both hardcoded, so a colour nobody chose reads as a mistake. The renderer strips them, so an
 emoji you write is simply deleted — write the word, or use an allowlisted icon, instead.
 Typographic marks that take their colour from CSS (✓ ✗ → ─) are fine and are kept.
 

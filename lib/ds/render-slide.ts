@@ -45,10 +45,39 @@ function splitHeadline(headline: string, accentWord?: string) {
   };
 }
 
+/* ── Renderer-owned rhythm ────────────────────────────────────────────────────
+ * Two things below alternate by slide index. Both are deliberately kept away from the
+ * model: it picks the content and the mockup, the renderer decides how the page breathes.
+ * Handing either of these to the model would be handing it a colour choice, and the
+ * whole palette guard exists to stop that. */
+
+/**
+ * Which of the two light surfaces a paper slide gets.
+ *
+ * Mist is cool, Cream is warm; alternating them means two paper slides in a row never
+ * look like the same sheet. Ink slides are unaffected — they already alternate through
+ * their own two darks.
+ */
+function paperClass(slide: Slide, slideIndex: number): string {
+  const surface = "surface" in slide ? slide.surface : undefined;
+  if (surface !== "paper") return "";
+  return slideIndex % 2 === 1 ? "paper warm" : "paper";
+}
+
+/**
+ * Whether this slide's eyebrow renders as a filled chip rather than coloured text.
+ *
+ * On every slide it would just be the new default; on none of them the eyebrow stays a
+ * thin line of teal text, which is the "newspaper" reading this change is fixing.
+ */
+function eyebrowClass(slideIndex: number): string {
+  return slideIndex % 2 === 0 ? "chip" : "";
+}
+
 /** Optional `.catatan` annotation strip shared by the diagram mockups. */
 function renderNote(note?: string): string {
   if (!note) return "";
-  return `<div class="catatan mt-40"><div class="catatan-label">Catatan</div><div class="catatan-body">${escapeHtml(note)}</div></div>`;
+  return `<div class="catatan mt-40"><div class="catatan-label chip">Catatan</div><div class="catatan-body">${escapeHtml(note)}</div></div>`;
 }
 
 /**
@@ -117,13 +146,19 @@ function renderComparisonMockup(m: Extract<Mockup, { type: "comparison" }>): str
 
 function renderStepsMockup(m: Extract<Mockup, { type: "steps" }>): string {
   const stepsHtml = m.items
-    .map((s, i) =>
-      fillTemplate(stepCardPartial, {
+    .map((s, i) => {
+      // Alternating colour families down the stack: odd steps warm, even steps teal.
+      // The badge and its panel always come from the same family, so the alternation
+      // reads as a deliberate rhythm rather than as two components disagreeing.
+      const warm = i % 2 === 0;
+      return fillTemplate(stepCardPartial, {
         stepN: String(i + 1),
         stepTitle: s.title,
         stepBody: s.body,
-      })
-    )
+        stepTone: warm ? "card-warm" : "card-amber",
+        badgeAlt: warm ? "alt" : "",
+      });
+    })
     .join("\n");
   // Function replacer: a bare string lets $-sequences in step copy be
   // interpreted by String.replace and corrupt output.
@@ -564,8 +599,11 @@ export function renderSlide(slide: Slide, slideIndex = 0): string {
     }
     case "point": {
       const mockup = resolveMockup(slide);
-      // Ink is the deck default now; "paper" is the explicit opt-out class.
-      const surfaceClass = slide.surface === "paper" ? "paper" : "";
+      // Ink is the deck default now; "paper" is the explicit opt-out class, and which of
+      // the two papers it resolves to is the renderer's call (see paperClass).
+      const surfaceClass = paperClass(slide, slideIndex);
+      const isPaper = surfaceClass.startsWith("paper");
+      const eyebrowCls = eyebrowClass(slideIndex);
 
       // Nothing to show: render the copy alone rather than inventing a diagram for it.
       if (!mockup) {
@@ -574,6 +612,7 @@ export function renderSlide(slide: Slide, slideIndex = 0): string {
           surfaceClass,
           counter: slide.counter,
           eyebrow: slide.eyebrow,
+          eyebrowClass: eyebrowCls,
           ...splitHeadline(slide.headline, slide.accentWord),
           body: slide.body,
           card: "",
@@ -593,6 +632,7 @@ export function renderSlide(slide: Slide, slideIndex = 0): string {
           surfaceClass,
           counter: slide.counter,
           eyebrow: slide.eyebrow,
+          eyebrowClass: eyebrowCls,
           ...splitHeadline(slide.headline, slide.accentWord),
           body: slide.body,
           card: "1",
@@ -608,12 +648,13 @@ export function renderSlide(slide: Slide, slideIndex = 0): string {
       }
 
       // For non-card mockups, render the mockup fragment and inject it after the body
-      const mockupHtml = renderMockup(mockup, scopeId, surfaceClass === "paper" ? "onLight" : "onDark");
+      const mockupHtml = renderMockup(mockup, scopeId, isPaper ? "onLight" : "onDark");
       const base = fillTemplate(pointTemplate, {
         brand,
         surfaceClass,
         counter: slide.counter,
         eyebrow: slide.eyebrow,
+        eyebrowClass: eyebrowCls,
         ...splitHeadline(slide.headline, slide.accentWord),
         body: slide.body,
         card: "",  // hide the card block
@@ -630,7 +671,7 @@ export function renderSlide(slide: Slide, slideIndex = 0): string {
     case "outro": {
       const cta = slide.cta ?? { strong: "" };
       // Ink is the deck default now; "paper" is the explicit opt-out class.
-      const surfaceClass = slide.surface === "paper" ? "paper" : "";
+      const surfaceClass = paperClass(slide, slideIndex);
       return fillTemplate(outroTemplate, {
         brand,
         surfaceClass,

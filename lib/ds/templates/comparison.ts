@@ -25,7 +25,7 @@ export const comparisonTemplate = String.raw`<div class="diag-wrap mt-40">
     </div>
     {{#compRationale}}
     <div class="catatan">
-      <div class="catatan-label">Catatan</div>
+      <div class="catatan-label chip">Catatan</div>
       <div class="catatan-body">{{compRationale}}</div>
     </div>
     {{/compRationale}}

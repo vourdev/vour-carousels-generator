@@ -25,7 +25,10 @@ describe("paper/ink surface parity", () => {
       .filter(({ line }) => line.startsWith("body section"))
       .filter(({ line }) => !line.includes(":not(.paper)"))
       // Layout-only, deliberately surface-independent (stacking context).
-      .filter(({ line }) => !line.startsWith("body section > *"));
+      .filter(({ line }) => !line.startsWith("body section > *"))
+      // The second LIGHT surface. This rule is the inverse of what the guard is for:
+      // it can only ever match a paper slide, and it overrides background alone.
+      .filter(({ line }) => !line.startsWith("body section.paper.warm"));
 
     expect(offenders.map((o) => `${o.n}: ${o.line}`)).toEqual([]);
   });
@@ -33,7 +36,11 @@ describe("paper/ink surface parity", () => {
   it("no longer keeps a second copy of the cream palette", () => {
     // A `body section.paper` reset block is what drifted out of sync with the
     // ink rules in the first place; paper must come from the base stylesheet.
-    expect(carouselExtraCss).not.toMatch(/body section\.paper\s*[.{]/);
+    // `.paper.warm` is the one allowed descendant, and only for the background.
+    expect(carouselExtraCss).not.toMatch(/body section\.paper\s*\{/);
+    const warm = carouselExtraCss.split("body section.paper.warm {")[1]?.split("}")[0] ?? "";
+    expect(warm).toContain("background:");
+    expect(warm.match(/^\s*[a-z-]+:/gm)?.map((d) => d.trim())).toEqual(["background:"]);
   });
 });
 

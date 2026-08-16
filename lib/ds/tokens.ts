@@ -1,9 +1,10 @@
 /**
  * Vour brand palette.
  *
- * Extracted from the logo: black, white, and two teals. Everything the carousels
- * paint resolves to one of these or to a tint derived from them — there is no second
- * palette, and no warm colour anywhere in the deck.
+ * Extracted from the logo: black, white, and two teals, plus ONE warm accent added
+ * deliberately (see the amber block). Everything the carousels paint resolves to one of
+ * these or to a tint derived from them — there is no second palette, and the model
+ * never picks a colour.
  *
  * Contrast ratios below are measured (WCAG 2.1 relative luminance), not estimated.
  * Carousels are scrolled past in a second, so accent text is held to the AA body
@@ -62,6 +63,57 @@ export const VOUR_WHITE = "#FFFFFF";
 
 /** Light surface with a teal tint — the light counterpart to VOUR_CHARCOAL. */
 export const VOUR_MIST = "#F2F7F7";
+
+/**
+ * Second light surface: warm cream, the paper stock to Mist's cool sheet.
+ *
+ * Added to give the light half of the deck the same two-way rhythm the dark half has
+ * had since the rebrand (black / charcoal). Deliberately a touch LIGHTER than Mist
+ * (L 0.924 vs 0.921) so it can never become the binding surface for a contrast check —
+ * every value already cleared against Mist clears here too:
+ *
+ *   black    19.48:1   ·   slate #223131   12.56:1
+ *   teal deep 6.26:1   ·   amber deep       4.77:1
+ *
+ * Which paper a slide gets is decided by the renderer, not the model. See the comment
+ * on the .paper.warm rule in carousel-css-extra.ts.
+ */
+export const VOUR_PAPER = "#FAF6EE";
+
+/* ── Amber: the one warm accent ───────────────────────────────────────────────
+ * A deck built from teal, black and white reads as a newspaper: correct, legible, and
+ * tonally flat. A magazine gets its life from a second colour used sparingly and in
+ * SOLID blocks. This is that colour, and it is deliberately the only one — a third
+ * would turn a two-colour system into "whatever the slide felt like".
+ *
+ * Its roles are fixed and enumerated (numbered badge, pull-quote mark). It is NOT for
+ * the headline accent word: that stays teal, because splitting the primary accent
+ * across two hues is how a brand stops having one.
+ *
+ * Two values for the same reason teal has two — measured, not assumed:
+ *
+ *              white   mist    black   charcoal
+ *   #E8A33D     2.16    1.99    9.74     8.64
+ *   #94640A     4.87    4.75    4.09     3.63
+ *
+ * So amber cannot be a single value: #E8A33D is unusable on light (it fails even the
+ * 3:1 a filled block needs against Mist, let alone 4.5:1 for text), and #94640A is the
+ * dull one on dark. Each surface gets the value that works there.
+ */
+
+/** Amber on DARK surfaces — text and solid fills. 9.7:1 on black; ink glyphs on top of
+ *  it are also 9.7:1, so a solid amber badge takes black numerals, never white. */
+export const VOUR_AMBER = "#E8A33D";
+
+/** Amber on LIGHT surfaces — text and solid fills. 4.75:1 on Mist, 4.77:1 on Cream, and
+ *  white text on top of it is 5.14:1, so a solid badge here takes WHITE numerals.
+ *  Chosen over #986802 (4.50 on Mist — no margin) and #9A6410 (4.62). */
+export const VOUR_AMBER_DEEP = "#94640A";
+
+/** Pale amber panel tint for light surfaces — the warm sibling of the aqua card tone.
+ *  Black 17.5:1 and slate 11.3:1 on it. Amber deep is 4.29:1 on it: fine for the
+ *  decorative quote mark (3:1), NOT for text, so copy on this panel stays neutral. */
+export const VOUR_AMBER_WASH = "#F7E9CF";
 
 /* ── Derived neutrals ─────────────────────────────────────────────────────────
  * Every step is the brand hue (180°) desaturated, so the greys read as part of the
