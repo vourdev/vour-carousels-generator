@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { Paperclip, Search, Send, Square } from "lucide-react";
+import { Paperclip, Search, Send, Square, Plus, Mic, AudioLines } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -26,6 +26,7 @@ export function Composer({
   topics,
   onPickTopic,
   hint,
+  modelSelector,
   footer,
 }: {
   value: string;
@@ -40,6 +41,7 @@ export function Composer({
   topics: Topic[];
   onPickTopic: (t: Topic) => void;
   hint?: React.ReactNode;
+  modelSelector?: React.ReactNode;
   /** Bottom-left slot under the input — where the model selector lives. */
   footer?: React.ReactNode;
 }) {
@@ -100,7 +102,7 @@ export function Composer({
                 aria-label="Ambil topik dari Topic Bank"
                 className="size-8 rounded-lg text-muted-foreground hover:text-foreground"
               >
-                <Paperclip className="size-4" />
+                <Plus className="size-4.5" />
               </Button>
 
               {attachOpen && (
@@ -149,16 +151,36 @@ export function Composer({
               )}
             </div>
 
-            <Button
-              type="button"
-              size="icon"
-              onClick={busy ? onCancel : onSubmit}
-              disabled={!busy && !canSend}
-              aria-label={busy ? "Hentikan proses" : "Kirim"}
-              className="size-8 rounded-lg"
-            >
-              {busy ? <Square className="size-3.5" /> : <Send className="size-4" />}
-            </Button>
+            <div className="flex items-center gap-1">
+              {modelSelector}
+              
+              <button
+                type="button"
+                className="size-8 rounded-lg flex items-center justify-center text-muted-foreground hover:text-foreground transition-all hover:bg-muted/40 cursor-pointer"
+                aria-label="Input suara"
+              >
+                <Mic className="size-4" />
+              </button>
+
+              <button
+                type="button"
+                className="size-8 rounded-lg flex items-center justify-center text-muted-foreground hover:text-foreground transition-all hover:bg-muted/40 cursor-pointer"
+                aria-label="Visualizer suara"
+              >
+                <AudioLines className="size-4" />
+              </button>
+
+              <Button
+                type="button"
+                size="icon"
+                onClick={busy ? onCancel : onSubmit}
+                disabled={!busy && !canSend}
+                aria-label={busy ? "Hentikan proses" : "Kirim"}
+                className="size-8 rounded-lg shrink-0"
+              >
+                {busy ? <Square className="size-3.5" /> : <Send className="size-4" />}
+              </Button>
+            </div>
           </div>
         </div>
 

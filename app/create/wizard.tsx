@@ -1208,8 +1208,8 @@ export function Wizard({
                 </p>
               ) : null
             }
-            footer={
-              <ModelPicker models={models} model={model} onChange={setModel} disabled={busy} dropUp />
+            modelSelector={
+              <ModelPicker models={models} model={model} onChange={setModel} disabled={busy} />
             }
           />
         </div>

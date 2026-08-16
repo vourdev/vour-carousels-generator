@@ -1,51 +1,41 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { Check, ChevronDown, Search } from "lucide-react";
-import { Input } from "@/components/ui/input";
+import { Check, ChevronDown } from "lucide-react";
 import type { ModelId } from "@/lib/ai/registry";
 
-export const modelDetails: Record<string, { label: string; vendor: string; description: string }> = {
-  gemini: { label: "Gemini Flash", vendor: "Google AI", description: "Model cepat & cerdas dari Google (Gratis)" },
-  deepseek: { label: "DeepSeek Chat", vendor: "DeepSeek AI", description: "Reasoning & content model dari DeepSeek" },
-  mimo: { label: "MIMO", vendor: "Xiaomi AI", description: "OpenAI-compatible inference engine" },
-  openrouter: { label: "OpenRouter", vendor: "OpenRouter", description: "Multi-vendor AI model gateway" },
-  "vour-high": { label: "Vour High", vendor: "Vour Model", description: "Kualitas terbaik, untuk hasil final" },
-  "vour-lite": { label: "Vour Lite", vendor: "Vour Model", description: "Lebih cepat, untuk eksplorasi ide" },
-  omniroute: { label: "Vour Model", vendor: "VourDev", description: "Model AI resmi @vourdev" },
+export const modelDetails: Record<string, { label: string; description: string }> = {
+  "vour-lite": { 
+    label: "Sonnet 4.5", 
+    description: "Paling efisien untuk tugas sehari-hari" 
+  },
+  "vour-high": { 
+    label: "Opus 4.6", 
+    description: "Kualitas penulisan terbaik dan analisis mendalam" 
+  },
 };
 
-/**
- * Model chooser: the line of text under the composer, the way a chat app does it.
- *
- * Text only — the label plus a one-line description, no avatar. Most sessions never
- * change the model, so it should read as a status line and only behave like a control
- * once you point at it. `dropUp` exists because it now sits at the bottom of the pane:
- * a menu opening downward would fall off the viewport.
- */
 export function ModelPicker({
-  models,
   model,
   onChange,
   disabled,
-  dropUp = false,
 }: {
-  models: ModelId[];
+  models?: ModelId[];
   model: ModelId | "";
   onChange: (m: ModelId) => void;
   disabled?: boolean;
   dropUp?: boolean;
 }) {
   const [open, setOpen] = useState(false);
-  const [search, setSearch] = useState("");
   const ref = useRef<HTMLDivElement>(null);
 
-  // Click-away: the old popover only closed via its own × button, so it stayed open
-  // while you interacted with the rest of the page.
+  // Click-away to close menu
   useEffect(() => {
     if (!open) return;
     const onDown = (e: MouseEvent) => {
-      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
+      if (ref.current && !ref.current.contains(e.target as Node)) {
+        setOpen(false);
+      }
     };
     const onEsc = (e: KeyboardEvent) => {
       if (e.key === "Escape") setOpen(false);
@@ -58,76 +48,76 @@ export function ModelPicker({
     };
   }, [open]);
 
-  const info = modelDetails[model];
-  const filtered = models.filter((m) => {
-    const d = modelDetails[m];
-    const q = search.toLowerCase();
-    return (d?.label || m).toLowerCase().includes(q) || (d?.vendor || "").toLowerCase().includes(q);
-  });
+  // Resolve active label
+  const activeModelId = model === "vour-high" ? "vour-high" : "vour-lite";
+  const activeLabel = modelDetails[activeModelId].label;
 
   return (
-    <div className="relative min-w-0" ref={ref}>
+    <div className="relative" ref={ref}>
+      {/* Pill button matching the design in Image 1 */}
       <button
         type="button"
         disabled={disabled}
         onClick={() => setOpen((o) => !o)}
-        aria-haspopup="listbox"
-        aria-expanded={open}
-        className="group flex w-full items-baseline gap-1.5 rounded-lg px-1.5 py-1 text-left text-[11px] transition-colors hover:bg-muted/50 disabled:opacity-50"
+        className="flex items-center gap-1.5 rounded-full px-3.5 py-1.5 transition-all text-xs font-normal text-foreground disabled:opacity-50 select-none cursor-pointer active:scale-[0.98] outline-none focus-visible:ring-2 focus-visible:ring-zinc-400/20"
       >
-        <span className="shrink-0 font-medium text-foreground">
-          {info?.label || model || "Pilih model"}
-        </span>
-        <span className="truncate text-muted-foreground/80">{info?.description}</span>
-        <ChevronDown className="size-3 shrink-0 self-center text-muted-foreground/50 transition-colors group-hover:text-muted-foreground" />
+        <span className="font-medium text-zinc-900 dark:text-zinc-150">{activeLabel}</span>
+        <ChevronDown className="size-3 text-zinc-400 dark:text-zinc-500 stroke-[2.5]" />
       </button>
 
       {open && (
         <div
           role="listbox"
-          className={`absolute left-0 z-50 w-72 bg-card border border-hairline rounded-xl shadow-xl p-2 animate-in fade-in duration-150 ${
-            dropUp
-              ? "bottom-full mb-1.5 slide-in-from-bottom-1"
-              : "top-full mt-1.5 slide-in-from-top-1"
-          }`}
+          className="absolute bottom-full right-0 mb-2.5 z-50 w-72 bg-white dark:bg-zinc-900 border border-zinc-150 dark:border-zinc-800/60 rounded-2xl shadow-[0_12px_32px_rgba(0,0,0,0.08)] p-1.5 animate-in fade-in slide-in-from-bottom-2 duration-150"
         >
-          {models.length > 4 && (
-            <div className="relative mb-1.5">
-              <Search className="absolute left-2.5 top-2.5 size-3.5 text-muted-foreground" />
-              <Input
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-                placeholder="Cari model…"
-                className="pl-8 h-8 text-xs bg-muted/20 border-hairline rounded-lg"
-              />
-            </div>
-          )}
-          <div className="space-y-0.5 max-h-64 overflow-y-auto">
-            {filtered.map((m) => {
-              const d = modelDetails[m];
-              const selected = model === m;
-              return (
-                <button
-                  key={m}
-                  type="button"
-                  role="option"
-                  aria-selected={selected}
-                  onClick={() => {
-                    onChange(m);
-                    setOpen(false);
-                  }}
-                  className={`w-full flex items-center justify-between gap-2 p-2 rounded-lg text-xs text-left transition-colors ${
-                    selected ? "bg-primary/10 text-primary" : "hover:bg-muted/50 text-foreground"
-                  }`}
-                >
-                  <div className="min-w-0">
-                    <div className="truncate font-medium">{d?.label || m}</div>
-                    <div className="text-[10px] text-muted-foreground truncate">{d?.description}</div>
-                  </div>
-                  {selected && <Check className="size-3.5 shrink-0" />}
-                </button>
-              );
-            })}
+          <div className="space-y-0.5">
+            {/* Vour Lite -> Sonnet 4.5 Row */}
+            <button
+              type="button"
+              className={`w-full flex items-center justify-between gap-3 px-3 py-2.5 rounded-xl text-left transition-all cursor-pointer active:scale-[0.99] ${
+                activeModelId === "vour-lite" ? "bg-zinc-50/70 dark:bg-zinc-800/20" : "hover:bg-zinc-50 dark:hover:bg-zinc-800/50"
+              }`}
+              onClick={() => {
+                onChange("vour-lite");
+                setOpen(false);
+              }}
+            >
+              <div className="min-w-0 flex-1">
+                <div className="font-medium text-[13px] text-zinc-900 dark:text-zinc-100">
+                  {modelDetails["vour-lite"].label}
+                </div>
+                <div className="text-[11px] text-zinc-400 dark:text-zinc-500 leading-normal mt-0.5 wrap-break-word">
+                  {modelDetails["vour-lite"].description}
+                </div>
+              </div>
+              {activeModelId === "vour-lite" && (
+                <Check className="size-4 shrink-0 text-blue-500 stroke-[2.5]" />
+              )}
+            </button>
+
+            {/* Vour High -> Opus 4.6 Row */}
+            <button
+              type="button"
+              className={`w-full flex items-center justify-between gap-3 px-3 py-2.5 rounded-xl text-left transition-all cursor-pointer active:scale-[0.99] ${
+                activeModelId === "vour-high" ? "bg-zinc-50/70 dark:bg-zinc-800/20" : "hover:bg-zinc-50 dark:hover:bg-zinc-800/50"
+              }`}
+              onClick={() => {
+                onChange("vour-high");
+                setOpen(false);
+              }}
+            >
+              <div className="min-w-0 flex-1">
+                <div className="font-medium text-[13px] text-zinc-900 dark:text-zinc-100">
+                  {modelDetails["vour-high"].label}
+                </div>
+                <div className="text-[11px] text-zinc-400 dark:text-zinc-500 leading-normal mt-0.5 wrap-break-word">
+                  {modelDetails["vour-high"].description}
+                </div>
+              </div>
+              {activeModelId === "vour-high" && (
+                <Check className="size-4 shrink-0 text-blue-500 stroke-[2.5]" />
+              )}
+            </button>
           </div>
         </div>
       )}
