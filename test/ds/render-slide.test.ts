@@ -91,11 +91,11 @@ describe("renderSlide", () => {
         ],
       },
     });
-    // Step cards alternate warm/teal down the stack, badge and panel in the same
-    // family, so a 3-step mockup shows both tones and both badge colours.
-    expect(html).toContain("card-warm");
-    expect(html).toContain("card-amber");
-    expect(html).toContain('class="badge alt"');
+    // The PANEL alternates down the stack; the badge does not. A 3-step mockup shows
+    // both tones and three identical badges.
+    expect(html).toContain("card-peach");
+    expect(html).toContain("card-alt");
+    expect(html).not.toContain('class="badge alt"');
     expect(html).toContain("Install deps");
     expect(html).toContain("Configure");
     expect(html).toContain("Deploy");

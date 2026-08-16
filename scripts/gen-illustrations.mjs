@@ -34,53 +34,56 @@ const UNDRAW_ACCENTS = [/#6c63ff/gi, /#6c5ce7/gi];
    #2f2e41 (44%), #ccc (37%), #d6d6e3 (28%) …
 
    onLight keeps unDraw's own value ordering — dark ink stays dark — but pulls the
-   neutrals onto the Vour ramp so they sit on Mist instead of on plain white.
+   neutrals onto the Vour ramp so they sit on warm cream instead of on plain white. The
+   ramp is WARM: an ember accent inside a cool-grey drawing on a cream page reads as
+   clip-art that was recoloured, which is exactly what it would be. Each warm step was
+   picked at the luminance of the cool one it replaces, so value ordering is untouched.
    onDark INVERTS the neutral ramp: what was darkest becomes lightest. Skin tones
    (#ed9da0, #ffb8b8, #a0616a …) are mid-tone and legible on both, so they are left
    alone on purpose — inverting them turns people green. */
 const PALETTES = {
   onLight: {
-    accent: "#0F6666", // VOUR_TEAL_DEEP — the only accent that passes AA on Mist
+    accent: "#EE4B1A", // VOUR_ORANGE — a graphic, so 3:1 is the bar; 3.45:1 on cream
     map: {
-      "#090814": "#000000",
-      "#2f2e41": "#16292A",
-      "#2f2e43": "#16292A",
-      "#3f3d56": "#2C4445",
-      "#b6b3c5": "#93A9A9",
-      "#d6d6e3": "#B7CACA",
-      "#ccc": "#B7CACA",
-      "#cacaca": "#B7CACA",
-      "#cbcbcb": "#B7CACA",
-      "#e6e6e6": "#D3E1E1",
-      "#e4e4e4": "#D3E1E1",
-      "#e5e5e5": "#D3E1E1",
-      "#f0f0f0": "#E6EFEF",
-      "#f1f1f1": "#E6EFEF",
-      "#f2f2f2": "#EDF4F4",
+      "#090814": "#1C0A05",
+      "#2f2e41": "#2A1A12",
+      "#2f2e43": "#2A1A12",
+      "#3f3d56": "#453026",
+      "#b6b3c5": "#A08C80",
+      "#d6d6e3": "#C4B5AA",
+      "#ccc": "#C4B5AA",
+      "#cacaca": "#C4B5AA",
+      "#cbcbcb": "#C4B5AA",
+      "#e6e6e6": "#DED3C8",
+      "#e4e4e4": "#DED3C8",
+      "#e5e5e5": "#DED3C8",
+      "#f0f0f0": "#EFE8DE",
+      "#f1f1f1": "#EFE8DE",
+      "#f2f2f2": "#F5EFE6",
       "#fff": "#FFFFFF",
       "#ffffff": "#FFFFFF",
     },
   },
   onDark: {
-    accent: "#4DE1F3", // VOUR_TEAL_BRIGHT — 13.4:1 on logo black
+    accent: "#FF7A45", // VOUR_ORANGE_BRIGHT — 7.24:1 on Ink
     map: {
       "#090814": "#FFFFFF",
-      "#2f2e41": "#D8E6E6",
-      "#2f2e43": "#D8E6E6",
-      "#3f3d56": "#A9C0C0",
-      "#b6b3c5": "#3C5050",
-      "#d6d6e3": "#2A3B3B",
-      "#ccc": "#2A3B3B",
-      "#cacaca": "#2A3B3B",
-      "#cbcbcb": "#2A3B3B",
-      "#e6e6e6": "#1D2C2C",
-      "#e4e4e4": "#1D2C2C",
-      "#e5e5e5": "#1D2C2C",
-      "#f0f0f0": "#152121",
-      "#f1f1f1": "#152121",
-      "#f2f2f2": "#152121",
-      "#fff": "#0D1414",
-      "#ffffff": "#0D1414",
+      "#2f2e41": "#EBE0D4",
+      "#2f2e43": "#EBE0D4",
+      "#3f3d56": "#C0AE9F",
+      "#b6b3c5": "#54443A",
+      "#d6d6e3": "#3A2F27",
+      "#ccc": "#3A2F27",
+      "#cacaca": "#3A2F27",
+      "#cbcbcb": "#3A2F27",
+      "#e6e6e6": "#2A221C",
+      "#e4e4e4": "#2A221C",
+      "#e5e5e5": "#2A221C",
+      "#f0f0f0": "#201A15",
+      "#f1f1f1": "#201A15",
+      "#f2f2f2": "#201A15",
+      "#fff": "#2B241D",
+      "#ffffff": "#2B241D",
     },
   },
 };

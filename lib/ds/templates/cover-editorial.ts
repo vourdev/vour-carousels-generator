@@ -4,8 +4,9 @@
 // EB Garamond series stamp top-right), left-aligned copy weighted bottom-left, and
 // "Geser" pinned bottom-left.
 //
-// Locked to the brand tokens: VOUR_TEAL_DEEP #0F6666 / VOUR_TEAL #50DCDC only (no second
-// hue), one radius scale, no backdrop-filter (dies on screenshot export). All
+// Locked to the brand tokens: VOUR_ORANGE #EE4B1A for the display accent and ghost
+// numeral, VOUR_ORANGE_BRIGHT #FF7A45 for the Ink stamps. One radius scale, no
+// backdrop-filter (dies on screenshot export). All
 // {{slot}} values are escaped by fillTemplate; GHOST_NUMERAL_INJECT is injected via
 // the function-replacer form in renderSlide so $-sequences stay verbatim.
 export const coverEditorialTemplate = String.raw`<section data-screen-label="01 · Cover" class="cover-editorial-ink {{coverSurface}}">

@@ -1,7 +1,7 @@
 import { describe, it, expect } from "vitest";
 import { normalizeIcon, renderIcon, ICON_SLUGS } from "@/lib/ds/icons";
 import { ICON_SVGS } from "@/lib/ds/icons.generated";
-import { VOUR_TEAL_DEEP } from "@/lib/ds/tokens";
+import { VOUR_ORANGE } from "@/lib/ds/tokens";
 
 describe("normalizeIcon", () => {
   it("strips a lucide: prefix", () => {
@@ -35,7 +35,7 @@ describe("renderIcon", () => {
     expect(svg).not.toContain('stroke="currentColor"');
   });
   it("defaults to the light-surface brand accent", () => {
-    expect(renderIcon("terminal")).toContain(`stroke="${VOUR_TEAL_DEEP}"`);
+    expect(renderIcon("terminal")).toContain(`stroke="${VOUR_ORANGE}"`);
   });
   it("falls back to sparkles for unknown, never empty", () => {
     const svg = renderIcon("nope");

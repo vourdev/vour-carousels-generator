@@ -7,11 +7,24 @@
      refreshed v1.0 hues automatically).
      ════════════════════════════════════════════════════════ */
 
-  /* ── Accent · Ember ── */
-  --ember:        #EE4B1A;              /* THE accent — eyebrow, headline keyword, active node */
-  --ember-bright: #FF6A3D;              /* Ember on Ink surface (dark) only */
-  --ember-soft:   #F5895F;              /* hover / soft emphasis — rare */
-  --ember-wash:   rgba(238,75,26,0.06); /* corner halo, faint tint wells */
+  /* ── Accent · Ember ──
+     Three values, one per JOB, because orange sits low on the luminance curve and no
+     single hex can be both the brand value and an AA-passing 24px label. Measured
+     (WCAG 2.1) against --paper #FBF6EF and --ink-900 #14110E:
+
+                    paper   ink-900
+       #EE4B1A       3.45      5.07
+       #B8380E       5.41      2.24
+       #FF7A45       2.40      7.28
+
+     --ember is the brand value and carries DISPLAY and GRAPHICS: 3.45 clears the 3:1
+     that >=24px text and graphics need, and misses the 4.5:1 that a small label needs.
+     Small labels on paper take --ember-deep; anything on ink takes --ember-bright. */
+  --ember:        #EE4B1A;              /* display + graphics: headline keyword, numerals, fills, rules */
+  --ember-deep:   #B8380E;              /* small labels on Paper — eyebrow, counter, stamp, chips */
+  --ember-bright: #FF7A45;              /* THE accent on Ink — 7.3:1, and 0.81x the body copy */
+  --ember-soft:   #F5895F;              /* hover / soft emphasis on Ink — rare */
+  --ember-wash:   rgba(238,75,26,0.07); /* corner halo, faint tint wells */
 
   /* ── Surfaces ── */
   --paper:        #FBF6EF;              /* default slide background */
@@ -25,7 +38,9 @@
   --ink:          #1C0A05;              /* display + headline */
   --ink-soft:     #3D2419;              /* sub-headline + body */
   --ink-muted:    #6E4B3E;              /* caption, counter, secondary */
-  --ink-faint:    #A48C7E;              /* inactive labels */
+  /* #A48C7E is 2.95:1 on --paper. It was carrying captions, table sub-labels and the
+     slide counter, all of which are small text needing 4.5:1. Same hue, taken down. */
+  --ink-faint:    #7E6153;              /* inactive labels — 5.25:1 on --paper */
 
   /* ── Text on Ink ── */
   --cream:        #F7F1E8;
@@ -55,6 +70,8 @@
   --text-muted:    var(--ink-muted);
   --text-faint:    var(--ink-faint);
   --border-subtle: var(--border);
+  /* The display value is the brand. A small label names --ember-deep and a component on
+     Ink names --ember-bright, both explicitly. */
   --brand-primary: var(--ember);
   --brand-accent:  var(--ember-soft);
 
@@ -68,7 +85,8 @@
   --ed-ink-soft:     var(--ink-soft);
   --ed-ink-muted:    var(--ink-muted);
   --ed-ink-faint:    var(--ink-faint);
-  --ed-orange:       var(--ember);
+  --ed-orange:       var(--ember);        /* display + graphics */
+  --ed-orange-deep:  var(--ember-deep);   /* small labels — eyebrow, counter, stamp */
   --ed-orange-soft:  var(--ember-soft);
   --ed-callout-ink:  var(--ink-900);
   --ed-card-peach:   var(--card-peach);

@@ -8,14 +8,14 @@ import manifest from "@/lib/ds/illustrations.manifest.json";
 import { mockupSchema, slidePlanSchema } from "@/lib/ds/schema";
 import { repairSlidePlan } from "@/lib/ds/repair";
 import { renderSlide } from "@/lib/ds/render-slide";
-import { VOUR_TEAL_BRIGHT, VOUR_TEAL_DEEP } from "@/lib/ds/tokens";
+import { VOUR_ORANGE, VOUR_ORANGE_BRIGHT } from "@/lib/ds/tokens";
 
 describe("unDraw Illustration System", () => {
   it("every slug has both surface variants on disk, recolored to that surface's accent", () => {
     expect(ILLUSTRATION_SLUGS.length).toBeGreaterThan(0);
 
     const dir = join(process.cwd(), "lib", "ds", "assets", "illustrations");
-    const accent = { onLight: VOUR_TEAL_DEEP, onDark: VOUR_TEAL_BRIGHT } as const;
+    const accent = { onLight: VOUR_ORANGE, onDark: VOUR_ORANGE_BRIGHT } as const;
     for (const slug of ILLUSTRATION_SLUGS) {
       for (const variant of ILLUSTRATION_VARIANTS) {
         const svg = readFileSync(join(dir, `${slug}.${variant}.svg`), "utf-8");
@@ -87,8 +87,8 @@ describe("unDraw Illustration System", () => {
     expect(light).not.toEqual(dark);
     // unDraw's near-black structural fills must not survive onto the Ink canvas —
     // that is exactly what made illustrations dissolve into the background.
-    expect(light).toContain(VOUR_TEAL_DEEP); // light-surface accent
-    expect(dark).toContain(VOUR_TEAL_BRIGHT); // dark-surface accent
+    expect(light).toContain(VOUR_ORANGE); // light-surface accent
+    expect(dark).toContain(VOUR_ORANGE_BRIGHT); // dark-surface accent
     for (const undrawDark of ["#090814", "#2f2e41", "#3f3d56"]) {
       expect(dark.toLowerCase()).not.toContain(undrawDark);
       expect(light.toLowerCase()).not.toContain(undrawDark);
@@ -205,10 +205,10 @@ describe("unDraw Illustration System", () => {
     const ink = renderSlide(illustrationSlide(["server_9eix"], "ink"), 2);
     const paper = renderSlide(illustrationSlide(["server_9eix"], "paper"), 2);
 
-    expect(inkDefault).toContain(VOUR_TEAL_BRIGHT);
-    expect(ink).toContain(VOUR_TEAL_BRIGHT);
-    expect(paper).toContain(VOUR_TEAL_DEEP);
-    expect(paper).not.toContain(VOUR_TEAL_BRIGHT);
+    expect(inkDefault).toContain(VOUR_ORANGE_BRIGHT);
+    expect(ink).toContain(VOUR_ORANGE_BRIGHT);
+    expect(paper).toContain(VOUR_ORANGE);
+    expect(paper).not.toContain(VOUR_ORANGE_BRIGHT);
   });
 
   it("lays two illustrations out as one centered group, never space-between", () => {

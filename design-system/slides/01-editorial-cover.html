@@ -1,4 +1,4 @@
-<!-- @dsCard group="Slides" viewport="1080x1350" name="Editorial · Cover" subtitle="Big headline with one-word orange accent" -->
+<!-- @dsCard group="Slides" viewport="1080x1350" name="Editorial · Cover" subtitle="Big headline with one-word ember accent" -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -15,10 +15,17 @@
   }
   .head { display:flex; justify-content:space-between; align-items:center; }
   .brand { display:flex; align-items:center; gap:16px; }
-  .disc { width:48px; height:48px; border-radius:50%; overflow:hidden; background:#07070e; }
+  .disc { width:48px; height:48px; border-radius:50%; overflow:hidden; background:var(--ink); }
   .disc img { width:100%; height:100%; object-fit:cover; display:block; }
   .handle { font-family:var(--font-body); font-weight:700; font-size:28px; color:var(--ed-ink); }
-  .counter { font-family:var(--font-mono); font-size:24px; color:var(--ed-ink-faint); letter-spacing:.04em; }
+  .counter { font-family:var(--font-mono); font-weight:500; font-size:24px; color:var(--ed-orange-deep); letter-spacing:.04em; }
+  /* Series stamp — Sora, not a serif, and it carries the accent. It shares the brand row
+     with a 28px Sora handle, so matching that face is what makes the row read as one
+     masthead instead of as a handle plus a floating caption. */
+  .stamp {
+    font-family:var(--font-display); font-weight:700; font-size:24px;
+    letter-spacing:.14em; text-transform:uppercase; color:var(--ed-orange-deep);
+  }
   .body { flex:1; display:flex; flex-direction:column; justify-content:center; gap:32px; }
   h1 {
     font-family:var(--font-display); font-weight:800;
@@ -31,7 +38,14 @@
     font-size:40px; line-height:1.3;
     color: var(--ed-ink-soft); max-width:880px; margin:0;
   }
-  .foot { font-family:var(--font-mono); font-size:22px; color:var(--ed-ink-muted); letter-spacing:.04em; }
+  /* Swipe CTA. Text, arrow and rule all take the accent from one declaration — the rule
+     inherits currentColor, so they cannot drift apart. */
+  .foot {
+    font-family:var(--font-mono); font-weight:600; font-size:22px;
+    color:var(--ed-orange-deep); letter-spacing:.12em; text-transform:uppercase;
+    display:inline-flex; align-items:center; gap:12px;
+  }
+  .foot::before { content:""; width:56px; height:2px; background:currentColor; border-radius:1px; flex:none; }
 </style>
 </head>
 <body>
@@ -40,7 +54,7 @@
       <div class="disc"><img src="../assets/vourdev-logo.jpeg" alt="@vourdev"></div>
       <span class="handle">@vourdev</span>
     </div>
-    <div class="counter">01 / 10</div>
+    <div class="stamp">Field Notes</div>
   </div>
   <div class="body">
     <h1>I dropped a<br>DESIGN.md into<br>Claude <span class="accent">Design.</span></h1>

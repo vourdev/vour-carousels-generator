@@ -64,8 +64,8 @@ The split now is:
 
 ## Two surface variants, and why the model has no say
 
-Slides render on two surfaces: **Ink** (logo black `#000000` falling from `#0D1414`, the deck
-default) and **Paper** (Mist `#F2F7F7`,
+Slides render on two surfaces: **Ink** (`#1C0A05` rising to `#2B241D`, the deck
+default) and **Paper** (warm cream `#FBF6EF`,
 the explicit `surface: "paper"` opt-out). unDraw ships one palette built for white pages —
 `#090814`, `#2f2e41`, `#3f3d56` carry the hair, clothes and outlines. On Ink those are
 within a few points of the background, so the illustration dissolves. That is the whole
@@ -75,8 +75,8 @@ CSS cannot fix it: `carousel-css-extra.ts` already documents the rule that a moc
 never name a literal ink/paper colour, but an SVG `fill` is not a token and cannot be
 re-scoped per surface. So the remap happens at codegen. Each slug is written twice:
 
-- `<slug>.onLight.svg` — unDraw's value ordering kept, neutrals pulled onto the Vour ramp, accent `#0F6666` (VOUR_TEAL_DEEP)
-- `<slug>.onDark.svg` — neutral ramp **inverted** (darkest becomes lightest), accent `#4DE1F3` (VOUR_TEAL_BRIGHT)
+- `<slug>.onLight.svg` — unDraw's value ordering kept, neutrals pulled onto the Vour ramp, accent `#EE4B1A` (VOUR_ORANGE)
+- `<slug>.onDark.svg` — neutral ramp **inverted** (darkest becomes lightest), accent `#FF7A45` (VOUR_ORANGE_BRIGHT)
 
 Skin tones (`#ed9da0`, `#ffb8b8`, `#a0616a` …) are deliberately left alone — they are
 mid-tone and legible on both, and inverting them turns people green.

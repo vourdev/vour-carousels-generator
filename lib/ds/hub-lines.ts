@@ -17,14 +17,14 @@ export function diagLines(
   const xs = n === 2 ? [110, 810] : n === 3 ? [110, 460, 810] : [110, 343, 577, 810];
   const headTop = o.endY - 4;
   const headBot = o.endY + 8;
-  const strokeAttrs = `stroke="#0F6666" stroke-width="1.5" fill="none"${o.dashed ? ' stroke-dasharray="6 6"' : ""}`;
+  const strokeAttrs = `stroke="#EE4B1A" stroke-width="1.5" fill="none"${o.dashed ? ' stroke-dasharray="6 6"' : ""}`;
   const paths = xs
     .map((x) => `<path ${strokeAttrs} d="M 460 96 Q 460 ${o.midY} ${x} ${o.endY}" />`)
     .join("");
   const heads = xs
     .map(
       (x) =>
-        `<polygon fill="#0F6666" points="${x - 8},${headTop} ${x + 8},${headTop} ${x},${headBot}" />`
+        `<polygon fill="#EE4B1A" points="${x - 8},${headTop} ${x + 8},${headTop} ${x},${headBot}" />`
     )
     .join("");
   return `<svg class="lines" viewBox="0 0 920 ${o.viewH}" preserveAspectRatio="none">${paths}${heads}</svg>`;

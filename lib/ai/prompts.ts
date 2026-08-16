@@ -712,8 +712,8 @@ ALWAYS set "stamp" on the cover. Every cover renders the same anatomy:
 brand row + stamp (top) → eyebrow → headline → anchor centered in the free space → "Geser" (bottom).
 Headline rules: hook word FIRST (a number, or a negative like "Salah"/"Jangan"/"Bukan", or a question word);
 ≤ 10 words; leave a curiosity gap (don't reveal the solution); stay credible (no misleading clickbait).
-Accent exactly ONE keyword with the brand-teal span. Cover is ALWAYS the Ink surface.
-SURFACE RHYTHM (DESIGN.md §13): a point slide defaults to "paper" (Mist, a teal-tinted off-white). Set surface:"ink"
+Accent exactly ONE keyword with the brand-accent span. Cover is ALWAYS the Ink surface.
+SURFACE RHYTHM (DESIGN.md §13): a point slide defaults to "paper" (a cool off-white). Set surface:"ink"
 (full dark) on AT MOST ~1 slide per 3, and NEVER two ink slides in a row — it is a rhythm accent,
 not a theme. Do NOT put an always-dark device (terminal, commandpalette) on an ink slide: it is a
 near-black panel on a near-black canvas. (The renderer flips such a slide back to paper, but pick

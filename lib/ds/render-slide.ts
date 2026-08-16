@@ -68,7 +68,7 @@ function paperClass(slide: Slide, slideIndex: number): string {
  * Whether this slide's eyebrow renders as a filled chip rather than coloured text.
  *
  * On every slide it would just be the new default; on none of them the eyebrow stays a
- * thin line of teal text, which is the "newspaper" reading this change is fixing.
+ * thin line of accent text, which is the "newspaper" reading this change is fixing.
  */
 function eyebrowClass(slideIndex: number): string {
   return slideIndex % 2 === 0 ? "chip" : "";
@@ -147,16 +147,14 @@ function renderComparisonMockup(m: Extract<Mockup, { type: "comparison" }>): str
 function renderStepsMockup(m: Extract<Mockup, { type: "steps" }>): string {
   const stepsHtml = m.items
     .map((s, i) => {
-      // Alternating colour families down the stack: odd steps warm, even steps teal.
-      // The badge and its panel always come from the same family, so the alternation
-      // reads as a deliberate rhythm rather than as two components disagreeing.
-      const warm = i % 2 === 0;
+      // Alternating PANEL down the stack: peach, amber, peach. The badge stays one
+      // colour on every row — with a single accent in the system, a badge that changed
+      // hue per step would read as a status rather than as a rhythm.
       return fillTemplate(stepCardPartial, {
         stepN: String(i + 1),
         stepTitle: s.title,
         stepBody: s.body,
-        stepTone: warm ? "card-warm" : "card-amber",
-        badgeAlt: warm ? "alt" : "",
+        stepTone: i % 2 === 0 ? "card-peach" : "card-alt",
       });
     })
     .join("\n");
@@ -170,7 +168,7 @@ function renderCalloutMockup(m: Extract<Mockup, { type: "callout" }>): string {
     calloutText: m.text,
   });
   // Function replacer: keep raw SVG out of String.replace $-interpretation.
-  return base.replace("ICON_INJECT", () => renderIcon(m.icon, { size: 24, color: "#0F6666" }));
+  return base.replace("ICON_INJECT", () => renderIcon(m.icon, { size: 24, color: "#EE4B1A" }));
 }
 
 function renderBigstatMockup(m: Extract<Mockup, { type: "bigstat" }>): string {
@@ -317,7 +315,7 @@ function renderFolderTreeMockup(m: Extract<Mockup, { type: "foldertree" }>): str
 function renderCommandPaletteMockup(m: Extract<Mockup, { type: "commandpalette" }>): string {
   const rows = m.rows
     .map((r) => {
-      const icon = renderIcon(r.icon, { size: 28, color: "#50DCDC" });
+      const icon = renderIcon(r.icon, { size: 28, color: "#FF7A45" });
       const key = r.active ? `<span class="k">↵</span>` : "";
       return `<div class="row${r.active ? " on" : ""}">${icon}${escapeHtml(r.label)}${key}</div>`;
     })
@@ -378,7 +376,7 @@ function renderImageHook(h: Extract<CoverHook, { kind: "image" }>): string {
 }
 
 function renderBadgeHook(h: Extract<CoverHook, { kind: "badge" }>): string {
-  const gitIcon = renderIcon("git-branch", { size: 24, color: "#50DCDC" });
+  const gitIcon = renderIcon("git-branch", { size: 24, color: "#FF7A45" });
   const sub = h.sub ? `<div class="sub">${escapeHtml(h.sub)}</div>` : "";
   const strike = h.struck ? `<div class="cover-strike"></div>` : "";
   return coverBadgeTemplate
@@ -427,7 +425,7 @@ function renderNocGridHook(h: Extract<CoverHook, { kind: "nocgrid" }>): string {
 function renderDoorHook(h: Extract<CoverHook, { kind: "door" }>): string {
   // "hand"/"pointer" are NOT in the icon allowlist; arrow-right is verified present
   // and reads as the (wrong) push direction the label demands.
-  const handIcon = renderIcon("arrow-right", { size: 96, color: "#50DCDC" });
+  const handIcon = renderIcon("arrow-right", { size: 96, color: "#FF7A45" });
   const handle = h.pull === false ? "" : `<div class="handle"></div>`;
   return coverDoorTemplate
     .replace("LABEL_INJECT", () => escapeHtml(h.label ?? "DORONG"))
@@ -643,7 +641,7 @@ export function renderSlide(slide: Slide, slideIndex = 0): string {
         });
         // Function replacer keeps raw SVG safe from $-sequence interpretation.
         return filled.replace("ICON_INJECT", () =>
-          renderIcon(mockup.icon, { size: 24, color: "#0F6666" })
+          renderIcon(mockup.icon, { size: 24, color: "#EE4B1A" })
         );
       }
 
