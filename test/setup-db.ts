@@ -1,4 +1,5 @@
-import { rmSync } from "node:fs";
+import { rmSync, readFileSync, existsSync } from "node:fs";
+import { join } from "node:path";
 
 const TEST_DB = "file:./.vitest-auth.db";
 
@@ -21,6 +22,48 @@ export async function setup() {
   const { auth } = await import("@/lib/auth");
   const { runMigrations } = await getMigrations(auth.options);
   await runMigrations();
+
+  // Create illustrations table and seed it
+  const { createClient } = await import("@libsql/client");
+  const db = createClient({ url: TEST_DB });
+  
+  await db.execute(`
+    CREATE TABLE IF NOT EXISTS illustrations (
+      slug TEXT NOT NULL,
+      variant TEXT NOT NULL,
+      svg TEXT NOT NULL,
+      PRIMARY KEY (slug, variant)
+    )
+  `);
+
+  const manifestPath = join(process.cwd(), "lib", "ds", "illustrations.manifest.json");
+  if (existsSync(manifestPath)) {
+    const manifest = JSON.parse(readFileSync(manifestPath, "utf-8"));
+    const slugs = Array.from(new Set(Object.values(manifest).flat() as string[]));
+    const assetsDir = join(process.cwd(), "lib", "ds", "assets", "illustrations");
+    
+    const tx = await db.transaction("write");
+    try {
+      for (const slug of slugs) {
+        for (const variant of ["onLight", "onDark"]) {
+          const filePath = join(assetsDir, `${slug}.${variant}.svg`);
+          if (existsSync(filePath)) {
+            const svg = readFileSync(filePath, "utf-8");
+            await tx.execute({
+              sql: `INSERT OR REPLACE INTO illustrations (slug, variant, svg) VALUES (?, ?, ?)`,
+              args: [slug, variant, svg],
+            });
+          }
+        }
+      }
+      await tx.commit();
+    } catch (err) {
+      await tx.rollback();
+      throw err;
+    } finally {
+      db.close();
+    }
+  }
 }
 
 export async function teardown() {

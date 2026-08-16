@@ -10,6 +10,7 @@ import { appendRevision, listRevisions, clearRevisions } from "@/lib/memory/repo
 import { summarizePlanDiff } from "@/lib/memory/diff";
 import type { SlidePlan } from "@/lib/ds/schema";
 import { assembleCarousel } from "@/lib/ds/assemble";
+import { warmUpIllustrations } from "@/lib/ds/illustrations.server";
 
 import { uploadImage } from "@/lib/publish/cloudinary";
 import { scheduleBufferPost } from "@/lib/publish/buffer";
@@ -193,6 +194,7 @@ export async function getPublishingConfigAction(): Promise<{ hasIg: boolean; has
  */
 export async function assembleAction(plan: SlidePlan): Promise<string> {
   await requireSession();
+  await warmUpIllustrations();
   return assembleCarousel(plan);
 }
 

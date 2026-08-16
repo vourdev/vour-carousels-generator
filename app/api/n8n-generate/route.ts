@@ -3,6 +3,7 @@ import { createClient } from "@libsql/client";
 import { defaultModel, resolveModel } from "@/lib/ai/registry";
 import { generateBrief, generateSlidePlan } from "@/lib/ai/generate";
 import { assembleCarousel } from "@/lib/ds/assemble";
+import { warmUpIllustrations } from "@/lib/ds/illustrations.server";
 import { captureCarouselServer } from "@/lib/export/capture-server";
 import { uploadImage } from "@/lib/publish/cloudinary";
 import { scheduleBufferPost } from "@/lib/publish/buffer";
@@ -46,6 +47,7 @@ async function createAndPublishCarousel({
   const plan = await generateSlidePlan(brief, resolvedModel);
   
   // 3. Assemble Carousel HTML
+  await warmUpIllustrations();
   const html = assembleCarousel(plan);
   
   // 4. Capture Carousel slides to Buffer JPEGs using Playwright (deviceScaleFactor = 2 for HD)

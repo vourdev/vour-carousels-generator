@@ -11,7 +11,9 @@
     "file-search_cbur",
     "files-missing_ntwe",
     "no-data_ig65",
-    "data-transfer_hz9g"
+    "data-transfer_hz9g",
+    "spreadsheet_uj8z",
+    "app-data_vo0p"
   ],
   "infrastructure": [
     "server_9eix",
@@ -26,7 +28,9 @@
     "container-ship_t6yx",
     "code-deployed_iwvu",
     "connected-world_anke",
-    "mcp-server_7kvc"
+    "mcp-server_7kvc",
+    "cloudflare-dev_nf79",
+    "static-website_x3tn"
   ],
   "security": [
     "online-security_1o24",
@@ -40,7 +44,11 @@
     "safe_0mei",
     "security-on_3ykb",
     "data-thief_d66l",
-    "private-data_934y"
+    "private-data_934y",
+    "unlock_m0yr",
+    "vault_tyfh",
+    "biometric-login_v832",
+    "digital-signature_ttti"
   ],
   "api_integration": [
     "message-sent_iyz6",
@@ -50,7 +58,9 @@
     "notifications_uvwd",
     "toast-notifications_bl43",
     "transfer-files_anat",
-    "file-sync_ag5g"
+    "file-sync_ag5g",
+    "export-files_gc69",
+    "successful-upload_t9fz"
   ],
   "ai_tools": [
     "ai-agent_pdkp",
@@ -100,7 +110,8 @@
     "performance-comparison_qd1q",
     "heavy-lifting_d753",
     "powerful_e1sw",
-    "loading_3kqt"
+    "loading_3kqt",
+    "os-upgrade_ztrf"
   ],
   "comparison": [
     "informed-decision_2jwi",

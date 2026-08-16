@@ -1,11 +1,12 @@
-// Server-only half of the illustration system: reads the inline SVG bodies off disk.
+// Server-only half of the illustration system: reads the inline SVG bodies off disk or DB.
 //
 // This module must never end up in a client bundle. The `node:fs` import is the guard —
 // Next.js fails the build if a client component reaches this file. That is deliberate:
 // the SVGs total ~3 MB across both surface variants, and when they were a TS module
 // every importer of render-slide dragged them into the browser bundle.
-import { readFileSync } from "node:fs";
+import { readFileSync, existsSync } from "node:fs";
 import { join } from "node:path";
+import { createClient } from "@libsql/client";
 import {
   FALLBACK_ILLUSTRATION,
   normalizeIllustration,
@@ -21,17 +22,61 @@ export type IllustrationVariant = "onLight" | "onDark";
 // runtime, so cache what has been read. Only slugs actually used pay the disk hit.
 const cache = new Map<string, string>();
 
+let client: ReturnType<typeof createClient> | null = null;
+function getDbClient() {
+  if (!client) {
+    client = createClient({
+      url: process.env.DATABASE_URL ?? "file:local-auth.db",
+      authToken: process.env.DATABASE_AUTH_TOKEN,
+    });
+  }
+  return client;
+}
+
+let warmUpPromise: Promise<void> | null = null;
+
+/**
+ * Pre-warm the cache from database.
+ * If database is not ready or has no illustrations table, it degrades gracefully to filesystem loading.
+ */
+export async function warmUpIllustrations(): Promise<void> {
+  if (warmUpPromise) return warmUpPromise;
+  
+  warmUpPromise = (async () => {
+    try {
+      const db = getDbClient();
+      const res = await db.execute("SELECT slug, variant, svg FROM illustrations");
+      for (const row of res.rows) {
+        const slug = String(row.slug);
+        const variant = String(row.variant);
+        const svg = String(row.svg);
+        cache.set(`${slug}.${variant}`, svg);
+      }
+    } catch {
+      // Degrade silently to filesystem fallback
+    }
+  })();
+  
+  return warmUpPromise;
+}
+
 function read(slug: IllustrationSlug, variant: IllustrationVariant): string | null {
   const key = `${slug}.${variant}`;
   const hit = cache.get(key);
   if (hit !== undefined) return hit;
+  
+  // Database miss or DB not warmed up/used -> fallback to filesystem
   try {
-    const svg = readFileSync(join(ASSETS_DIR, `${key}.svg`), "utf-8");
-    cache.set(key, svg);
-    return svg;
+    const filePath = join(ASSETS_DIR, `${key}.svg`);
+    if (existsSync(filePath)) {
+      const svg = readFileSync(filePath, "utf-8");
+      cache.set(key, svg);
+      return svg;
+    }
   } catch {
-    return null;
+    // Ignore and fall through
   }
+  return null;
 }
 
 /**

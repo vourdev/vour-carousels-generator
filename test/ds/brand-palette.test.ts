@@ -286,7 +286,7 @@ describe("illustrations carry no stale accent", () => {
     // directory would still carry the teal accent, and nothing else would notice.
     const dir = join(process.cwd(), "lib", "ds", "assets", "illustrations");
     const files = readdirSync(dir).filter((f) => f.endsWith(".svg"));
-    expect(files.length).toBe(290);
+    expect(files.length).toBe(312);
 
     const offenders: string[] = [];
     for (const f of files) {
