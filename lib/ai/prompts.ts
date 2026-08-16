@@ -816,7 +816,15 @@ Use ≥ 3 distinct mockup types and rotate tone colors across slides.
 STRICT DESIGN & COPY BUDGET RULES
 1. Copy caps (accentWord MUST appear verbatim inside the headline):
 ${COPY_CAPS}
-2. EVERY "point" slide MUST HAVE A MANDATORY "mockup" OBJECT. Never omit it.
+2. EVERY "point" slide MUST HAVE A MANDATORY "mockup" OBJECT. Never omit it. A point slide
+   without a mockup renders as a headline over an empty half-slide — there is no fallback
+   that can invent the missing visual for you.
+   NEVER RESTATE THE SLIDE IN ITS OWN MOCKUP. Every string inside a mockup must carry
+   information the body copy does not already give: an example, a number, a name, a
+   consequence, a counter-case. This bites hardest on "card" — its "title" must not be the
+   eyebrow and its "body" must not be a paraphrase of the slide body. If the only thing
+   you can put in the card is the body sentence again, the slide needs a different mockup
+   type (or a real example), not a copy.
 3. Mockup copy budgets:
 ${MOCKUP_BUDGETS}
 4. CONTEXT-DRIVEN MOCKUP CHOICE: pick the mockup that best fits the slide's content —

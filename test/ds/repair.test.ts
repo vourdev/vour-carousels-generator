@@ -19,10 +19,18 @@ function planWith(mockup: unknown) {
   return { title: "t", caption: "", hashtags: [], slides: [pointWith(mockup)] };
 }
 
-/** The repaired point slide fell back to its auto-card (mockup was dropped). */
-function fellBackToAutoCard(slide: Slide): boolean {
+/**
+ * The unsalvageable mockup was dropped and the slide still renders.
+ *
+ * This used to assert the slide fell back to an auto-card. That card was built from the
+ * slide's own eyebrow and body, so "recovered" meant "says the same sentence twice".
+ * The recovery contract is now weaker and honest: the deck survives a bad mockup, and
+ * the slide shows its copy without a fabricated diagram under it.
+ */
+function droppedTheMockup(slide: Slide): boolean {
   if (slide.role !== "point") return false;
-  return slide.mockup === undefined && renderSlide(slide).includes("card-peach");
+  const html = renderSlide(slide);
+  return slide.mockup === undefined && !html.includes('class="card ') && html.includes("<h1");
 }
 
 describe("repairSlidePlan — TASK-1 mockups never crash generation", () => {
@@ -37,9 +45,9 @@ describe("repairSlidePlan — TASK-1 mockups never crash generation", () => {
     expect(s.mockup.lines).toHaveLength(8);
   });
 
-  it("drops a below-min foldertree (1 line) to the auto-card, no throw", () => {
+  it("drops a below-min foldertree (1 line) rather than throwing", () => {
     const plan = repairSlidePlan(planWith({ type: "foldertree", lines: [{ text: "app/" }] }));
-    expect(fellBackToAutoCard(plan.slides[0])).toBe(true);
+    expect(droppedTheMockup(plan.slides[0])).toBe(true);
   });
 
   it("clamps an over-max commandpalette (7 → 5 rows)", () => {
@@ -50,7 +58,7 @@ describe("repairSlidePlan — TASK-1 mockups never crash generation", () => {
     expect(s.mockup.rows).toHaveLength(5);
   });
 
-  it("drops a database with over-long NESTED rows to the auto-card (nested is unclampable)", () => {
+  it("drops a database with over-long NESTED rows (nested is unclampable)", () => {
     // tables clamp cannot reach tables[].rows; the over-long inner array must fail
     // safeParse and drop the whole mockup rather than crash the deck.
     const bigRows = Array.from({ length: 6 }, (_, i) => ({ col: `c${i}`, type: "text" }));
@@ -64,7 +72,7 @@ describe("repairSlidePlan — TASK-1 mockups never crash generation", () => {
         relation: "1 ─< ∞",
       })
     );
-    expect(fellBackToAutoCard(plan.slides[0])).toBe(true);
+    expect(droppedTheMockup(plan.slides[0])).toBe(true);
   });
 
   it("clamps an over-max gitbranch main (8 → 6) and keeps it", () => {

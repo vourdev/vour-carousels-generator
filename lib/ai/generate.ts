@@ -119,6 +119,46 @@ function enforceIllustrationForAnalogySlides(plan: SlidePlan): SlidePlan {
   return { ...plan, slides };
 }
 
+/**
+ * Every point slide leaves here with a mockup.
+ *
+ * `mockup` is optional in the schema and the prompt only *asks* for it, so a plan with a
+ * bare point slide validates cleanly and nothing downstream notices. The renderer used to
+ * hide that by fabricating a card from the slide's own body text — a slide that said the
+ * same sentence twice. That fallback is gone (see resolveMockup), which leaves the real
+ * problem exposed: the bottom half of a 1350px slide is empty because the plan was
+ * incomplete.
+ *
+ * It is closed here rather than in the renderer because this is the last point where a
+ * slide can be given something real instead of a copy of itself. An illustration is a
+ * picture, not a claim: choosing one in code invents no content the model did not write,
+ * which is exactly what the old card fallback did wrong.
+ *
+ * Generation only — deliberately NOT applied on revision, where the scope guard treats a
+ * field appearing on an out-of-scope slide as drift and rejects the whole patch.
+ */
+function enforceMockupForPointSlides(plan: SlidePlan): SlidePlan {
+  const slides = plan.slides.map((slide) => {
+    if (slide.role !== "point" || slide.mockup || slide.card) return slide;
+    console.warn(
+      `[mockup-safety-net] Slide "${slide.eyebrow}" came back with no mockup. Filling with an illustration.`
+    );
+    return {
+      ...slide,
+      mockup: {
+        type: "illustration" as const,
+        illustrationSlugs: [normalizeIllustration(ILLUSTRATION_FALLBACK_SLUG)],
+      },
+    };
+  });
+  return { ...plan, slides };
+}
+
+/** Both code-level safety nets, in the order they must run. */
+function enforcePlanInvariants(plan: SlidePlan): SlidePlan {
+  return enforceMockupForPointSlides(enforceIllustrationForAnalogySlides(plan));
+}
+
 export async function generateSlidePlan(brief: string, model: LanguageModel): Promise<SlidePlan> {
   return withRetry(async () => {
     try {
@@ -128,7 +168,7 @@ export async function generateSlidePlan(brief: string, model: LanguageModel): Pr
         system: planSystem,
         prompt: planUserPrompt(brief),
       });
-      return enforceIllustrationForAnalogySlides(object);
+      return enforcePlanInvariants(object);
     } catch (err: any) {
       console.warn("generateObject failed, trying generateText + JSON parse fallback:", err?.message || err);
       const { text } = await generateText({
@@ -138,7 +178,7 @@ export async function generateSlidePlan(brief: string, model: LanguageModel): Pr
       });
       const parsed = extractAndParseJson(text);
       const repaired = repairSlidePlan(parsed);
-      return enforceIllustrationForAnalogySlides(repaired);
+      return enforcePlanInvariants(repaired);
     }
   });
 }

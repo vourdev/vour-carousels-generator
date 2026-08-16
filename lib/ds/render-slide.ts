@@ -32,6 +32,7 @@ import { databaseTemplate } from "@/lib/ds/templates/database";
 import { gitBranchTemplate } from "@/lib/ds/templates/gitbranch";
 import { diagLines } from "@/lib/ds/hub-lines";
 import { deviceTemplate } from "@/lib/ds/templates/device";
+import { VOUR_MIST_MUTED, VOUR_POSITIVE_ON_DARK } from "@/lib/ds/tokens";
 
 function splitHeadline(headline: string, accentWord?: string) {
   if (!accentWord) return { headlinePre: headline, accentWord: "", headlinePost: "" };
@@ -357,12 +358,31 @@ function renderNocGridHook(h: Extract<CoverHook, { kind: "nocgrid" }>): string {
   const rows = h.rows ?? 3;
   const down = (h.state ?? "down") === "down";
   const banner = h.banner ?? "100% PACKET LOSS";
-  // Slugs MUST be in the icons allowlist or renderIcon falls back to "sparkles".
-  const nodeIcon = renderIcon(down ? "x-circle" : "check-circle", { size: 34, color: down ? "#8FA5A5" : "#16705A" });
+  /* Node glyph sizing and colour. Both were wrong for the same reason: the node was
+   * treated as the component and the glyph as a detail inside it, when the glyph IS the
+   * component — the grid exists to say "every node is down".
+   *
+   * Size: a 34px mark inside a ~124px node covers about 2% of it, so the grid read as
+   * eighteen empty boxes. 62px is a little under half the node, which is where a status
+   * tile normally sits.
+   *
+   * Colour: measured, the old values were not a contrast failure the way the grid's
+   * appearance suggests — #8FA5A5 is 7.2:1 on the node fill. They were a HIERARCHY
+   * failure: the node's own 1.5px border (#607272, 4.2:1) is brighter and heavier than
+   * the glyph it frames, so the chrome won. The glyph now outranks its container on both
+   * states, and "up" stops using #16705A, which was 3.2:1 and barely legible at all.
+   * Slugs MUST be in the icons allowlist or renderIcon falls back to "sparkles". */
+  const stateColor = down ? VOUR_MIST_MUTED : VOUR_POSITIVE_ON_DARK;
+  const nodeIcon = renderIcon(down ? "x-circle" : "check-circle", { size: 62, color: stateColor });
   const nodes = Array.from({ length: cols * rows })
     .map(() => `<span class="node ${down ? "down" : "up"}">${nodeIcon}</span>`)
     .join("");
-  const bannerIcon = renderIcon(down ? "alert-triangle" : "check-circle", { size: 40, color: down ? "#8FA5A5" : "#16705A" });
+  // The banner is one unit: its icon inherits the banner's own colour rather than the
+  // node colour, so brightening the glyphs cannot leave a two-tone caption behind.
+  const bannerIcon = renderIcon(down ? "alert-triangle" : "check-circle", {
+    size: 40,
+    color: "currentColor",
+  });
   return coverNocGridTemplate
     .replace("GRID_COLS_INJECT", () => String(cols))
     .replace("NODES_INJECT", () => nodes)
@@ -467,25 +487,32 @@ function renderMockup(m: Mockup, scopeId: string, variant: IllustrationVariant):
 }
 
 /**
- * Resolve the effective mockup for a point slide.
- * Priority: slide.mockup > slide.card (wrapped as card type) > auto-fallback.
+ * Resolve the effective mockup for a point slide, or `undefined` when the slide has
+ * nothing to show.
+ * Priority: slide.mockup > slide.card (wrapped as card type) > nothing.
+ *
+ * This used to fabricate a card out of the slide's own copy — `icon: "sparkles"`,
+ * `title: slide.eyebrow`, `body: slide.body` — so that "no slide is ever flat". What it
+ * actually produced was a slide that says the same sentence twice: once as body copy,
+ * then again inside a sparkle-iconned box whose title was the eyebrow, so a slide read
+ * "TANDA 03" as a heading over text the reader had just finished. A duplicate is not a
+ * fallback; on the rendered slide it reads as a bug, because it is one.
+ *
+ * Missing content is now simply missing here. The gap is closed upstream instead:
+ * enforceMockupForPointSlides (lib/ai/generate.ts) gives every point slide a real
+ * mockup, so this returning undefined is the last resort, not the normal path.
  */
-function resolveMockup(slide: Extract<Slide, { role: "point" }>): Mockup {
+function resolveMockup(slide: Extract<Slide, { role: "point" }>): Mockup | undefined {
   // A custom fragment whose entire body was styling leaves nothing to render once
-  // sanitizeCustomHtml has run. Fall through to the auto-card rather than emit an
-  // empty diagram well — the slide still says something either way.
+  // sanitizeCustomHtml has run — treat it as absent rather than emit an empty hull.
   const customIsEmpty =
     slide.mockup?.type === "custom" && sanitizeCustomHtml(slide.mockup.html) === null;
   if (slide.mockup && !customIsEmpty) return slide.mockup;
-  if (slide.card) return { type: "card" as const, ...slide.card };
-  // Auto-fallback: generate a card from slide data so no slide is ever flat
-  return {
-    type: "card" as const,
-    icon: "sparkles",
-    title: slide.eyebrow || "Ringkasan",
-    body: slide.body,
-    tone: "peach" as const,
-  };
+  // An all-blank legacy card is the same case: a box with no words in it.
+  if (slide.card && (slide.card.title.trim() || slide.card.body.trim())) {
+    return { type: "card" as const, ...slide.card };
+  }
+  return undefined;
 }
 
 /* ── Main render ──────────────────────────────────────────────── */
@@ -540,7 +567,26 @@ export function renderSlide(slide: Slide, slideIndex = 0): string {
       // Ink is the deck default now; "paper" is the explicit opt-out class.
       const surfaceClass = slide.surface === "paper" ? "paper" : "";
 
-      // For card-type mockups, render via the point template's built-in {{#card}} block
+      // Nothing to show: render the copy alone rather than inventing a diagram for it.
+      if (!mockup) {
+        return fillTemplate(pointTemplate, {
+          brand,
+          surfaceClass,
+          counter: slide.counter,
+          eyebrow: slide.eyebrow,
+          ...splitHeadline(slide.headline, slide.accentWord),
+          body: slide.body,
+          card: "",
+          cardTitle: "",
+          cardBody: "",
+          cardTone: "peach",
+          mockupHtml: "",
+        });
+      }
+
+      // For card-type mockups, render via the point template's built-in {{#card}} block.
+      // The card's own title and body are used verbatim — falling back to the slide's
+      // eyebrow and body here was the second half of the duplication bug.
       if (mockup.type === "card") {
         const filled = fillTemplate(pointTemplate, {
           brand,
@@ -550,8 +596,8 @@ export function renderSlide(slide: Slide, slideIndex = 0): string {
           ...splitHeadline(slide.headline, slide.accentWord),
           body: slide.body,
           card: "1",
-          cardTitle: mockup.title || slide.eyebrow || "Ringkasan",
-          cardBody: mockup.body || slide.body,
+          cardTitle: mockup.title,
+          cardBody: mockup.body,
           cardTone: mockup.tone || "peach",
           mockupHtml: "",
         });

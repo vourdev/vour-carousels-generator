@@ -15,6 +15,7 @@ import {
   VOUR_TEAL_TEXT,
   VOUR_WHITE,
   VOUR_TONES,
+  VOUR_POSITIVE_ON_DARK,
 } from "@/lib/ds/tokens";
 
 const CSS = carouselCss + carouselExtraCss;
@@ -234,6 +235,30 @@ describe("accent never out-shouts the copy it serves", () => {
     const accent = contrast(VOUR_TEAL_DEEP, VOUR_MIST);
     expect(headline).toBeGreaterThan(body);
     expect(body).toBeGreaterThan(accent);
+  });
+
+  it("keeps a cover status glyph brighter than the node that frames it", () => {
+    // The NOC grid failed the same way round as the accent word did, one level down:
+    // the glyph measured 7.2:1 on the node fill (well past the 3:1 a graphic needs), but
+    // the node's own border was heavier and the glyph was drawn at 34px inside a ~124px
+    // tile, so the grid read as eighteen empty boxes. Assert the ordering, not just AA.
+    const NODE_FILL = "#0F1414"; // rgba(96,114,114,0.16) over the ink cover, resolved
+    const NODE_BORDER = "#607272";
+    const DOWN_GLYPH = "#B2BEBE"; // VOUR_MIST_MUTED (0.72) over NODE_FILL, resolved
+
+    expect(contrast(DOWN_GLYPH, NODE_FILL)).toBeGreaterThanOrEqual(3);
+    expect(contrast(VOUR_POSITIVE_ON_DARK, NODE_FILL)).toBeGreaterThanOrEqual(3);
+    // The glyph must out-rank its own frame, or the chrome reads as the content.
+    expect(contrast(DOWN_GLYPH, NODE_FILL)).toBeGreaterThan(contrast(NODE_BORDER, NODE_FILL));
+    // …and stay under the cover headline, which is still the primary.
+    expect(contrast(DOWN_GLYPH, VOUR_BLACK)).toBeLessThan(contrast(VOUR_WHITE, VOUR_BLACK));
+  });
+
+  it("documents why the old 'up' state colour could not stay", () => {
+    // #16705A is a light-surface positive. On the node fill it was 3.2:1 — technically
+    // a pass, visibly a smudge, and dimmer than the border around it.
+    const NODE_FILL = "#0F1414";
+    expect(contrast("#16705A", NODE_FILL)).toBeLessThan(contrast("#607272", NODE_FILL));
   });
 
   it("leaves the full-strength logo teal in use for chrome", () => {

@@ -10,10 +10,23 @@ describe("renderSlide", () => {
     expect(html).toContain("BACKEND");
   });
 
-  it("renders a point with fallback card when no mockup/card", () => {
-    const html = renderSlide({ role: "point", counter: "02 / 05", eyebrow: "WHY", headline: "It matters", body: "because." });
+  it("renders a point with no mockup as copy alone, never as a copy of itself", () => {
+    // The old fallback built a card out of the slide's own eyebrow and body, so the
+    // rendered slide said the same sentence twice. Nothing is better than a duplicate.
+    const body = "because the write cost outlives the read.";
+    const html = renderSlide({ role: "point", counter: "02 / 05", eyebrow: "WHY", headline: "It matters", body });
     expect(html).toContain("02 / 05");
-    expect(html).toContain("card-peach");
+    expect(html).not.toContain("class=\"card ");
+    expect(html.split(body).length - 1).toBe(1);
+    expect(html.split("WHY").length - 1).toBe(1);
+  });
+
+  it("drops a legacy card that has no words in it", () => {
+    const html = renderSlide({
+      role: "point", counter: "1/1", eyebrow: "E", headline: "H", body: "b",
+      card: { icon: "box", title: "", body: "", tone: "peach" },
+    });
+    expect(html).not.toContain("class=\"card ");
   });
 
   it("renders a point WITH a legacy card when provided", () => {

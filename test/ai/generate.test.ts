@@ -55,4 +55,53 @@ describe("generateSlidePlan", () => {
     expect(plan.slides[0].role).toBe("cover");
     expect(plan.title).toBe("T");
   });
+
+  it("gives a mockup-less point slide a real mockup instead of leaving it bare", async () => {
+    // `mockup` is optional in the schema, so a bare point slide validates and nothing
+    // downstream notices. The renderer used to hide it by fabricating a card out of the
+    // slide's own body text; now it renders nothing, so the gap has to be closed here.
+    const bare = {
+      title: "T",
+      caption: "c",
+      hashtags: ["a"],
+      slides: [
+        { role: "cover", eyebrow: "E", headline: "H", accentWord: "H" },
+        { role: "point", counter: "02 / 03", eyebrow: "TANDA 03", headline: "H2", body: "b" },
+      ],
+    };
+    const model = new MockLanguageModelV4({
+      doGenerate: async () => result(JSON.stringify(bare)),
+    });
+    const plan = await generateSlidePlan("# brief", model);
+    const s = plan.slides[1];
+    expect(s.role).toBe("point");
+    if (s.role !== "point") return;
+    expect(s.mockup?.type).toBe("illustration");
+  });
+
+  it("leaves a point slide that already has a mockup alone", async () => {
+    const withMockup = {
+      title: "T",
+      caption: "c",
+      hashtags: ["a"],
+      slides: [
+        { role: "cover", eyebrow: "E", headline: "H", accentWord: "H" },
+        {
+          role: "point",
+          counter: "02 / 03",
+          eyebrow: "E2",
+          headline: "H2",
+          body: "b",
+          mockup: { type: "bigstat", number: "3x", caption: "faster" },
+        },
+      ],
+    };
+    const model = new MockLanguageModelV4({
+      doGenerate: async () => result(JSON.stringify(withMockup)),
+    });
+    const plan = await generateSlidePlan("# brief", model);
+    const s = plan.slides[1];
+    if (s.role !== "point") throw new Error("unexpected role");
+    expect(s.mockup?.type).toBe("bigstat");
+  });
 });
