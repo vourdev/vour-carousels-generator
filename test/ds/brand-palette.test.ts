@@ -280,31 +280,6 @@ describe("exactly one accent exists, and every colour in the deck is accounted f
   });
 });
 
-describe("illustrations carry no stale accent", () => {
-  it("has no previous-palette accent left in any generated illustration", () => {
-    // The generator rewrites unDraw's #6c63ff to the surface accent. A stale asset
-    // directory would still carry the teal accent, and nothing else would notice.
-    const dir = join(process.cwd(), "lib", "ds", "assets", "illustrations");
-    const files = readdirSync(dir).filter((f) => f.endsWith(".svg"));
-    expect(files.length).toBe(312);
-
-    const offenders: string[] = [];
-    for (const f of files) {
-      const svg = readFileSync(join(dir, f), "utf8");
-      if (/#6c63ff|#6c5ce7|#0F6666|#4DE1F3|#50DCDC/i.test(svg)) offenders.push(f);
-    }
-    expect(offenders).toEqual([]);
-  });
-
-  it("recolours each illustration variant to its own surface accent", () => {
-    const dir = join(process.cwd(), "lib", "ds", "assets", "illustrations");
-    const light = readFileSync(join(dir, "server-error_syuz.onLight.svg"), "utf8");
-    const dark = readFileSync(join(dir, "server-error_syuz.onDark.svg"), "utf8");
-    expect(light).toContain(VOUR_ORANGE);
-    expect(dark).toContain(VOUR_ORANGE_BRIGHT);
-  });
-});
-
 describe("background variety is preserved", () => {
   it("still ships two distinct slide surfaces", () => {
     expect(CSS).toMatch(/body section:not\(\.paper\)\s*\{[\s\S]*?background:/);

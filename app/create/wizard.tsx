@@ -6,7 +6,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { PreviewFrame } from "@/components/preview-frame";
 import type { ModelId } from "@/lib/ai/registry";
 import type { SlidePlan } from "@/lib/ds/schema";
-import { planAction, reviseAction, reviseBriefAction, humanVoiceEditorAction, clearRevisionMemoryAction, uploadSingleImageAction, publishAction, getPublishingConfigAction, assembleAction } from "./actions";
+import { planAction, reviseAction, reviseBriefAction, humanVoiceEditorAction, clearRevisionMemoryAction, uploadSingleImageAction, publishAction, getPublishingConfigAction, assembleAction, captureAction } from "./actions";
 import { saveExportedCarouselAction, markCarouselStatusAction, deleteCarouselAction } from "@/app/history/actions";
 import {
   linkTopicCarouselAction,
@@ -570,11 +570,15 @@ export function Wizard({
     setLoadingJob("export");
     addMessage("ai", "Mengekspor slide rancangan menjadi gambar PNG...");
     try {
-      // Loaded on demand: lib/export/capture pulls in html-to-image plus the ~940 KB
-      // inlined font faces, which was a 1.05 MB client chunk on every visit to /create
-      // even though export only happens at the end of the flow.
-      const { captureCarousel } = await import("@/lib/export/capture");
-      const generatedBlobs = await captureCarousel(html);
+      // Capture the images on the Hono backend server for consistency and high quality
+      const base64s = await captureAction(html);
+      const generatedBlobs = base64s.map((b) => {
+        const bin = window.atob(b);
+        const len = bin.length;
+        const u8 = new Uint8Array(len);
+        for (let i = 0; i < len; i++) u8[i] = bin.charCodeAt(i);
+        return new Blob([u8], { type: "image/jpeg" });
+      });
       setBlobs(generatedBlobs);
 
       // Revoke any existing object URLs to avoid memory leaks
