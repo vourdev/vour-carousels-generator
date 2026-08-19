@@ -1,5 +1,5 @@
 import { requireSession } from "@/lib/session";
-import { availableModels } from "@/lib/ai/registry";
+import { listModelsAction } from "./create/actions";
 import { LogoutButton } from "./logout-button";
 import { KeyboardNav } from "./keyboard-nav";
 import Link from "next/link";
@@ -15,7 +15,8 @@ const gradientBorder: React.CSSProperties = {
 
 export default async function Home() {
   const session = await requireSession();
-  const models = availableModels();
+  // A dead backend should degrade this panel to "none configured", not 500 the homepage.
+  const models = await listModelsAction().catch(() => []);
   const handle = session.user.email.split("@")[0];
 
   return (
@@ -277,7 +278,7 @@ export default async function Home() {
               ))
             ) : (
               <span className="text-xs font-mono text-destructive bg-destructive/10 border border-destructive/20 px-3 py-1.5 rounded-xl">
-                Tidak ada API Key (Set GOOGLE_GENERATIVE_AI_API_KEY di .env)
+                Tidak ada model aktif (set OMNIROUTE_API_KEY di backend)
               </span>
             )}
           </div>

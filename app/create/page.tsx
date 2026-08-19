@@ -1,8 +1,8 @@
 import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
 import { requireSession } from "@/lib/session";
-import { availableModels } from "@/lib/ai/registry";
 import { getTopic } from "@/lib/topics/bank";
+import { listModelsAction } from "./actions";
 import { Wizard } from "./wizard";
 
 export default async function CreatePage({
@@ -11,7 +11,7 @@ export default async function CreatePage({
   searchParams: Promise<{ topic?: string }>;
 }) {
   const [session, { topic: topicId }] = await Promise.all([requireSession(), searchParams]);
-  const models = availableModels().filter((m) => m === "vour-high" || m === "vour-lite");
+  const models = (await listModelsAction()).filter((m) => m === "vour-high" || m === "vour-lite");
   const initialTopic = topicId ? await getTopic(topicId, session.user.id) : null;
   return (
     <main className="mx-auto w-full max-w-7xl h-[100dvh] overflow-hidden p-3 md:p-4 flex flex-col gap-2.5">

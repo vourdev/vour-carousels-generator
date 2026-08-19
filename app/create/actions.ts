@@ -1,42 +1,14 @@
 "use server";
 
-import { headers } from "next/headers";
-import type { ModelId } from "@/lib/ai/registry";
+import type { ModelId } from "@/lib/models";
 import type { SlidePlan } from "@/lib/ds/schema";
 import { clearRevisions } from "@/lib/memory/repo";
 import { requireSession } from "@/lib/session";
+import { backendGet, backendSend } from "@/lib/backend";
 
-/** Helper to proxy request to Hono backend */
-async function fetchBackend(path: string, bodyObj: any, method: string = "POST") {
-  const reqHeaders = await headers();
-  const forwardHeaders = new Headers();
-  forwardHeaders.set("Content-Type", "application/json");
-
-  const cookie = reqHeaders.get("cookie");
-  if (cookie) forwardHeaders.set("cookie", cookie);
-  const auth = reqHeaders.get("authorization");
-  if (auth) forwardHeaders.set("authorization", auth);
-
-  const backendUrl = process.env.BACKEND_API_URL || "http://localhost:3000";
-  const url = `${backendUrl}${path}`;
-
-  const init: RequestInit = {
-    method,
-    headers: forwardHeaders,
-  };
-
-  if (method !== "GET" && method !== "HEAD") {
-    init.body = JSON.stringify(bodyObj);
-  }
-
-  const res = await fetch(url, init);
-
-  if (!res.ok) {
-    const errObj = await res.json().catch(() => ({}));
-    throw new Error(errObj.error || `Backend returned error ${res.status}: ${res.statusText}`);
-  }
-
-  return res.json();
+/** Kept so the call sites below read unchanged; the transport lives in lib/backend. */
+function fetchBackend(path: string, bodyObj: any, method: string = "POST") {
+  return method === "GET" ? backendGet(path) : backendSend(path, bodyObj, method as "POST");
 }
 
 export async function listModelsAction(): Promise<ModelId[]> {

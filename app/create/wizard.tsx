@@ -4,7 +4,7 @@ import { useState, useTransition, useEffect, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { PreviewFrame } from "@/components/preview-frame";
-import type { ModelId } from "@/lib/ai/registry";
+import type { ModelId } from "@/lib/models";
 import type { SlidePlan } from "@/lib/ds/schema";
 import { planAction, reviseAction, reviseBriefAction, humanVoiceEditorAction, clearRevisionMemoryAction, uploadSingleImageAction, publishAction, getPublishingConfigAction, assembleAction, captureAction } from "./actions";
 import { saveExportedCarouselAction, markCarouselStatusAction, deleteCarouselAction } from "@/app/history/actions";

@@ -1,7 +1,7 @@
 "use server";
 
 import { requireSession } from "@/lib/session";
-import { uploadImage } from "@/lib/publish/cloudinary";
+import { backendSend } from "@/lib/backend";
 import {
   createCarousel,
   updateCarousel,
@@ -11,8 +11,6 @@ import {
   type CarouselStatus,
   type Carousel,
 } from "@/lib/history/repo";
-import { scheduleBufferPost } from "@/lib/publish/buffer";
-import type { SlidePlan } from "@/lib/ds/schema";
 
 /** Persist a freshly-exported carousel. Returns the new carousel id. */
 export async function saveExportedCarouselAction(input: {
@@ -58,56 +56,20 @@ export async function markCarouselStatusAction(
   await updateCarousel(id, patch);
 }
 
-/** Publish a stock carousel directly from the calendar page. */
+/**
+ * Publish a stock carousel directly from the calendar page.
+ *
+ * The backend loads the row and builds the post text itself — this used to be
+ * a second implementation here, and it posted the caption with every hashtag
+ * dropped. It also marks the row scheduled, so the status and the Buffer ids
+ * are written by whoever actually made the call.
+ */
 export async function publishSavedCarouselAction(
   id: string,
   dueAt: string
 ): Promise<{ igPostId?: string; ttPostId?: string }> {
-  const session = await requireSession();
-  const c = await getCarousel(id, session.user.id);
-  if (!c) throw new Error("Carousel not found");
-  if (!c.imageUrls || c.imageUrls.length === 0) {
-    throw new Error("Carousel has no exported slides");
-  }
-
-  const igChannelId = process.env.BUFFER_IG_CHANNEL_ID;
-  const ttChannelId = process.env.BUFFER_TIKTOK_CHANNEL_ID;
-
-  if (!igChannelId && !ttChannelId) {
-    throw new Error("Neither BUFFER_IG_CHANNEL_ID nor BUFFER_TIKTOK_CHANNEL_ID is configured");
-  }
-
-  const results: { igPostId?: string; ttPostId?: string } = {};
-
-  if (igChannelId) {
-    results.igPostId = await scheduleBufferPost({
-      channelId: igChannelId,
-      text: c.caption,
-      assets: c.imageUrls,
-      dueAt,
-    });
-  }
-
-  if (ttChannelId) {
-    results.ttPostId = await scheduleBufferPost({
-      channelId: ttChannelId,
-      text: c.caption,
-      assets: c.imageUrls,
-      dueAt,
-      isTikTok: true,
-      title: c.title,
-    });
-  }
-
-  // Mark as scheduled in the database
-  await updateCarousel(id, {
-    status: "scheduled",
-    bufferIgId: results.igPostId || null,
-    bufferTtId: results.ttPostId || null,
-    dueAt,
-  });
-
-  return results;
+  await requireSession();
+  return backendSend("/api/publish/carousel", { carouselId: id, dueAt });
 }
 
 export async function deleteCarouselAction(id: string): Promise<void> {

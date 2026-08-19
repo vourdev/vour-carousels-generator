@@ -1,7 +1,8 @@
 "use server";
 
 import { requireSession } from "@/lib/session";
-import { availableModels, resolveModel, type ModelId } from "@/lib/ai/registry";
+import { backendSend } from "@/lib/backend";
+import type { ModelId } from "@/lib/models";
 import {
   createTopic,
   deleteTopic,
@@ -12,8 +13,7 @@ import {
   type TopicCategory,
   type TopicStatus,
 } from "@/lib/topics/bank";
-import { expandTopicToBrief } from "@/lib/topics/generator";
-import { generateAndSaveTopics, type GenerateTopicsInput } from "@/lib/topics/service";
+import type { GenerateTopicsInput } from "@/lib/topics/types";
 
 async function sessionUserId(): Promise<string> {
   const session = await requireSession();
@@ -57,20 +57,14 @@ export async function deleteTopicAction(id: string): Promise<void> {
 }
 
 export async function generateTopicsAction(input: GenerateTopicsInput): Promise<Topic[]> {
-  const userId = await sessionUserId();
-  const modelId = availableModels()[0];
-  if (!modelId) throw new Error("No AI model configured");
-  const model = resolveModel(modelId as ModelId);
-  return generateAndSaveTopics(userId, model, input);
+  const data = await backendSend("/api/topics/generate", input);
+  return data.topics;
 }
 
 /** Expand a saved topic into a canonical-format brief (used by the /create wizard). */
 export async function expandTopicBriefAction(topicId: string, modelId: ModelId): Promise<string> {
-  const userId = await sessionUserId();
-  if (!availableModels().includes(modelId)) throw new Error(`model "${modelId}" is not configured`);
-  const topic = await getTopic(topicId, userId);
-  if (!topic) throw new Error("Topic not found");
-  return expandTopicToBrief(topic, resolveModel(modelId));
+  const data = await backendSend(`/api/topics/${topicId}/brief`, { modelId });
+  return data.brief;
 }
 
 /** Wizard trigger: carousel exported from this topic — link + mark generated. */

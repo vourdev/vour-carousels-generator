@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { Check, ChevronDown } from "lucide-react";
-import type { ModelId } from "@/lib/ai/registry";
+import type { ModelId } from "@/lib/models";
 
 export const modelDetails: Record<string, { label: string; description: string }> = {
   "vour-lite": { 
