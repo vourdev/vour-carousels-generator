@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
-import { captureCarousel } from "@/lib/export/capture";
+import { captureAction } from "@/app/create/actions";
 import { namedBlobs, downloadNamedBlobs } from "@/lib/export/download";
 
 export function ExportButton({ html }: { html: string }) {
@@ -13,7 +13,14 @@ export function ExportButton({ html }: { html: string }) {
     setPending(true);
     setError("");
     try {
-      const blobs = await captureCarousel(html);
+      const base64s = await captureAction(html);
+      const blobs = base64s.map((b) => {
+        const bin = window.atob(b);
+        const len = bin.length;
+        const u8 = new Uint8Array(len);
+        for (let i = 0; i < len; i++) u8[i] = bin.charCodeAt(i);
+        return new Blob([u8], { type: "image/jpeg" });
+      });
       downloadNamedBlobs(namedBlobs(blobs));
     } catch (e) {
       setError(e instanceof Error ? e.message : "export failed");
