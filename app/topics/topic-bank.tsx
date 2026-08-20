@@ -7,6 +7,14 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import {
   Select,
   SelectContent,
   SelectItem,
@@ -138,6 +146,7 @@ export function TopicBank() {
   const [showSettings, setShowSettings] = useState(false);
   const [showAddForm, setShowAddForm] = useState(false);
   const [showNotesModal, setShowNotesModal] = useState(false);
+  const [topicToDelete, setTopicToDelete] = useState<Topic | null>(null);
   const [showBulkDeleteDialog, setShowBulkDeleteDialog] = useState(false);
   const [showClearPublishedDialog, setShowClearPublishedDialog] = useState(false);
 
@@ -426,17 +435,19 @@ export function TopicBank() {
     });
   };
 
-  const handleDeleteTopic = (topicId: string) => {
-    if (!confirm("Hapus topic ini?")) return;
+  const handleConfirmDeleteSingle = () => {
+    if (!topicToDelete) return;
+    const targetId = topicToDelete.id;
     startTransition(async () => {
       try {
-        await deleteTopicAction(topicId);
+        await deleteTopicAction(targetId);
         toast.success("Topic berhasil dihapus");
         setSelectedIds((prev) => {
           const next = new Set(prev);
-          next.delete(topicId);
+          next.delete(targetId);
           return next;
         });
+        setTopicToDelete(null);
         fetchTopics();
       } catch {
         toast.error("Gagal menghapus topic");
@@ -510,7 +521,7 @@ export function TopicBank() {
           <Button
             onClick={() => handleGenerate("weekly")}
             disabled={isPending}
-            className="gap-2 shadow-xs h-8.5"
+            className="gap-2 shadow-xs h-8.5 cursor-pointer"
             size="sm"
           >
             <Calendar className="size-4" />
@@ -519,7 +530,7 @@ export function TopicBank() {
           <Button
             onClick={() => handleGenerate("monthly")}
             disabled={isPending}
-            className="gap-2 shadow-xs h-8.5"
+            className="gap-2 shadow-xs h-8.5 cursor-pointer"
             variant="default"
             size="sm"
           >
@@ -529,7 +540,7 @@ export function TopicBank() {
           <Button
             onClick={() => handleGenerate("ideas")}
             disabled={isPending}
-            className="gap-2 shadow-xs h-8.5"
+            className="gap-2 shadow-xs h-8.5 cursor-pointer"
             variant="outline"
             size="sm"
           >
@@ -539,7 +550,7 @@ export function TopicBank() {
           <Button
             onClick={() => setShowNotesModal(true)}
             disabled={isPending}
-            className="gap-2 shadow-xs h-8.5"
+            className="gap-2 shadow-xs h-8.5 cursor-pointer"
             variant="outline"
             size="sm"
           >
@@ -549,7 +560,7 @@ export function TopicBank() {
           <Button
             onClick={() => setShowAddForm(!showAddForm)}
             variant={showAddForm ? "secondary" : "outline"}
-            className="gap-1.5 shadow-xs h-8.5"
+            className="gap-1.5 shadow-xs h-8.5 cursor-pointer"
             size="sm"
           >
             <Plus className="size-4" />
@@ -562,7 +573,7 @@ export function TopicBank() {
             onClick={() => setShowSettings(!showSettings)}
             variant="ghost"
             size="sm"
-            className="text-xs text-muted-foreground hover:text-foreground gap-1.5 border border-hairline h-8.5"
+            className="text-xs text-muted-foreground hover:text-foreground gap-1.5 border border-hairline h-8.5 cursor-pointer"
           >
             <SlidersHorizontal className="size-3.5" />
             Settings
@@ -576,7 +587,7 @@ export function TopicBank() {
             disabled={isLoading}
             variant="ghost"
             size="sm"
-            className="text-xs text-muted-foreground hover:text-foreground border border-hairline h-8.5"
+            className="text-xs text-muted-foreground hover:text-foreground border border-hairline h-8.5 cursor-pointer"
           >
             <RotateCcw className={`size-3.5 ${isLoading ? "animate-spin" : ""}`} />
             <span className="hidden sm:inline">Refresh</span>
@@ -596,7 +607,7 @@ export function TopicBank() {
               <Button
                 variant="ghost"
                 size="sm"
-                className="size-6 p-0"
+                className="size-6 p-0 cursor-pointer"
                 onClick={() => setShowSettings(false)}
               >
                 <X className="size-3.5" />
@@ -658,7 +669,7 @@ export function TopicBank() {
               <Button
                 variant="ghost"
                 size="sm"
-                className="size-6 p-0"
+                className="size-6 p-0 cursor-pointer"
                 onClick={() => setShowAddForm(false)}
               >
                 <X className="size-3.5" />
@@ -733,10 +744,10 @@ export function TopicBank() {
               />
             </div>
             <div className="flex gap-2 justify-end pt-1">
-              <Button onClick={() => setShowAddForm(false)} variant="ghost" size="sm">
+              <Button onClick={() => setShowAddForm(false)} variant="ghost" size="sm" className="cursor-pointer">
                 Cancel
               </Button>
-              <Button onClick={handleAddTopic} disabled={isPending} size="sm">
+              <Button onClick={handleAddTopic} disabled={isPending} size="sm" className="cursor-pointer">
                 Save Topic
               </Button>
             </div>
@@ -762,7 +773,7 @@ export function TopicBank() {
               <button
                 key={tab.id}
                 onClick={() => setActiveTab(tab.id as TopicStatus | "all")}
-                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
+                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all cursor-pointer ${
                   isActive
                     ? "bg-foreground text-background shadow-xs font-semibold"
                     : "text-muted-foreground hover:text-foreground hover:bg-muted/60"
@@ -789,7 +800,7 @@ export function TopicBank() {
             variant="outline"
             size="sm"
             onClick={() => setShowClearPublishedDialog(true)}
-            className="text-xs text-destructive border-destructive/30 hover:bg-destructive/10 hover:text-destructive gap-1.5 h-8 font-medium shadow-2xs"
+            className="text-xs text-destructive border-destructive/30 hover:bg-destructive/10 hover:text-destructive gap-1.5 h-8 font-medium shadow-2xs cursor-pointer"
           >
             <Trash2 className="size-3.5" />
             Clear Published ({statusCounts.published})
@@ -812,7 +823,7 @@ export function TopicBank() {
             {searchQuery && (
               <button
                 onClick={() => setSearchQuery("")}
-                className="absolute right-2.5 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground p-0.5"
+                className="absolute right-2.5 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground p-0.5 cursor-pointer"
               >
                 <X className="size-3.5" />
               </button>
@@ -856,7 +867,7 @@ export function TopicBank() {
           <div className="flex items-center border border-hairline rounded-lg p-0.5 bg-card">
             <button
               onClick={() => setViewMode("table")}
-              className={`p-1.5 rounded-md transition-colors ${
+              className={`p-1.5 rounded-md transition-colors cursor-pointer ${
                 viewMode === "table"
                   ? "bg-muted text-foreground shadow-2xs"
                   : "text-muted-foreground hover:text-foreground"
@@ -867,7 +878,7 @@ export function TopicBank() {
             </button>
             <button
               onClick={() => setViewMode("grid")}
-              className={`p-1.5 rounded-md transition-colors ${
+              className={`p-1.5 rounded-md transition-colors cursor-pointer ${
                 viewMode === "grid"
                   ? "bg-muted text-foreground shadow-2xs"
                   : "text-muted-foreground hover:text-foreground"
@@ -880,7 +891,7 @@ export function TopicBank() {
         </div>
       </div>
 
-      {/* 7. Floating Bulk Action Toolbar (Polished dark glass with visible icons) */}
+      {/* 7. Floating Bulk Action Toolbar */}
       {selectedIds.size > 0 && (
         <div className="sticky top-4 z-40 bg-zinc-900/95 dark:bg-zinc-950/95 text-white border border-zinc-700/60 rounded-xl p-2.5 px-4 shadow-2xl backdrop-blur-md flex items-center justify-between gap-3 flex-wrap animate-in fade-in slide-in-from-top-2 duration-150">
           <div className="flex items-center gap-3">
@@ -971,7 +982,7 @@ export function TopicBank() {
                     <div className="size-4 rounded bg-muted animate-pulse mx-auto" />
                   </th>
                   <th className="p-3 font-semibold text-foreground">Topic Title & Details</th>
-                  <th className="p-3 w-40 font-semibold text-foreground">Category & Product</th>
+                  <th className="p-3 w-44 font-semibold text-foreground">Category & Product</th>
                   <th className="p-3 w-28 font-semibold text-foreground">Status</th>
                   <th className="p-3 w-28 font-semibold text-foreground">Scheduled</th>
                   <th className="p-3 w-48 text-right font-semibold text-foreground">Actions</th>
@@ -1062,7 +1073,7 @@ export function TopicBank() {
                   setFilterCategory("all");
                   setActiveTab("all");
                 }}
-                className="text-xs"
+                className="text-xs cursor-pointer"
               >
                 Reset All Filters
               </Button>
@@ -1247,7 +1258,7 @@ export function TopicBank() {
                             size="sm"
                             variant="ghost"
                             className="size-7.5 p-0 text-muted-foreground hover:text-destructive hover:bg-destructive/10 cursor-pointer"
-                            onClick={() => handleDeleteTopic(topic.id)}
+                            onClick={() => setTopicToDelete(topic)}
                             title="Hapus Topic"
                           >
                             <Trash2 className="size-3.5" />
@@ -1328,7 +1339,7 @@ export function TopicBank() {
                       size="sm"
                       variant="ghost"
                       className="size-7.5 p-0 text-muted-foreground hover:text-destructive hover:bg-destructive/10 shrink-0 cursor-pointer"
-                      onClick={() => handleDeleteTopic(topic.id)}
+                      onClick={() => setTopicToDelete(topic)}
                       title="Hapus Topic"
                     >
                       <Trash2 className="size-3.5" />
@@ -1492,179 +1503,199 @@ export function TopicBank() {
         </div>
       )}
 
-      {/* 10. Generate from Notes Modal Dialog */}
-      {showNotesModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs animate-in fade-in duration-150">
-          <Card className="w-full max-w-xl shadow-2xl border-border bg-card">
-            <CardContent className="p-5 space-y-4">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2.5">
-                  <div className="p-2 rounded-lg bg-primary/10 text-primary">
-                    <FileText className="size-5" />
-                  </div>
-                  <div>
-                    <h3 className="font-semibold text-base">Generate from Notes</h3>
-                    <p className="text-xs text-muted-foreground">
-                      Paste catatan mentah untuk otomatis di-extract menjadi topic cards
-                    </p>
-                  </div>
-                </div>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="size-8 p-0 cursor-pointer"
-                  onClick={() => setShowNotesModal(false)}
-                >
-                  <X className="size-4" />
-                </Button>
+      {/* 10. Generate from Notes (shadcn Dialog) */}
+      <Dialog open={showNotesModal} onOpenChange={setShowNotesModal}>
+        <DialogContent className="sm:max-w-xl">
+          <DialogHeader>
+            <div className="flex items-center gap-3 text-left">
+              <div className="size-10 rounded-xl bg-primary/10 border border-primary/20 text-primary shrink-0 flex items-center justify-center">
+                <FileText className="size-5" />
               </div>
+              <div className="space-y-0.5">
+                <DialogTitle className="text-base">Generate from Notes</DialogTitle>
+                <DialogDescription>
+                  Paste catatan mentah atau outline ide untuk di-extract otomatis menjadi topic cards.
+                </DialogDescription>
+              </div>
+            </div>
+          </DialogHeader>
 
-              <div className="space-y-2">
-                <label className="text-xs font-medium text-muted-foreground">
-                  Catatan Mentah (Raw Notes / Outline / Dumps)
-                </label>
-                <Textarea
-                  placeholder="Paste raw notes di sini... Misal:
+          <div className="space-y-2 py-1">
+            <label className="text-xs font-medium text-foreground/80 flex items-center justify-between">
+              <span>Catatan Mentah (Raw Notes / Outline / Dumps)</span>
+              <span className="text-[10px] text-muted-foreground font-mono">Markdown / Plain text</span>
+            </label>
+            <Textarea
+              placeholder="Paste raw notes di sini... Misal:
 - Ide 1: Panduan integrasi AI agent dengan Next.js Server Actions
 - Ide 2: 5 Kesalahan umum saat implementasi PostgreSQL indexing
 - Ide 3: Kenapa developer perlu beralih ke Tailwind CSS v4..."
-                  value={notesText}
-                  onChange={(e) => setNotesText(e.target.value)}
-                  rows={8}
-                  className="font-mono text-xs resize-y"
-                  autoFocus
-                />
-                <p className="text-[11px] text-muted-foreground">
-                  AI akan mengekstrak poin penting, menentukan kategori, keyword, angle, dan
-                  otomatis menghubungkan produk jika relevan.
-                </p>
-              </div>
+              value={notesText}
+              onChange={(e) => setNotesText(e.target.value)}
+              rows={8}
+              className="font-mono text-xs leading-relaxed resize-y bg-background/50 border-hairline focus:border-primary/40 focus:ring-1 focus:ring-primary/20 rounded-xl"
+              autoFocus
+            />
+            <p className="text-[11px] text-muted-foreground leading-relaxed">
+              AI akan mengekstrak poin penting, menentukan kategori, keyword, angle, dan
+              otomatis menghubungkan produk jika relevan.
+            </p>
+          </div>
 
-              <div className="flex justify-end gap-2 pt-2 border-t border-hairline">
-                <Button
-                  variant="ghost"
-                  onClick={() => setShowNotesModal(false)}
-                  disabled={isPending}
-                  size="sm"
-                  className="cursor-pointer"
-                >
-                  Batal
-                </Button>
-                <Button
-                  onClick={handleGenerateFromNotes}
-                  disabled={isPending || !notesText.trim()}
-                  className="gap-2 cursor-pointer"
-                  size="sm"
-                >
-                  {isPending ? (
-                    <>
-                      <Loader2 className="size-4 animate-spin" />
-                      Extracting...
-                    </>
-                  ) : (
-                    <>
-                      <Sparkles className="size-4" />
-                      Generate Topics
-                    </>
-                  )}
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-      )}
+          <DialogFooter className="gap-2 sm:gap-2">
+            <Button
+              variant="ghost"
+              onClick={() => setShowNotesModal(false)}
+              disabled={isPending}
+              size="sm"
+              className="cursor-pointer text-xs"
+            >
+              Batal
+            </Button>
+            <Button
+              onClick={handleGenerateFromNotes}
+              disabled={isPending || !notesText.trim()}
+              className="gap-2 cursor-pointer text-xs shadow-xs"
+              size="sm"
+            >
+              {isPending ? (
+                <>
+                  <Loader2 className="size-3.5 animate-spin" />
+                  Extracting...
+                </>
+              ) : (
+                <>
+                  <Sparkles className="size-3.5" />
+                  Generate Topics
+                </>
+              )}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
-      {/* 11. Bulk Delete Confirmation Dialog (With prominent visible Alert icon) */}
-      {showBulkDeleteDialog && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs animate-in fade-in duration-150">
-          <Card className="w-full max-w-md shadow-2xl border-destructive/40 bg-card">
-            <CardContent className="p-5 space-y-4">
-              <div className="flex items-center gap-3.5">
-                <div className="p-3 rounded-full bg-destructive/15 text-destructive border border-destructive/25 shrink-0 flex items-center justify-center">
-                  <AlertTriangle className="size-5" />
-                </div>
-                <div>
-                  <h3 className="font-semibold text-sm text-foreground">
-                    Hapus {selectedIds.size} Topik Terpilih?
-                  </h3>
-                  <p className="text-xs text-muted-foreground mt-0.5">
-                    Tindakan ini permanen dan akan menghapus {selectedIds.size} topik dari Topic
-                    Bank Anda.
-                  </p>
-                </div>
-              </div>
+      {/* 11. Single Topic Delete Confirmation (shadcn Dialog) */}
+      <Dialog open={!!topicToDelete} onOpenChange={(open) => !open && setTopicToDelete(null)}>
+        <DialogContent className="sm:max-w-md">
+          <div className="flex items-start gap-3.5">
+            <div className="size-10 rounded-xl bg-destructive/10 border border-destructive/20 text-destructive shrink-0 flex items-center justify-center mt-0.5">
+              <AlertTriangle className="size-5" />
+            </div>
+            <div className="space-y-1.5 flex-1 text-left">
+              <DialogTitle>Hapus Topik?</DialogTitle>
+              <DialogDescription className="leading-relaxed">
+                Apakah Anda yakin ingin menghapus topik{" "}
+                <strong className="text-foreground font-semibold">
+                  &quot;{topicToDelete?.title}&quot;
+                </strong>
+                ? Tindakan ini permanen dan tidak dapat dibatalkan.
+              </DialogDescription>
+            </div>
+          </div>
 
-              <div className="flex justify-end gap-2 pt-2 border-t border-hairline">
-                <Button
-                  variant="ghost"
-                  onClick={() => setShowBulkDeleteDialog(false)}
-                  disabled={isPending}
-                  size="sm"
-                  className="cursor-pointer"
-                >
-                  Batal
-                </Button>
-                <Button
-                  variant="destructive"
-                  onClick={handleBulkDelete}
-                  disabled={isPending}
-                  size="sm"
-                  className="gap-1.5 cursor-pointer shadow-xs"
-                >
-                  <Trash2 className="size-3.5" />
-                  Hapus {selectedIds.size} Topik
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-      )}
+          <DialogFooter className="gap-2 sm:gap-2">
+            <Button
+              variant="ghost"
+              onClick={() => setTopicToDelete(null)}
+              disabled={isPending}
+              size="sm"
+              className="cursor-pointer text-xs"
+            >
+              Batal
+            </Button>
+            <Button
+              variant="destructive"
+              onClick={handleConfirmDeleteSingle}
+              disabled={isPending}
+              size="sm"
+              className="gap-1.5 cursor-pointer shadow-xs text-xs"
+            >
+              <Trash2 className="size-3.5" />
+              Hapus Topik
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
-      {/* 12. Clear Published Confirmation Dialog (With prominent visible Trash icon) */}
-      {showClearPublishedDialog && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs animate-in fade-in duration-150">
-          <Card className="w-full max-w-md shadow-2xl border-destructive/40 bg-card">
-            <CardContent className="p-5 space-y-4">
-              <div className="flex items-center gap-3.5">
-                <div className="p-3 rounded-full bg-destructive/15 text-destructive border border-destructive/25 shrink-0 flex items-center justify-center">
-                  <Trash2 className="size-5" />
-                </div>
-                <div>
-                  <h3 className="font-semibold text-sm text-foreground">
-                    Bersihkan Semua Topik Published ({statusCounts.published})?
-                  </h3>
-                  <p className="text-xs text-muted-foreground mt-0.5">
-                    Semua {statusCounts.published} topik dengan status &quot;Published&quot; akan
-                    dihapus dari bank untuk merapikan backlog Anda.
-                  </p>
-                </div>
-              </div>
+      {/* 12. Bulk Delete Confirmation (shadcn Dialog) */}
+      <Dialog open={showBulkDeleteDialog} onOpenChange={setShowBulkDeleteDialog}>
+        <DialogContent className="sm:max-w-md">
+          <div className="flex items-start gap-3.5">
+            <div className="size-10 rounded-xl bg-destructive/10 border border-destructive/20 text-destructive shrink-0 flex items-center justify-center mt-0.5">
+              <AlertTriangle className="size-5" />
+            </div>
+            <div className="space-y-1.5 flex-1 text-left">
+              <DialogTitle>Hapus {selectedIds.size} Topik Terpilih?</DialogTitle>
+              <DialogDescription className="leading-relaxed">
+                Tindakan ini permanen dan akan menghapus <strong className="text-foreground font-semibold">{selectedIds.size} topik</strong> terpilih dari Topic Bank Anda.
+              </DialogDescription>
+            </div>
+          </div>
 
-              <div className="flex justify-end gap-2 pt-2 border-t border-hairline">
-                <Button
-                  variant="ghost"
-                  onClick={() => setShowClearPublishedDialog(false)}
-                  disabled={isPending}
-                  size="sm"
-                  className="cursor-pointer"
-                >
-                  Batal
-                </Button>
-                <Button
-                  variant="destructive"
-                  onClick={handleClearAllPublished}
-                  disabled={isPending}
-                  size="sm"
-                  className="gap-1.5 cursor-pointer shadow-xs"
-                >
-                  <Trash2 className="size-3.5" />
-                  Hapus Semua ({statusCounts.published})
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-      )}
+          <DialogFooter className="gap-2 sm:gap-2">
+            <Button
+              variant="ghost"
+              onClick={() => setShowBulkDeleteDialog(false)}
+              disabled={isPending}
+              size="sm"
+              className="cursor-pointer text-xs"
+            >
+              Batal
+            </Button>
+            <Button
+              variant="destructive"
+              onClick={handleBulkDelete}
+              disabled={isPending}
+              size="sm"
+              className="gap-1.5 cursor-pointer shadow-xs text-xs"
+            >
+              <Trash2 className="size-3.5" />
+              Hapus {selectedIds.size} Topik
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* 13. Clear Published Confirmation (shadcn Dialog) */}
+      <Dialog open={showClearPublishedDialog} onOpenChange={setShowClearPublishedDialog}>
+        <DialogContent className="sm:max-w-md">
+          <div className="flex items-start gap-3.5">
+            <div className="size-10 rounded-xl bg-destructive/10 border border-destructive/20 text-destructive shrink-0 flex items-center justify-center mt-0.5">
+              <Trash2 className="size-5" />
+            </div>
+            <div className="space-y-1.5 flex-1 text-left">
+              <DialogTitle>
+                Bersihkan Semua Topik Published ({statusCounts.published})?
+              </DialogTitle>
+              <DialogDescription className="leading-relaxed">
+                Semua <strong className="text-foreground font-semibold">{statusCounts.published} topik</strong> dengan status &quot;Published&quot; akan dihapus dari bank untuk merapikan backlog Anda.
+              </DialogDescription>
+            </div>
+          </div>
+
+          <DialogFooter className="gap-2 sm:gap-2">
+            <Button
+              variant="ghost"
+              onClick={() => setShowClearPublishedDialog(false)}
+              disabled={isPending}
+              size="sm"
+              className="cursor-pointer text-xs"
+            >
+              Batal
+            </Button>
+            <Button
+              variant="destructive"
+              onClick={handleClearAllPublished}
+              disabled={isPending}
+              size="sm"
+              className="gap-1.5 cursor-pointer shadow-xs text-xs"
+            >
+              <Trash2 className="size-3.5" />
+              Hapus Semua ({statusCounts.published})
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
