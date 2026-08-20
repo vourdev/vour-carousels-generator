@@ -18,6 +18,7 @@ CREATE TABLE IF NOT EXISTS topics (
   priority INTEGER NOT NULL DEFAULT 0,
   scheduled_date TEXT,
   carousel_id TEXT,
+  related_product_id TEXT,
   created_at INTEGER NOT NULL,
   updated_at INTEGER NOT NULL,
   FOREIGN KEY (user_id) REFERENCES user(id) ON DELETE CASCADE

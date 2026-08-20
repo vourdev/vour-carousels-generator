@@ -120,7 +120,7 @@ export default async function Home() {
                 T
               </kbd>
             </Link>
-            
+
             <Link
               href="/history"
               className="inline-flex items-center gap-2 px-6 py-3.5 rounded-2xl bg-card border border-hairline text-foreground font-medium text-sm hover:bg-muted/50 transition-colors shadow-2xs"
@@ -173,7 +173,7 @@ export default async function Home() {
               </span>
             </div>
           </Link>
-        
+
           {/* Tile 1: Create Studio */}
           <Link
             href="/create"

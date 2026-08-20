@@ -1,19 +1,36 @@
 "use server";
 
 import { requireSession } from "@/lib/session";
-import { backendSend } from "@/lib/backend";
+import { backendGet, backendSend } from "@/lib/backend";
 import type { ModelId } from "@/lib/models";
 import {
   createTopic,
   deleteTopic,
+  bulkDeleteTopics,
+  bulkUpdateTopicStatus,
+  deleteTopicsByStatus,
   getTopic,
   getTopics,
+  getProductsFromDb,
   updateTopic,
   type Topic,
   type TopicCategory,
   type TopicStatus,
 } from "@/lib/topics/bank";
 import type { GenerateTopicsInput } from "@/lib/topics/types";
+
+export interface Product {
+  id: string;
+  name: string;
+  slug: string;
+  tagline?: string;
+  description?: string;
+  targetAudience?: string;
+  keyBenefit?: string;
+  ctaText?: string;
+  landingUrl?: string;
+  active?: number | boolean;
+}
 
 async function sessionUserId(): Promise<string> {
   const session = await requireSession();
@@ -29,6 +46,17 @@ export async function listTopicsAction(filters?: {
   return getTopics(userId, filters);
 }
 
+export async function getProductsAction(): Promise<Product[]> {
+  try {
+    const data = await backendGet("/api/products");
+    const list = Array.isArray(data) ? data : (data?.products ?? []);
+    if (list.length > 0) return list;
+  } catch (err) {
+    console.warn("Failed to fetch products from backend, trying db fallback:", err);
+  }
+  return getProductsFromDb();
+}
+
 export async function createTopicAction(data: {
   title: string;
   category: TopicCategory;
@@ -37,6 +65,7 @@ export async function createTopicAction(data: {
   angle?: string;
   priority?: number;
   scheduledDate?: string;
+  relatedProductId?: string;
 }): Promise<Topic> {
   const userId = await sessionUserId();
   return createTopic({ userId, ...data });
@@ -56,9 +85,39 @@ export async function deleteTopicAction(id: string): Promise<void> {
   await deleteTopic(id, userId);
 }
 
+export async function bulkDeleteTopicsAction(ids: string[]): Promise<void> {
+  const userId = await sessionUserId();
+  await bulkDeleteTopics(ids, userId);
+}
+
+export async function bulkUpdateTopicStatusAction(
+  ids: string[],
+  status: TopicStatus
+): Promise<void> {
+  const userId = await sessionUserId();
+  await bulkUpdateTopicStatus(ids, userId, status);
+}
+
+export async function deleteTopicsByStatusAction(status: TopicStatus): Promise<number> {
+  const userId = await sessionUserId();
+  return deleteTopicsByStatus(userId, status);
+}
+
 export async function generateTopicsAction(input: GenerateTopicsInput): Promise<Topic[]> {
   const data = await backendSend("/api/topics/generate", input);
   return data.topics;
+}
+
+export async function generateFromNotesAction(
+  rawNotes: string,
+  modelId?: ModelId
+): Promise<Topic[]> {
+  const data = await backendSend("/api/topics/generate-from-notes", {
+    rawNotes,
+    notes: rawNotes,
+    modelId,
+  });
+  return Array.isArray(data) ? data : (data.topics ?? []);
 }
 
 /** Expand a saved topic into a canonical-format brief (used by the /create wizard). */
