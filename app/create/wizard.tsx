@@ -225,20 +225,25 @@ export function Wizard({
         "Gagal memproses"
       );
     } else if (step === 2) {
+      setLoadingJob("briefRevise");
       start(async () => {
         try {
           addMessage("ai", "Merevisi brief outline berdasarkan instruksi Anda...");
           const res = await reviseBriefAction(brief, textToSubmit, model as ModelId, draftId);
           setFinalBrief(res);
           setBrief(res);
-          addMessage("ai", "Brief outline berhasil diperbarui dengan konteks penuh.");
+          toast.success("Revisi brief outline selesai!");
+          addMessage("ai", "Brief outline berhasil diperbarui dengan konteks penuh. Silakan periksa perubahannya.");
         } catch (e) {
           const msg = e instanceof Error ? e.message : "failed";
           toast.error(msg);
           addMessage("ai", `Revisi brief gagal: ${summarizeError(msg)}`);
+        } finally {
+          setLoadingJob(null);
         }
       });
     } else if (step === 3 || step === 4) {
+      setLoadingJob("planRevise");
       start(async () => {
         try {
           addMessage("ai", "Merevisi rancangan slide berdasarkan instruksi Anda...");
@@ -249,11 +254,14 @@ export function Wizard({
           const updatedPlan = await reviseAction(plan!, textToSubmit, model as ModelId, draftId);
           setPlan(updatedPlan);
           setApproved(false);
-          addMessage("ai", "Rancangan slide berhasil disesuaikan. Silakan cek preview terbaru.");
+          toast.success("Revisi rancangan slide selesai!");
+          addMessage("ai", "Rancangan slide berhasil disesuaikan. Silakan cek preview terbaru pada panel di sebelah kanan.");
         } catch (e) {
           const msg = e instanceof Error ? e.message : "failed";
           toast.error(msg);
           addMessage("ai", `Revisi slide gagal: ${summarizeError(msg)}`);
+        } finally {
+          setLoadingJob(null);
         }
       });
     } else if (step === 5) {

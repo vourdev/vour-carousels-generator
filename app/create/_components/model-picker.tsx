@@ -7,11 +7,11 @@ import type { ModelId } from "@/lib/models";
 export const modelDetails: Record<string, { label: string; description: string }> = {
   "vour-lite": { 
     label: "Sonnet 4.5", 
-    description: "Paling efisien untuk tugas sehari-hari" 
+    description: "Paling efisien untuk tugas pembuatan carousel sehari-hari" 
   },
   "vour-high": { 
     label: "Opus 4.6", 
-    description: "Kualitas penulisan terbaik dan analisis mendalam" 
+    description: "Kualitas penulisan terbaik dengan penalaran dan analisis mendalam" 
   },
 };
 
@@ -50,32 +50,34 @@ export function ModelPicker({
 
   // Resolve active label
   const activeModelId = model === "vour-high" ? "vour-high" : "vour-lite";
-  const activeLabel = modelDetails[activeModelId].label;
+  const activeLabel = modelDetails[activeModelId]?.label ?? "Sonnet 4.5";
 
   return (
     <div className="relative" ref={ref}>
-      {/* Pill button matching the design in Image 1 */}
+      {/* Pill button */}
       <button
         type="button"
         disabled={disabled}
         onClick={() => setOpen((o) => !o)}
-        className="flex items-center gap-1.5 rounded-full px-3.5 py-1.5 transition-all text-xs font-normal text-foreground disabled:opacity-50 select-none cursor-pointer active:scale-[0.98] outline-none focus-visible:ring-2 focus-visible:ring-zinc-400/20"
+        className="flex items-center gap-1.5 rounded-full px-3 py-1.5 transition-all text-xs font-medium text-foreground bg-muted/40 hover:bg-muted border border-hairline/60 disabled:opacity-50 select-none cursor-pointer active:scale-[0.98] outline-none focus-visible:ring-2 focus-visible:ring-ring/30"
       >
-        <span className="font-medium text-zinc-900 dark:text-zinc-150">{activeLabel}</span>
-        <ChevronDown className="size-3 text-zinc-400 dark:text-zinc-500 stroke-[2.5]" />
+        <span className="font-medium text-foreground">{activeLabel}</span>
+        <ChevronDown className="size-3 text-muted-foreground stroke-[2.5]" />
       </button>
 
       {open && (
         <div
           role="listbox"
-          className="absolute bottom-full right-0 mb-2.5 z-50 w-72 bg-white dark:bg-zinc-900 border border-zinc-150 dark:border-zinc-800/60 rounded-2xl shadow-[0_12px_32px_rgba(0,0,0,0.08)] p-1.5 animate-in fade-in slide-in-from-bottom-2 duration-150"
+          className="absolute bottom-full right-0 mb-2 z-50 w-80 bg-card/95 border border-hairline rounded-2xl shadow-2xl backdrop-blur-xl p-1.5 animate-in fade-in slide-in-from-bottom-2 duration-150 overflow-hidden"
         >
-          <div className="space-y-0.5">
+          <div className="space-y-1">
             {/* Vour Lite -> Sonnet 4.5 Row */}
             <button
               type="button"
-              className={`w-full flex items-center justify-between gap-3 px-3 py-2.5 rounded-xl text-left transition-all cursor-pointer active:scale-[0.99] ${
-                activeModelId === "vour-lite" ? "bg-zinc-50/70 dark:bg-zinc-800/20" : "hover:bg-zinc-50 dark:hover:bg-zinc-800/50"
+              className={`w-full flex items-start justify-between gap-3 p-2.5 rounded-xl text-left transition-all cursor-pointer active:scale-[0.99] ${
+                activeModelId === "vour-lite"
+                  ? "bg-primary/10 border border-primary/20 text-foreground"
+                  : "hover:bg-muted/70 text-foreground"
               }`}
               onClick={() => {
                 onChange("vour-lite");
@@ -83,23 +85,30 @@ export function ModelPicker({
               }}
             >
               <div className="min-w-0 flex-1">
-                <div className="font-medium text-[13px] text-zinc-900 dark:text-zinc-100">
+                <div className="font-semibold text-sm text-foreground flex items-center gap-1.5">
                   {modelDetails["vour-lite"].label}
+                  {activeModelId === "vour-lite" && (
+                    <span className="text-[10px] font-mono px-1.5 py-0.2 rounded bg-primary/15 text-primary font-medium">
+                      Aktif
+                    </span>
+                  )}
                 </div>
-                <div className="text-[11px] text-zinc-400 dark:text-zinc-500 leading-normal mt-0.5 wrap-break-word">
+                <div className="text-xs text-zinc-600 dark:text-zinc-300 leading-relaxed mt-1">
                   {modelDetails["vour-lite"].description}
                 </div>
               </div>
               {activeModelId === "vour-lite" && (
-                <Check className="size-4 shrink-0 text-blue-500 stroke-[2.5]" />
+                <Check className="size-4 shrink-0 text-primary stroke-[2.5] mt-0.5" />
               )}
             </button>
 
             {/* Vour High -> Opus 4.6 Row */}
             <button
               type="button"
-              className={`w-full flex items-center justify-between gap-3 px-3 py-2.5 rounded-xl text-left transition-all cursor-pointer active:scale-[0.99] ${
-                activeModelId === "vour-high" ? "bg-zinc-50/70 dark:bg-zinc-800/20" : "hover:bg-zinc-50 dark:hover:bg-zinc-800/50"
+              className={`w-full flex items-start justify-between gap-3 p-2.5 rounded-xl text-left transition-all cursor-pointer active:scale-[0.99] ${
+                activeModelId === "vour-high"
+                  ? "bg-primary/10 border border-primary/20 text-foreground"
+                  : "hover:bg-muted/70 text-foreground"
               }`}
               onClick={() => {
                 onChange("vour-high");
@@ -107,15 +116,20 @@ export function ModelPicker({
               }}
             >
               <div className="min-w-0 flex-1">
-                <div className="font-medium text-[13px] text-zinc-900 dark:text-zinc-100">
+                <div className="font-semibold text-sm text-foreground flex items-center gap-1.5">
                   {modelDetails["vour-high"].label}
+                  {activeModelId === "vour-high" && (
+                    <span className="text-[10px] font-mono px-1.5 py-0.2 rounded bg-primary/15 text-primary font-medium">
+                      Aktif
+                    </span>
+                  )}
                 </div>
-                <div className="text-[11px] text-zinc-400 dark:text-zinc-500 leading-normal mt-0.5 wrap-break-word">
+                <div className="text-xs text-zinc-600 dark:text-zinc-300 leading-relaxed mt-1">
                   {modelDetails["vour-high"].description}
                 </div>
               </div>
               {activeModelId === "vour-high" && (
-                <Check className="size-4 shrink-0 text-blue-500 stroke-[2.5]" />
+                <Check className="size-4 shrink-0 text-primary stroke-[2.5] mt-0.5" />
               )}
             </button>
           </div>
