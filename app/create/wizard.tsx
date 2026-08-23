@@ -645,7 +645,12 @@ export function Wizard({
       // fallback is the pre-existing behaviour: the deck still renders and publish
       // still uploads, it just does not survive a reload.
       if (uploadError) {
-        toast.warning("Gambar tersimpan sementara — upload permanen gagal, akan diulang saat publish.");
+        // Be specific about what "sementara" costs. These are object URLs: they are not
+        // written to the draft and they die with the page, so a refresh loses them and
+        // the only way back is another export.
+        toast.warning(
+          "Upload permanen gagal. Gambar hanya ada di tab ini — jangan refresh sebelum unduh atau ulangi ekspor."
+        );
       }
       const displayUrls = urls.length > 0 ? urls : generatedBlobs.map((b) => URL.createObjectURL(b));
       if (displayUrls.length === 0) throw new Error("Ekspor tidak menghasilkan gambar apa pun.");
@@ -1233,6 +1238,17 @@ export function Wizard({
       <Button size="sm" onClick={() => { setStep(5); openArtifact("publish"); }} className="gap-1.5">
         Atur jadwal posting
         <ArrowRight className="size-4" />
+      </Button>
+    ) : step === 4 && plan ? (
+      /* Step 4 with nothing to show. Reachable whenever the render survived but the
+       * upload did not: the slides were object URLs, which are stripped on save and
+       * dead after a reload, and the carousel row was written with no imageUrls, so
+       * the restore effect finds nothing either. This branch used to be `null` — no
+       * export action (that one is gated on step 3), no publish action (gated on
+       * having images), no way back. The wizard simply ended. */
+      <Button size="sm" onClick={() => handleExport(true)} disabled={busy} className="gap-1.5">
+        <Images className="size-4" />
+        Ulangi ekspor gambar
       </Button>
     ) : null;
 
