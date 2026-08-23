@@ -1,12 +1,19 @@
 "use client";
 
-import { useState, useTransition, useEffect, useRef } from "react";
+import { useState, useTransition, useEffect, useRef, useCallback } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { PreviewFrame } from "@/components/preview-frame";
 import type { ModelId } from "@/lib/models";
 import type { SlidePlan } from "@/lib/ds/schema";
-import { planAction, reviseAction, reviseBriefAction, humanVoiceEditorAction, clearRevisionMemoryAction, uploadSingleImageAction, publishAction, getPublishingConfigAction, assembleAction, captureAction } from "./actions";
+import { planAction, reviseAction, reviseBriefAction, humanVoiceEditorAction, clearRevisionMemoryAction, uploadSingleImageAction, publishAction, getPublishingConfigAction, assembleAction, captureAction, getCarouselAction } from "./actions";
+import {
+  emptyDraft,
+  restoreDraft,
+  serializeDraft,
+  revocableUrls,
+  type DraftSnapshot,
+} from "./draft-state";
 import { saveExportedCarouselAction, markCarouselStatusAction, deleteCarouselAction } from "@/app/history/actions";
 import {
   linkTopicCarouselAction,
@@ -123,6 +130,11 @@ export function Wizard({
   // Which long-running job is in flight, so each step can show its own loader.
   const [loadingJob, setLoadingJob] = useState<LoadingKind | null>(null);
 
+  // True while handleReset is awaiting the server-side clears. The draft on screen is
+  // still the old one during that window, and the debounced autosave would happily
+  // write it back out — after which removing the key just races the next write.
+  const [isResetting, setIsResetting] = useState(false);
+
   // Prompt history state (terminal-style ArrowUp / ArrowDown navigation)
   const [promptHistory, setPromptHistory] = useState<string[]>([]);
   const [historyIndex, setHistoryIndex] = useState<number>(-1);
@@ -219,6 +231,11 @@ export function Wizard({
     setChatInput("");
     setIdea("");
 
+    // Every branch below writes its result back into the draft when it settles. Reset
+    // bumps this counter, so a result that lands afterwards belongs to a draft that no
+    // longer exists and is dropped instead of resurrecting it.
+    const runId = genRunRef.current;
+
     if (step === 1 || !brief.trim()) {
       runBriefGeneration(
         (signal) => fetchBrief(textToSubmit, signal),
@@ -230,6 +247,7 @@ export function Wizard({
         try {
           addMessage("ai", "Merevisi brief outline berdasarkan instruksi Anda...");
           const res = await reviseBriefAction(brief, textToSubmit, model as ModelId, draftId);
+          if (genRunRef.current !== runId) return;
           setFinalBrief(res);
           setBrief(res);
           toast.success("Revisi brief outline selesai!");
@@ -252,6 +270,8 @@ export function Wizard({
             setActiveTab("preview");
           }
           const updatedPlan = await reviseAction(plan!, textToSubmit, model as ModelId, draftId);
+          // Reset while this was in flight: the draft it revises is gone.
+          if (genRunRef.current !== runId) return;
           setPlan(updatedPlan);
           setApproved(false);
           toast.success("Revisi rancangan slide selesai!");
@@ -347,42 +367,49 @@ export function Wizard({
     }
   }, [plan]);
 
+  /** Push a whole snapshot into the individual state slots. One call site per field. */
+  const applyDraft = useCallback((d: DraftSnapshot) => {
+    setStep(d.step);
+    setIdea(d.idea);
+    setModel(d.model as ModelId | "");
+    setBrief(d.brief);
+    setFinalBrief(d.finalBrief);
+    setPlan(d.plan);
+    setApproved(d.approved);
+    setActiveTab(d.activeTab);
+    setMessages(d.messages);
+    setMdMode(d.mdMode);
+    setCarouselId(d.carouselId);
+    setDraftId(d.draftId);
+    setDueAt(d.dueAt);
+    setEditableTitle(d.editableTitle);
+    setEditableCaption(d.editableCaption);
+    setExportedImages(d.exportedImages);
+    setUploadedImageUrls(d.uploadedImageUrls);
+    setTopicId(d.topicId);
+    setTopicTitle(d.topicTitle);
+  }, []);
+
   // Load state from local storage
   useEffect(() => {
     const saved = localStorage.getItem("vour_carousel_draft");
     if (saved) {
       try {
-        const parsed = JSON.parse(saved);
-        if (parsed.step) setStep(parsed.step);
-        if (parsed.idea) setIdea(parsed.idea);
-        if (parsed.model) setModel(parsed.model);
-        if (parsed.brief) setBrief(parsed.brief);
-        // finalBrief is the last AI-authored version, distinct from the user's edits.
-        if (parsed.finalBrief ?? parsed.brief) setFinalBrief(parsed.finalBrief ?? parsed.brief);
-        if (parsed.plan) setPlan(parsed.plan);
-        if (parsed.approved) setApproved(parsed.approved);
-        if (parsed.activeTab) setActiveTab(parsed.activeTab);
-        if (parsed.messages) setMessages(parsed.messages);
-        if (parsed.mdMode) setMdMode(parsed.mdMode);
-        if (parsed.carouselId) setCarouselId(parsed.carouselId);
-        if (parsed.draftId) setDraftId(parsed.draftId);
-        if (parsed.dueAt) setDueAt(parsed.dueAt);
-        if (parsed.editableTitle) setEditableTitle(parsed.editableTitle);
-        if (parsed.editableCaption) setEditableCaption(parsed.editableCaption);
-        if (parsed.uploadedImageUrls) setUploadedImageUrls(parsed.uploadedImageUrls);
-        if (parsed.topicId) setTopicId(parsed.topicId);
-        if (parsed.topicTitle) setTopicTitle(parsed.topicTitle);
+        // restoreDraft fills in every field, so a draft written before a field existed
+        // comes back with that field's empty value rather than leaving the previous
+        // session's value standing in a slot nobody wrote to.
+        applyDraft(restoreDraft(JSON.parse(saved), crypto.randomUUID()));
       } catch (e) {
         console.error("Failed to parse saved draft", e);
       }
     }
     setMounted(true);
-  }, []);
+  }, [applyDraft]);
 
   // Save state to local storage
   useEffect(() => {
-    if (!mounted) return;
-    const draft = {
+    if (!mounted || isResetting) return;
+    const draft = serializeDraft({
       step,
       idea,
       model,
@@ -398,10 +425,11 @@ export function Wizard({
       dueAt,
       editableTitle,
       editableCaption,
+      exportedImages,
       uploadedImageUrls,
       topicId,
       topicTitle,
-    };
+    });
     // Debounced: coalesce rapid changes (keystrokes, 15ms typewriter ticks) into
     // one write instead of serializing the full draft on every state change.
     const t = setTimeout(() => {
@@ -432,9 +460,11 @@ export function Wizard({
     dueAt,
     editableTitle,
     editableCaption,
+    exportedImages,
     uploadedImageUrls,
     topicId,
     topicTitle,
+    isResetting,
   ]);
 
   // Auto-scroll chat feed to bottom
@@ -502,10 +532,11 @@ export function Wizard({
     startBriefFromTopic(initialTopic);
   }, [mounted, initialTopic, step, brief]);
 
-  // Clean up object URLs on unmount/re-export
+  // Clean up object URLs on unmount/re-export. Exported slides are normally Cloudinary
+  // URLs now — revoking one is a no-op, but filtering says which are ours to free.
   useEffect(() => {
     return () => {
-      exportedImages.forEach((url) => URL.revokeObjectURL(url));
+      revocableUrls(exportedImages).forEach((url) => URL.revokeObjectURL(url));
     };
   }, [exportedImages]);
 
@@ -574,12 +605,18 @@ export function Wizard({
       }
     }
 
+    const runId = ++genRunRef.current;
     setExportPending(true);
     setLoadingJob("export");
     addMessage("ai", "Mengekspor slide rancangan menjadi gambar PNG...");
     try {
-      // Capture the images on the Hono backend server for consistency and high quality
-      const base64s = await captureAction(html);
+      // The backend renders AND uploads: the URLs come back permanent, so a refresh
+      // does not have to pay for Playwright a second time.
+      const { images: base64s, urls, uploadError } = await captureAction(html, carouselId ?? undefined);
+      // A reset (or a second export) while this was in flight — the draft this result
+      // belongs to is gone, and writing it back is what used to un-reset the wizard.
+      if (genRunRef.current !== runId) return;
+
       const generatedBlobs = base64s.map((b) => {
         const bin = window.atob(b);
         const len = bin.length;
@@ -589,35 +626,52 @@ export function Wizard({
       });
       setBlobs(generatedBlobs);
 
-      // Revoke any existing object URLs to avoid memory leaks
-      exportedImages.forEach((url) => URL.revokeObjectURL(url));
+      // Only this page's own allocations need revoking; a Cloudinary URL is not ours.
+      revocableUrls(exportedImages).forEach((url) => URL.revokeObjectURL(url));
 
-      const urls = generatedBlobs.map((b) => URL.createObjectURL(b));
-      setExportedImages(urls);
+      // Cloudinary URLs when the upload worked, object URLs when it did not. The
+      // fallback is the pre-existing behaviour: the deck still renders and publish
+      // still uploads, it just does not survive a reload.
+      if (uploadError) {
+        toast.warning("Gambar tersimpan sementara — upload permanen gagal, akan diulang saat publish.");
+      }
+      const displayUrls = urls.length > 0 ? urls : generatedBlobs.map((b) => URL.createObjectURL(b));
+      setExportedImages(displayUrls);
+      setUploadedImageUrls(urls);
 
-      // Reset uploaded URLs state (we upload only when publishing to Buffer)
-      setUploadedImageUrls([]);
-
-      // Persist to history — thumbnail = tiny local compressed base64 JPEG
+      // Persist to history. The thumbnail is a Cloudinary URL when we have one, and a
+      // tiny local base64 JPEG otherwise — the History grid reads whichever it gets.
       if (plan) {
         try {
-          const thumb = generatedBlobs[0] ? await compressImageBlob(generatedBlobs[0], 120) : null;
-          const id = await saveExportedCarouselAction({
-            source: "ai",
-            title: editableTitle || plan.title,
-            caption: editableCaption || plan.caption,
-            hashtags: plan.hashtags,
-            slideCount,
-            model: model || null,
-            thumbnail: thumb,
-            imageUrls: [], // Defer upload to Cloudinary until publishing
-          });
-          setCarouselId(id);
-          // Topic Bank trigger: mark the source topic as generated + link it.
-          if (topicId) {
-            linkTopicCarouselAction(topicId, id).catch((err) =>
-              console.error("failed to link topic to carousel", err)
-            );
+          const thumb = urls[0] ?? (generatedBlobs[0] ? await compressImageBlob(generatedBlobs[0], 120) : null);
+          if (carouselId) {
+            // Re-export of a deck already on file: /api/capture has written the new
+            // URLs onto the row, so only the copy fields are left to sync.
+            await markCarouselStatusAction(carouselId, {
+              status: "exported",
+              title: editableTitle || plan.title,
+              caption: editableCaption || plan.caption,
+              thumbnail: thumb,
+            });
+          } else {
+            const id = await saveExportedCarouselAction({
+              source: "ai",
+              title: editableTitle || plan.title,
+              caption: editableCaption || plan.caption,
+              hashtags: plan.hashtags,
+              slideCount,
+              model: model || null,
+              thumbnail: thumb,
+              imageUrls: urls,
+            });
+            if (genRunRef.current !== runId) return;
+            setCarouselId(id);
+            // Topic Bank trigger: mark the source topic as generated + link it.
+            if (topicId) {
+              linkTopicCarouselAction(topicId, id).catch((err) =>
+                console.error("failed to link topic to carousel", err)
+              );
+            }
           }
         } catch (err) {
           console.error("history save failed", err);
@@ -628,31 +682,99 @@ export function Wizard({
       setActiveTab("preview");
       addMessage("ai", "Ekspor gambar berhasil diselesaikan! Tinjau hasil preview di sebelah kanan. Anda dapat mengunduh gambar ke lokal, atau melanjutkan ke langkah Publish.");
     } catch (e) {
+      if (genRunRef.current !== runId) return;
       const msg = e instanceof Error ? e.message : "failed";
       toast.error(`Gagal ekspor: ${msg}`);
       addMessage("ai", `Gagal memproses ekspor gambar: ${msg}`);
     } finally {
-      setExportPending(false);
-      setLoadingJob(null);
+      if (genRunRef.current === runId) {
+        setExportPending(false);
+        setLoadingJob(null);
+      }
     }
   };
 
   const handleDownloadAll = async () => {
+    const { namedBlobs, downloadNamedBlobs } = await import("@/lib/export/download");
     if (blobs.length > 0) {
-      const { namedBlobs, downloadNamedBlobs } = await import("@/lib/export/download");
       downloadNamedBlobs(namedBlobs(blobs));
       toast.success("Downloaded JPEGs locally!");
-    } else {
-      toast.error("Belum ada slide gambar yang di-export.");
+      return;
     }
+    // After a reload the blobs are gone but the slides are not: they are on Cloudinary,
+    // which is the whole point of uploading at capture time. Fetching them back is a
+    // few hundred KB against re-running the entire render.
+    if (exportedImages.length > 0) {
+      try {
+        const fetched = await Promise.all(
+          exportedImages.map((url) => fetch(url).then((r) => r.blob()))
+        );
+        downloadNamedBlobs(namedBlobs(fetched));
+        toast.success("Downloaded JPEGs locally!");
+      } catch {
+        toast.error("Gagal mengunduh gambar dari penyimpanan.");
+      }
+      return;
+    }
+    toast.error("Belum ada slide gambar yang di-export.");
   };
 
-  // Fallback to regenerate exports if they refreshed while in Step 4 or 5
+  /**
+   * Restore the exported slides after a reload.
+   *
+   * This used to re-run handleExport() — a full Chromium render, one screenshot per
+   * slide — because the images had been object URLs and died with the page. They are
+   * uploaded at capture time now, so the row already has them and this is one GET.
+   */
   useEffect(() => {
-    if (mounted && step >= 4 && exportedImages.length === 0 && html) {
-      handleExport();
+    if (!mounted || step < 4 || exportedImages.length > 0 || exportPending || !carouselId) return;
+    let cancelled = false;
+    getCarouselAction(carouselId)
+      .then((saved) => {
+        if (cancelled || !saved?.imageUrls?.length) return;
+        setExportedImages(saved.imageUrls);
+        setUploadedImageUrls(saved.imageUrls);
+      })
+      .catch((err) => console.error("failed to restore exported slides", err));
+    return () => {
+      cancelled = true;
+    };
+  }, [mounted, step, carouselId, exportedImages.length, exportPending]);
+
+  /**
+   * The permanent URLs for this deck, uploading only if there are none.
+   *
+   * /api/capture uploads as part of the render, so the normal path is a no-op — the
+   * loop below only runs when Cloudinary was unreachable at export time. Publishing and
+   * saving-to-stock each had their own copy of it, which is how they drifted into
+   * writing different things to the row afterwards.
+   */
+  const ensureUploadedUrls = async (): Promise<string[]> => {
+    if (uploadedImageUrls.length > 0) return uploadedImageUrls;
+    if (blobs.length === 0) return [];
+
+    setPublishState({ status: "uploading", progressMsg: "Mengunggah gambar ke Cloudinary..." });
+    const uploaded: string[] = [];
+    for (let idx = 0; idx < blobs.length; idx++) {
+      setPublishState({
+        status: "uploading",
+        progressMsg: `Mengunggah slide ${idx + 1} dari ${blobs.length} ke Cloudinary...`,
+      });
+      const base64 = await new Promise<string>((res, rej) => {
+        const reader = new FileReader();
+        reader.onloadend = () => res(reader.result as string);
+        reader.onerror = rej;
+        reader.readAsDataURL(blobs[idx]);
+      });
+      uploaded.push(await uploadSingleImageAction(base64));
     }
-  }, [mounted, step, html]);
+    setUploadedImageUrls(uploaded);
+    // The gallery is showing object URLs in this branch; swap them for the permanent
+    // ones so a reload from here on keeps working.
+    revocableUrls(exportedImages).forEach((url) => URL.revokeObjectURL(url));
+    setExportedImages(uploaded);
+    return uploaded;
+  };
 
   const handlePublish = async () => {
     if (!dueAt) {
@@ -669,34 +791,11 @@ export function Wizard({
     addMessage("user", `Jadwalkan publikasi pada ${scheduleDate.toLocaleString("id-ID")}`);
 
     try {
-      let urls = uploadedImageUrls;
-      if (urls.length === 0 && blobs.length > 0) {
-        setPublishState({ status: "uploading", progressMsg: "Mengunggah gambar ke Cloudinary..." });
-        const uploadedUrls: string[] = [];
-        for (let idx = 0; idx < blobs.length; idx++) {
-          setPublishState({
-            status: "uploading",
-            progressMsg: `Mengunggah slide ${idx + 1} dari ${blobs.length} ke Cloudinary...`,
-          });
-          const blob = blobs[idx];
-          const base64 = await new Promise<string>((res, rej) => {
-            const reader = new FileReader();
-            reader.onloadend = () => res(reader.result as string);
-            reader.onerror = rej;
-            reader.readAsDataURL(blob);
-          });
-          const url = await uploadSingleImageAction(base64);
-          uploadedUrls.push(url);
-        }
-        urls = uploadedUrls;
-        setUploadedImageUrls(urls);
-        // Also save to database and promote thumbnail to Cloudinary URL
-        if (carouselId) {
-          await markCarouselStatusAction(carouselId, {
-            imageUrls: urls,
-            thumbnail: urls[0] || null,
-          });
-        }
+      const urls = await ensureUploadedUrls();
+      if (urls.length === 0) throw new Error("Tidak ada gambar untuk dipublikasikan. Export ulang dulu.");
+      // Promote the thumbnail to a real URL if the row still has the local base64 one.
+      if (carouselId) {
+        await markCarouselStatusAction(carouselId, { imageUrls: urls, thumbnail: urls[0] || null });
       }
 
       setPublishState({ status: "publishing", progressMsg: "Mengirim ke Buffer API..." });
@@ -771,28 +870,8 @@ export function Wizard({
     addMessage("user", `Simpan ke Stock Konten pada ${scheduleDate.toLocaleString("id-ID")}`);
 
     try {
-      let urls = uploadedImageUrls;
-      if (urls.length === 0 && blobs.length > 0) {
-        setPublishState({ status: "uploading", progressMsg: "Mengunggah gambar ke Cloudinary..." });
-        const uploadedUrls: string[] = [];
-        for (let idx = 0; idx < blobs.length; idx++) {
-          setPublishState({
-            status: "uploading",
-            progressMsg: `Mengunggah slide ${idx + 1} dari ${blobs.length} ke Cloudinary...`,
-          });
-          const blob = blobs[idx];
-          const base64 = await new Promise<string>((res, rej) => {
-            const reader = new FileReader();
-            reader.onloadend = () => res(reader.result as string);
-            reader.onerror = rej;
-            reader.readAsDataURL(blob);
-          });
-          const url = await uploadSingleImageAction(base64);
-          uploadedUrls.push(url);
-        }
-        urls = uploadedUrls;
-        setUploadedImageUrls(urls);
-      }
+      const urls = await ensureUploadedUrls();
+      if (urls.length === 0) throw new Error("Tidak ada gambar untuk disimpan. Export ulang dulu.");
 
       setPublishState({ status: "publishing", progressMsg: "Menyimpan ke database..." });
 
@@ -833,52 +912,70 @@ export function Wizard({
     }
   };
 
+  /**
+   * Throw the draft away and start clean — in one click.
+   *
+   * It used to take two, because cancelling and clearing were not the same act. The
+   * generation guard is what actually discards an in-flight result: handleCancelGeneration
+   * bumps `genRunRef`, and reset only called `abort()`. A brief request that had already
+   * come back off the wire ignores the abort, so its `.then` still passed the run check
+   * and ran applyBriefResult — which sets `finalBrief`, moves back to step 2 and starts a
+   * typewriter writing the old brief back into state, after the reset had cleared it. The
+   * second click worked because by then nothing was in flight.
+   *
+   * So: bump the guard first, so every in-flight brief, plan and export lands on a draft
+   * that no longer exists and returns; await the server-side clears so the UI never shows
+   * a state the backend has not reached; then apply one snapshot.
+   */
   async function handleReset() {
+    genRunRef.current++;
     abortRef.current?.abort();
+    abortRef.current = null;
     if (typewriterIntervalRef.current) {
       clearInterval(typewriterIntervalRef.current);
+      typewriterIntervalRef.current = null;
     }
-    // Delete the unscheduled/unpublished draft from the database on reset
-    if (carouselId && publishState.status !== "success") {
-      try {
-        await deleteCarouselAction(carouselId);
-      } catch (err) {
-        console.error("Failed to delete draft from db on reset:", err);
-      }
+    // Holds a closure that writes the previous brief back into state. Left set, it fires
+    // on the next tab switch — the reveal's own "snap to finished" handler, un-resetting
+    // a draft that is already gone.
+    revealFinishRef.current = null;
+    setIsResetting(true);
+
+    // Both clears are awaited: the draft row and its revision memory belong to the
+    // backend, and an optimistic UI here would let the next draft inherit them.
+    try {
+      await Promise.all([
+        carouselId && publishState.status !== "success"
+          ? deleteCarouselAction(carouselId).catch((err) =>
+              console.error("Failed to delete draft from db on reset:", err)
+            )
+          : Promise.resolve(),
+        clearRevisionMemoryAction(draftId).catch((err) =>
+          console.error("Failed to clear revision memory on reset:", err)
+        ),
+      ]);
+    } finally {
+      setIsResetting(false);
     }
-    // The reset draft is gone; its revision memory must not survive into the next one.
-    clearRevisionMemoryAction(draftId).catch((err) =>
-      console.error("Failed to clear revision memory on reset:", err)
-    );
-    setStep(1);
-    setIdea("");
-    setBrief("");
-    setFinalBrief("");
-    setPlan(null);
+
+    revocableUrls(exportedImages).forEach((url) => URL.revokeObjectURL(url));
+
+    // One snapshot, so a field added to DraftSnapshot cannot be left behind here —
+    // which is exactly how the export URLs would have survived a reset.
+    applyDraft(emptyDraft(crypto.randomUUID()));
+    // Not part of the persisted draft, so cleared alongside rather than within it.
+    setBlobs([]);
     setApproved(false);
-    setEditableTitle("");
-    setEditableCaption("");
     setIsTyping(false);
     setBriefPending(false);
+    setExportPending(false);
     setLoadingJob(null);
-    setActiveTab("brief");
-    setMdMode("split");
-    setBlobs([]);
-    exportedImages.forEach((url) => URL.revokeObjectURL(url));
-    setExportedImages([]);
-    setDueAt("");
-    setCarouselId(null);
-    setDraftId(crypto.randomUUID());
-    setTopicId(null);
-    setTopicTitle(null);
     setPublishState({ status: "idle", progressMsg: "" });
-    setMessages([
-      {
-        sender: "ai",
-        text: "Draft dibersihkan. Silakan masukkan ide konten baru atau upload file md untuk memulai.",
-        timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
-      }
-    ]);
+
+    // The autosave is suppressed for the whole await above and re-runs on the cleared
+    // values, so this removes a key that is about to be rewritten empty. Kept because
+    // "about to be" is a 400ms debounce, and a tab closed inside it should not come
+    // back to the draft that was just discarded.
     localStorage.removeItem("vour_carousel_draft");
     toast.success("Draft reset successfully");
   }
@@ -1021,13 +1118,16 @@ export function Wizard({
     if (!brief) return;
     addMessage("user", "Approve brief outline & generate Slide design.");
     setLoadingJob("plan");
+    const runId = genRunRef.current;
     start(async () => {
       try {
         const generatedPlan = await planAction(brief, model as ModelId);
+        // Reset while the plan was generating — do not walk the cleared draft to step 3.
+        if (genRunRef.current !== runId) return;
         setPlan(generatedPlan);
         setPanelOpen(true);
         setApproved(false);
-            setStep(3);
+        setStep(3);
         setActiveTab("preview");
         addMessage("ai", "Slide deck HTML berhasil dirender! Anda sekarang dapat meninjau visualnya pada tab 'Live Design Preview'. Jika butuh penyesuaian, ketik revisi Anda di kolom chat.");
       } catch (e) {

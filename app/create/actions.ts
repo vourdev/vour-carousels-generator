@@ -82,9 +82,44 @@ export async function uploadSingleImageAction(base64Image: string): Promise<stri
   return data.url;
 }
 
-export async function captureAction(html: string): Promise<string[]> {
-  const data = await fetchBackend("/api/capture", { html });
-  return data.images;
+export interface CaptureResult {
+  /** base64 JPEGs, for the local "download all" without a round trip. */
+  images: string[];
+  /** Permanent Cloudinary URLs, uploaded by the backend as part of the capture. */
+  urls: string[];
+  /** Set when the upload failed; `urls` is empty and the deck has to be uploaded at publish time. */
+  uploadError?: string;
+}
+
+/**
+ * Render the deck to images, which now come back with somewhere to live.
+ *
+ * The URLs are the point. Capture is the most expensive step in the pipeline, and its
+ * output used to exist only as object URLs in this tab — so a refresh lost them and the
+ * wizard re-ran the whole capture. Passing `carouselId` also writes them onto the row.
+ */
+export async function captureAction(html: string, carouselId?: string): Promise<CaptureResult> {
+  const data = await fetchBackend("/api/capture", { html, carouselId });
+  return { images: data.images ?? [], urls: data.urls ?? [], uploadError: data.uploadError };
+}
+
+/** The exported slides of a saved carousel — what a refreshed wizard reads to skip re-capture. */
+export async function getCarouselAction(id: string): Promise<{
+  id: string;
+  status: string;
+  imageUrls: string[];
+  title: string;
+  caption: string;
+} | null> {
+  await requireSession();
+  try {
+    const data = await fetchBackend(`/api/carousels/${id}`, null, "GET");
+    return data.carousel ?? null;
+  } catch {
+    // A draft deleted on another device, or a row from before this column existed.
+    // The wizard falls back to its local copy rather than surfacing an error.
+    return null;
+  }
 }
 
 export async function publishAction(

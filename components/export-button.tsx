@@ -13,8 +13,10 @@ export function ExportButton({ html }: { html: string }) {
     setPending(true);
     setError("");
     try {
-      const base64s = await captureAction(html);
-      const blobs = base64s.map((b) => {
+      // Download-only: this button has no draft to attach the uploaded URLs to, so it
+      // uses the base64 the capture returns alongside them.
+      const { images } = await captureAction(html);
+      const blobs = images.map((b) => {
         const bin = window.atob(b);
         const len = bin.length;
         const u8 = new Uint8Array(len);
