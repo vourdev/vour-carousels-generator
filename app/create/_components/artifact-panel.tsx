@@ -23,6 +23,7 @@ export function ArtifactPanel({
   onSelect,
   onClose,
   loadingJob,
+  actions,
   children,
 }: {
   tabs: ArtifactTabDef[];
@@ -30,6 +31,8 @@ export function ArtifactPanel({
   onSelect: (t: ArtifactTab) => void;
   onClose: () => void;
   loadingJob: LoadingKind | null;
+  /** Controls for the active tab, seated in the tab bar beside the close button. */
+  actions?: React.ReactNode;
   children: React.ReactNode;
 }) {
   return (
@@ -53,14 +56,17 @@ export function ArtifactPanel({
           ))}
         </div>
 
-        <button
-          type="button"
-          onClick={onClose}
-          aria-label="Tutup panel"
-          className="size-7 rounded-lg flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted/60 transition-colors shrink-0"
-        >
-          <X className="size-4" />
-        </button>
+        <div className="flex items-center gap-0.5 shrink-0">
+          {actions}
+          <button
+            type="button"
+            onClick={onClose}
+            aria-label="Tutup panel"
+            className="size-7 rounded-lg flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted/60 transition-colors shrink-0"
+          >
+            <X className="size-4" />
+          </button>
+        </div>
       </header>
 
       <div className="relative flex-1 min-h-0 flex flex-col">
