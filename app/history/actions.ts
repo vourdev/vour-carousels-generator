@@ -72,6 +72,36 @@ export async function publishSavedCarouselAction(
   return backendSend("/api/publish/carousel", { carouselId: id, dueAt });
 }
 
+export interface CleanupResult {
+  carouselId: string;
+  deleted: number;
+  /** Assets Cloudinary had already forgotten. Counted separately so the report is honest. */
+  missed: number;
+  kept: number;
+}
+
+/**
+ * Free one deck's slide assets on Cloudinary, keeping its thumbnail.
+ *
+ * Every export uploads a set and nothing ever removed one, so a deck that has been posted
+ * leaves its full-resolution slides sitting there indefinitely — Instagram and TikTok hold
+ * their own copies from the moment Buffer publishes. The backend refuses while a deck is
+ * still scheduled, because Buffer fetches the image when the post goes out.
+ */
+export async function cleanupCarouselImagesAction(id: string): Promise<CleanupResult> {
+  await requireSession();
+  return backendSend(`/api/carousels/${id}/cleanup-images`, {});
+}
+
+/** The same, for every deck already posted. Scoped to `posted` by the backend. */
+export async function cleanupPostedImagesAction(): Promise<{
+  results: CleanupResult[];
+  deleted: number;
+}> {
+  await requireSession();
+  return backendSend("/api/carousels/cleanup-images", {});
+}
+
 export async function deleteCarouselAction(id: string): Promise<void> {
   const session = await requireSession();
   const c = await getCarousel(id, session.user.id);

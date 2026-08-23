@@ -18,17 +18,28 @@ import {
   Link2,
   Copy,
   Check,
-  Loader2
+  Loader2,
+  Eraser
 } from "lucide-react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
-import { 
-  markCarouselStatusAction, 
-  publishSavedCarouselAction 
+import {
+  markCarouselStatusAction,
+  publishSavedCarouselAction,
+  cleanupCarouselImagesAction,
+  cleanupPostedImagesAction,
 } from "./actions";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import type { Carousel, CarouselStatus } from "@/lib/history/repo";
 
 interface HistoryClientProps {
@@ -70,6 +81,16 @@ export default function HistoryClient({ initialItems, userId, betterAuthSecret }
   const [publishingId, setPublishingId] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
 
+  /**
+   * Which cleanup is awaiting confirmation: a single deck, or every posted one.
+   *
+   * Confirmed rather than immediate because it deletes assets on Cloudinary and there is
+   * no undo — the slides would have to be rendered and uploaded again, which is the
+   * single most expensive thing this system does.
+   */
+  const [cleanupTarget, setCleanupTarget] = useState<Carousel | "posted" | null>(null);
+  const [cleaningUp, setCleaningUp] = useState(false);
+
   const n8nUrl = useMemo(() => {
     if (typeof window !== "undefined") {
       return `${window.location.origin}/api/calendar?userId=${userId}`;
@@ -83,6 +104,64 @@ export default function HistoryClient({ initialItems, userId, betterAuthSecret }
     toast.success("n8n API endpoint URL copied to clipboard!");
     setTimeout(() => setCopied(false), 2000);
   };
+
+  /**
+   * Free Cloudinary assets for one deck, or for every deck already posted.
+   *
+   * The thumbnail survives, so the calendar still renders what it always did. The backend
+   * refuses a deck that is still scheduled: Buffer fetches the image when the post goes
+   * out, so deleting early would publish a hole and the failure would only surface later,
+   * on the live account.
+   */
+  const runCleanup = async () => {
+    if (!cleanupTarget) return;
+    setCleaningUp(true);
+    try {
+      if (cleanupTarget === "posted") {
+        const res = await cleanupPostedImagesAction();
+        const decks = res.results.length;
+        toast.success(
+          decks === 0
+            ? "Tidak ada aset yang perlu dibersihkan."
+            : `${res.deleted} gambar dibersihkan dari ${decks} konten.`
+        );
+        const cleaned = new Set(res.results.map((r) => r.carouselId));
+        setItems((prev) =>
+          prev.map((c) =>
+            cleaned.has(c.id)
+              ? { ...c, imageUrls: c.thumbnail && c.imageUrls.includes(c.thumbnail) ? [c.thumbnail] : [] }
+              : c
+          )
+        );
+      } else {
+        const r = await cleanupCarouselImagesAction(cleanupTarget.id);
+        toast.success(
+          r.missed > 0
+            ? `${r.deleted} gambar dibersihkan, ${r.missed} sudah tidak ada di Cloudinary.`
+            : `${r.deleted} gambar dibersihkan.`
+        );
+        const keptUrls =
+          cleanupTarget.thumbnail && cleanupTarget.imageUrls.includes(cleanupTarget.thumbnail)
+            ? [cleanupTarget.thumbnail]
+            : [];
+        setItems((prev) =>
+          prev.map((c) => (c.id === cleanupTarget.id ? { ...c, imageUrls: keptUrls } : c))
+        );
+        setSelectedCarousel((c) => (c && c.id === cleanupTarget.id ? { ...c, imageUrls: keptUrls } : c));
+      }
+      setCleanupTarget(null);
+    } catch (e) {
+      // The backend's refusal for a scheduled deck arrives here as its own message, which
+      // says more than a generic failure would.
+      toast.error(e instanceof Error ? e.message : "Gagal membersihkan aset.");
+    } finally {
+      setCleaningUp(false);
+    }
+  };
+
+  const postedWithAssets = items.filter(
+    (c) => c.status === "posted" && c.imageUrls && c.imageUrls.length > 0
+  ).length;
 
   // Reschedule or schedule a carousel
   const handleScheduleCarousel = async () => {
@@ -256,6 +335,22 @@ export default function HistoryClient({ initialItems, userId, betterAuthSecret }
         </div>
 
         <div className="flex items-center gap-3 w-full md:w-auto self-stretch md:self-auto justify-end">
+          {/* Bulk cleanup. Only offered when there is actually something to free, and only
+              ever touches decks already posted — Instagram and TikTok hold their own copies
+              from the moment Buffer publishes, so those slides are dead weight. */}
+          {postedWithAssets > 0 && (
+            <Button
+              variant="ghost"
+              size="sm"
+              className="font-mono text-xs gap-1.5 text-muted-foreground hover:text-destructive shrink-0"
+              onClick={() => setCleanupTarget("posted")}
+              title="Hapus aset Cloudinary dari konten yang sudah diposting"
+            >
+              <Eraser className="size-3.5" />
+              Bersihkan aset ({postedWithAssets})
+            </Button>
+          )}
+
           <div className="inline-flex p-0.5 bg-muted/50 rounded-lg border border-hairline shrink-0">
             <button
               onClick={() => setView("calendar")}
@@ -698,6 +793,23 @@ export default function HistoryClient({ initialItems, userId, betterAuthSecret }
 
                 {/* Actions */}
                 <div className="flex flex-wrap items-center justify-end gap-2 border-t pt-4">
+                  {/* Free the slide assets. Offered whenever there is more than the
+                      thumbnail to free and the deck is not waiting on Buffer — a scheduled
+                      deck still needs its images at post time, so the backend refuses it
+                      and there is no point offering the button. */}
+                  {selectedCarousel.status !== "scheduled" &&
+                    (selectedCarousel.imageUrls?.length ?? 0) > 1 && (
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="font-mono text-xs gap-1.5 text-muted-foreground hover:text-destructive mr-auto"
+                        onClick={() => setCleanupTarget(selectedCarousel)}
+                      >
+                        <Eraser className="size-3.5" />
+                        Bersihkan aset ({selectedCarousel.imageUrls.length})
+                      </Button>
+                    )}
+
                   {Boolean(selectedCarousel.bufferIgId || selectedCarousel.bufferTtId || selectedCarousel.status === "posted") ? (
                     <div className="flex items-center gap-1.5 text-xs font-medium text-emerald-600 bg-emerald-50 dark:bg-emerald-950/30 border border-emerald-200 dark:border-emerald-800 px-3 py-1.5 rounded-lg font-mono">
                       <CheckCircle className="size-4 text-emerald-500 shrink-0" />
@@ -756,6 +868,48 @@ export default function HistoryClient({ initialItems, userId, betterAuthSecret }
           </div>
         </div>
       )}
+      {/* Confirm before deleting. There is no undo: recovering a slide means rendering and
+          uploading it again, which is the most expensive thing this system does. */}
+      <Dialog open={cleanupTarget !== null} onOpenChange={(o) => !o && setCleanupTarget(null)}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Bersihkan aset gambar?</DialogTitle>
+            <DialogDescription>
+              <span className="block space-y-2 text-sm">
+                {cleanupTarget === "posted" ? (
+                  <span className="block">
+                    Menghapus gambar slide di Cloudinary untuk <strong>{postedWithAssets} konten
+                    yang sudah diposting</strong>. Instagram dan TikTok sudah menyimpan salinannya
+                    sendiri sejak Buffer memposting, jadi aset ini tidak dipakai lagi.
+                  </span>
+                ) : cleanupTarget ? (
+                  <span className="block">
+                    Menghapus <strong>{Math.max((cleanupTarget.imageUrls?.length ?? 1) - 1, 0)} gambar
+                    slide</strong> dari “{cleanupTarget.title}”.
+                  </span>
+                ) : null}
+                <span className="block">
+                  Thumbnail tetap disimpan, jadi kalender masih menampilkan konten ini seperti biasa.
+                  Konten yang masih <strong>terjadwal</strong> tidak akan disentuh — Buffer baru
+                  mengambil gambarnya saat posting.
+                </span>
+                <span className="block text-destructive">
+                  Tidak bisa dibatalkan. Untuk mendapatkannya kembali, deck harus di-export ulang.
+                </span>
+              </span>
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setCleanupTarget(null)} disabled={cleaningUp}>
+              Batal
+            </Button>
+            <Button variant="destructive" onClick={runCleanup} disabled={cleaningUp} className="gap-1.5">
+              {cleaningUp ? <Loader2 className="size-3.5 animate-spin" /> : <Eraser className="size-3.5" />}
+              {cleaningUp ? "Membersihkan..." : "Bersihkan"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </main>
   );
 }
