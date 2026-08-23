@@ -10,12 +10,15 @@ export function ExportPanel({
   expectedCount,
   canDownload,
   onDownloadAll,
+  onDownloadOne,
 }: {
   images: string[];
   pending: boolean;
   expectedCount: number;
   canDownload: boolean;
   onDownloadAll: () => void;
+  /** Save one slide. A plain download link cannot: see lib/export/download.ts. */
+  onDownloadOne: (index: number) => void;
 }) {
   return (
     <div className="flex flex-col h-full min-h-0">
@@ -49,13 +52,14 @@ export function ExportPanel({
               <figure key={i} className="flex flex-col gap-1.5 group">
                 <div className="aspect-[4/5] rounded-lg border border-hairline overflow-hidden bg-muted relative">
                   <img src={src} alt={`Slide ${i + 1}`} className="size-full object-cover" />
-                  <a
-                    href={src}
-                    download={`slide-${i + 1}.jpg`}
-                    className="absolute inset-0 flex items-center justify-center bg-black/45 text-white text-[11px] font-medium opacity-0 group-hover:opacity-100 transition-opacity"
+                  <button
+                    type="button"
+                    onClick={() => onDownloadOne(i)}
+                    aria-label={`Unduh slide ${i + 1}`}
+                    className="absolute inset-0 flex items-center justify-center bg-black/45 text-white text-[11px] font-medium opacity-0 group-hover:opacity-100 focus-visible:opacity-100 transition-opacity"
                   >
                     Unduh
-                  </a>
+                  </button>
                 </div>
                 <figcaption className="text-[10px] font-mono text-center text-muted-foreground">
                   Slide {i + 1}

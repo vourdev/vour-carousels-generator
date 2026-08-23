@@ -3,7 +3,7 @@
 import { useState, useTransition, useEffect, useRef, useCallback } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { PreviewFrame } from "@/components/preview-frame";
+import { PreviewFrame, type PreviewMode } from "@/components/preview-frame";
 import type { ModelId } from "@/lib/models";
 import type { SlidePlan } from "@/lib/ds/schema";
 import { planAction, reviseAction, reviseBriefAction, humanVoiceEditorAction, clearRevisionMemoryAction, uploadSingleImageAction, publishAction, getPublishingConfigAction, assembleAction, startCaptureAction, pollCaptureAction, getCarouselAction } from "./actions";
@@ -22,7 +22,7 @@ import {
   markTopicPublishedAction,
 } from "@/app/topics/actions";
 import type { Topic } from "@/lib/topics/bank";
-import { AlertCircle, ArrowRight, Images, LayoutGrid, PanelRightOpen, RotateCcw, Sparkles } from "lucide-react";
+import { AlertCircle, ArrowRight, Images, LayoutGrid, PanelRightOpen, RectangleVertical, RotateCcw, Sparkles } from "lucide-react";
 import { toast } from "sonner";
 
 import { compressImageBlob, revealedLength, summarizeError } from "./_components/utils";
@@ -66,6 +66,10 @@ export function Wizard({
   // something to look at and closes when the user wants the conversation back.
   const [panelOpen, setPanelOpen] = useState(false);
   const [mdMode, setMdMode] = useState<"split" | "editor" | "preview">("split");
+  // Detail or overview for the slide canvas. Lives here rather than in PreviewFrame because
+  // the toggle sits in the panel's tab bar, and is not persisted — it is how you are looking
+  // at the deck right now, not part of the draft.
+  const [previewMode, setPreviewMode] = useState<PreviewMode>("single");
   const [messages, setMessages] = useState<Message[]>([
     {
       sender: "ai",
@@ -506,12 +510,30 @@ export function Wizard({
     setMobilePanel(step >= 3 ? "canvas" : "chat");
   }, [step]);
 
-  // Fetch publishing channels config
+  /* Fetch publishing channels config.
+   *
+   * Keyed to the Jadwal tab existing, not to reaching step 5. The tab appears as soon as
+   * there are exported images, so it can be opened while the wizard is still on step 4 —
+   * and it was: the panel then rendered with a null config and reported both Instagram and
+   * TikTok "Nonaktif · BUFFER_IG_CHANNEL_ID", which reads as a missing environment
+   * variable rather than a request that was never made.
+   *
+   * The failure is surfaced for the same reason: a swallowed error is indistinguishable
+   * from an unconfigured channel, and the two need different fixes. */
+  const canPublish = exportedImages.length > 0 || step === 5;
   useEffect(() => {
-    if (step === 5) {
-      getPublishingConfigAction().then(setPubConfig).catch(console.error);
-    }
-  }, [step]);
+    if (!canPublish) return;
+    getPublishingConfigAction()
+      .then(setPubConfig)
+      .catch((err) => {
+        console.error(err);
+        toast.error(
+          `Gagal memuat konfigurasi channel: ${summarizeError(
+            err instanceof Error ? err.message : String(err)
+          )}`
+        );
+      });
+  }, [canPublish]);
 
   // Step 1: load pickable Topic Bank entries (queued/idea) for the dropdown.
   useEffect(() => {
@@ -754,29 +776,59 @@ export function Wizard({
     }
   };
 
+  /**
+   * Save every slide as a file.
+   *
+   * The Cloudinary branch is the normal path now, not the after-a-reload fallback it was
+   * written as. Capture uploads server-side and only returns base64 when that upload
+   * failed, so on a successful export `blobs` is empty for the whole session — which is
+   * why the button sat permanently disabled while the per-slide link still worked.
+   */
   const handleDownloadAll = async () => {
-    const { namedBlobs, downloadNamedBlobs } = await import("@/lib/export/download");
+    const { namedBlobs, downloadNamedBlobs, downloadUrlsAsFiles } = await import(
+      "@/lib/export/download"
+    );
     if (blobs.length > 0) {
       downloadNamedBlobs(namedBlobs(blobs));
-      toast.success("Downloaded JPEGs locally!");
+      toast.success(`${blobs.length} gambar diunduh.`);
       return;
     }
-    // After a reload the blobs are gone but the slides are not: they are on Cloudinary,
-    // which is the whole point of uploading at capture time. Fetching them back is a
-    // few hundred KB against re-running the entire render.
     if (exportedImages.length > 0) {
       try {
-        const fetched = await Promise.all(
-          exportedImages.map((url) => fetch(url).then((r) => r.blob()))
+        await downloadUrlsAsFiles(exportedImages);
+        toast.success(`${exportedImages.length} gambar diunduh.`);
+      } catch (err) {
+        toast.error(
+          `Gagal mengunduh gambar dari penyimpanan: ${summarizeError(
+            err instanceof Error ? err.message : String(err)
+          )}`
         );
-        downloadNamedBlobs(namedBlobs(fetched));
-        toast.success("Downloaded JPEGs locally!");
-      } catch {
-        toast.error("Gagal mengunduh gambar dari penyimpanan.");
       }
       return;
     }
     toast.error("Belum ada slide gambar yang di-export.");
+  };
+
+  /** One slide, saved rather than opened. Same reason as the bulk path. */
+  const handleDownloadOne = async (index: number) => {
+    const url = exportedImages[index];
+    if (!url) return;
+    const { downloadNamedBlobs } = await import("@/lib/export/download");
+    if (blobs[index]) {
+      downloadNamedBlobs([{ name: `slide-${index + 1}.jpg`, blob: blobs[index] }]);
+      return;
+    }
+    try {
+      const res = await fetch(url, { mode: "cors", credentials: "omit" });
+      if (!res.ok) throw new Error(String(res.status));
+      downloadNamedBlobs([{ name: `slide-${index + 1}.jpg`, blob: await res.blob() }]);
+    } catch (err) {
+      toast.error(
+        `Gagal mengunduh slide ${index + 1}: ${summarizeError(
+          err instanceof Error ? err.message : String(err)
+        )}`
+      );
+    }
   };
 
   /**
@@ -1416,6 +1468,41 @@ export function Wizard({
                   setMobilePanel("chat");
                 }}
                 loadingJob={loadingJob}
+                actions={
+                  activeArtifactTab === "preview" && slideCount > 1 ? (
+                    <button
+                      type="button"
+                      onClick={() => setPreviewMode((m) => (m === "grid" ? "single" : "grid"))}
+                      aria-pressed={previewMode === "grid"}
+                      aria-label={previewMode === "grid" ? "Tampilkan satu slide" : "Tampilkan semua slide"}
+                      title={previewMode === "grid" ? "Tampilkan satu slide" : "Tampilkan semua slide"}
+                      className={`relative size-7 rounded-lg flex items-center justify-center transition-[color,background-color] duration-150 ease-out shrink-0 ${
+                        previewMode === "grid"
+                          ? "bg-muted text-foreground"
+                          : "text-muted-foreground hover:text-foreground hover:bg-muted/60"
+                      }`}
+                    >
+                      {/* Both icons stay mounted and cross-fade, so the swap has an exit as
+                          well as an enter without pulling in a motion library. */}
+                      <LayoutGrid
+                        className="absolute size-4 transition-[opacity,scale,filter] duration-200 ease-[cubic-bezier(0.2,0,0,1)]"
+                        style={
+                          previewMode === "grid"
+                            ? { opacity: 0, scale: 0.25, filter: "blur(4px)" }
+                            : { opacity: 1, scale: 1, filter: "blur(0px)" }
+                        }
+                      />
+                      <RectangleVertical
+                        className="absolute size-4 transition-[opacity,scale,filter] duration-200 ease-[cubic-bezier(0.2,0,0,1)]"
+                        style={
+                          previewMode === "grid"
+                            ? { opacity: 1, scale: 1, filter: "blur(0px)" }
+                            : { opacity: 0, scale: 0.25, filter: "blur(4px)" }
+                        }
+                      />
+                    </button>
+                  ) : null
+                }
               >
                 {activeArtifactTab === "brief" && (
                   <BriefEditor
@@ -1430,13 +1517,29 @@ export function Wizard({
                 )}
 
                 {activeArtifactTab === "preview" && (
-                  <div className="flex-1 min-h-0 overflow-y-auto p-3 flex flex-col gap-3">
-                    <div className="flex justify-center">
+                  // The canvas owns the height rather than growing past it: the thumbnail
+                  // strip and the slide counter are navigation, and navigation you have to
+                  // scroll to find is not navigation. PreviewFrame reads this box and fits
+                  // the slide inside whatever is left.
+                  <div className="flex-1 min-h-0 p-3 flex flex-col gap-3">
+                    <div className="flex-1 min-h-0 flex justify-center">
                       {/* Wider cap than the default 540px: the divider exists so this can
                           actually grow when the user drags it. */}
-                      <PreviewFrame html={html} slideCount={slideCount} maxWidthClass="max-w-[720px]" />
+                      <PreviewFrame
+                        html={html}
+                        slideCount={slideCount}
+                        maxWidthClass="max-w-[720px]"
+                        mode={previewMode}
+                        onModeChange={setPreviewMode}
+                      />
                     </div>
-                    {plan && <ScreenshotUploads plan={plan} onUpdate={handleUpdateScreenshot} />}
+                    {plan && (
+                      // Renders nothing unless a slide is waiting on a real screenshot, so
+                      // this costs the preview no height in the ordinary case.
+                      <div className="shrink-0 max-h-[38%] overflow-y-auto">
+                        <ScreenshotUploads plan={plan} onUpdate={handleUpdateScreenshot} />
+                      </div>
+                    )}
                   </div>
                 )}
 
@@ -1445,8 +1548,9 @@ export function Wizard({
                     images={exportedImages}
                     pending={exportPending}
                     expectedCount={slideCount}
-                    canDownload={!exportPending && blobs.length > 0}
+                    canDownload={!exportPending && (blobs.length > 0 || exportedImages.length > 0)}
                     onDownloadAll={handleDownloadAll}
+                    onDownloadOne={handleDownloadOne}
                   />
                 )}
 
