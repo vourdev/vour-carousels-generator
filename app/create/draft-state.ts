@@ -46,12 +46,24 @@ export interface DraftSnapshot {
 export const WELCOME_MESSAGE_TEXT =
   "Draft dibersihkan. Silakan masukkan ide konten baru atau upload file md untuk memulai.";
 
-/** A draft with nothing in it. `draftId` is injected so this stays pure. */
-export function emptyDraft(draftId: string, now: Date = new Date()): DraftSnapshot {
+/**
+ * A draft with nothing in it. `draftId` is injected so this stays pure.
+ *
+ * `model` is carried over rather than cleared. It is saved with the draft — the deck
+ * records which model wrote it — but it is a preference, not content: the picker
+ * initialises from the account's model list, and a reset that blanked it left the
+ * composer refusing every message with "Pilih model AI dulu" until the user noticed the
+ * dropdown had emptied itself.
+ */
+export function emptyDraft(
+  draftId: string,
+  opts: { model?: string; now?: Date } = {}
+): DraftSnapshot {
+  const now = opts.now ?? new Date();
   return {
     step: 1,
     idea: "",
-    model: "",
+    model: opts.model ?? "",
     brief: "",
     finalBrief: "",
     plan: null,
@@ -102,8 +114,12 @@ export function revocableUrls(urls: readonly string[]): string[] {
  * trusting the shape. Object URLs from a previous page are dropped: they parse fine
  * and resolve to nothing, which renders as silently broken images.
  */
-export function restoreDraft(raw: unknown, fallbackDraftId: string): DraftSnapshot {
-  const base = emptyDraft(fallbackDraftId);
+export function restoreDraft(
+  raw: unknown,
+  fallbackDraftId: string,
+  opts: { model?: string } = {}
+): DraftSnapshot {
+  const base = emptyDraft(fallbackDraftId, { model: opts.model });
   if (!raw || typeof raw !== "object") return base;
   const p = raw as Partial<DraftSnapshot> & Record<string, unknown>;
 

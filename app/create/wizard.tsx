@@ -397,8 +397,12 @@ export function Wizard({
       try {
         // restoreDraft fills in every field, so a draft written before a field existed
         // comes back with that field's empty value rather than leaving the previous
-        // session's value standing in a slot nobody wrote to.
-        applyDraft(restoreDraft(JSON.parse(saved), crypto.randomUUID()));
+        // session's value standing in a slot nobody wrote to. The model is the one
+        // exception: a draft saved before it was recorded should keep the picker's
+        // default rather than blank it.
+        applyDraft(
+          restoreDraft(JSON.parse(saved), crypto.randomUUID(), { model: models[0] ?? "" })
+        );
       } catch (e) {
         console.error("Failed to parse saved draft", e);
       }
@@ -593,9 +597,15 @@ export function Wizard({
   };
 
   const handleExport = async (forceExport = false) => {
-    if (!html) return;
+    // The plan is what gets sent; the backend assembles the deck itself. This used to
+    // gate on `html`, which is produced by an async effect — so clicking Export before
+    // the preview had assembled did nothing at all, with no message.
+    if (!plan) {
+      toast.error("Belum ada rancangan slide untuk diekspor.");
+      return;
+    }
 
-    if (!forceExport && plan) {
+    if (!forceExport) {
       const pendingScreenshots = plan.slides.filter(
         (s) => s.role === "point" && s.mockup?.type === "screenshot" && s.mockup.evidenceStatus === "pending"
       );
@@ -612,11 +622,13 @@ export function Wizard({
     try {
       // The backend renders AND uploads: the URLs come back permanent, so a refresh
       // does not have to pay for Playwright a second time.
-      const { images: base64s, urls, uploadError } = await captureAction(html, carouselId ?? undefined);
+      const { images: base64s, urls, uploadError } = await captureAction(plan!, carouselId ?? undefined);
       // A reset (or a second export) while this was in flight — the draft this result
       // belongs to is gone, and writing it back is what used to un-reset the wizard.
       if (genRunRef.current !== runId) return;
 
+      // Only present when the upload failed. On the normal path the slides are already
+      // on Cloudinary and there is no base64 to decode.
       const generatedBlobs = base64s.map((b) => {
         const bin = window.atob(b);
         const len = bin.length;
@@ -636,6 +648,7 @@ export function Wizard({
         toast.warning("Gambar tersimpan sementara — upload permanen gagal, akan diulang saat publish.");
       }
       const displayUrls = urls.length > 0 ? urls : generatedBlobs.map((b) => URL.createObjectURL(b));
+      if (displayUrls.length === 0) throw new Error("Ekspor tidak menghasilkan gambar apa pun.");
       setExportedImages(displayUrls);
       setUploadedImageUrls(urls);
 
@@ -961,8 +974,10 @@ export function Wizard({
     revocableUrls(exportedImages).forEach((url) => URL.revokeObjectURL(url));
 
     // One snapshot, so a field added to DraftSnapshot cannot be left behind here —
-    // which is exactly how the export URLs would have survived a reset.
-    applyDraft(emptyDraft(crypto.randomUUID()));
+    // which is exactly how the export URLs would have survived a reset. The model is
+    // handed back in: it is saved with the draft but chosen by the user, and a reset
+    // that cleared it left the composer rejecting every message.
+    applyDraft(emptyDraft(crypto.randomUUID(), { model: model || models[0] || "" }));
     // Not part of the persisted draft, so cleared alongside rather than within it.
     setBlobs([]);
     setApproved(false);

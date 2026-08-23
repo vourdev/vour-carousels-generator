@@ -83,11 +83,18 @@ export async function uploadSingleImageAction(base64Image: string): Promise<stri
 }
 
 export interface CaptureResult {
-  /** base64 JPEGs, for the local "download all" without a round trip. */
-  images: string[];
   /** Permanent Cloudinary URLs, uploaded by the backend as part of the capture. */
   urls: string[];
-  /** Set when the upload failed; `urls` is empty and the deck has to be uploaded at publish time. */
+  /**
+   * base64 JPEGs — the fallback payload, non-empty only when the upload failed.
+   *
+   * Returning both would push ~2.4 MB of base64 through a Server Action on every
+   * export. Next rejects it outright ("Maximum array nesting exceeded"), and it was
+   * pure waste even when it fit: the client turned it into blobs and dropped them on
+   * the next reload. With URLs in hand nothing reads this.
+   */
+  images: string[];
+  /** Set when the upload failed; `urls` is empty and the deck is uploaded at publish time. */
   uploadError?: string;
 }
 
@@ -97,10 +104,22 @@ export interface CaptureResult {
  * The URLs are the point. Capture is the most expensive step in the pipeline, and its
  * output used to exist only as object URLs in this tab — so a refresh lost them and the
  * wizard re-ran the whole capture. Passing `carouselId` also writes them onto the row.
+ *
+ * The plan goes over, not the assembled HTML. A deck is ~1.1 MB of inline fonts and SVG
+ * that the backend produced in the first place; posting it back to be captured meant it
+ * crossed the wire twice per export, and Next refuses to encode a string that size as a
+ * Server Action argument at all ("Maximum array nesting exceeded").
  */
-export async function captureAction(html: string, carouselId?: string): Promise<CaptureResult> {
-  const data = await fetchBackend("/api/capture", { html, carouselId });
+export async function captureAction(plan: SlidePlan, carouselId?: string): Promise<CaptureResult> {
+  const data = await fetchBackend("/api/capture", { plan, carouselId });
   return { images: data.images ?? [], urls: data.urls ?? [], uploadError: data.uploadError };
+}
+
+/** Capture straight to base64, for callers that only want to download the JPEGs. */
+export async function captureHtmlAction(html: string): Promise<string[]> {
+  await requireSession();
+  const data = await fetchBackend("/api/capture", { html });
+  return data.images ?? [];
 }
 
 /** The exported slides of a saved carousel — what a refreshed wizard reads to skip re-capture. */

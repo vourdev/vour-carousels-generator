@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
-import { captureAction } from "@/app/create/actions";
+import { captureHtmlAction } from "@/app/create/actions";
 import { namedBlobs, downloadNamedBlobs } from "@/lib/export/download";
 
 export function ExportButton({ html }: { html: string }) {
@@ -13,9 +13,9 @@ export function ExportButton({ html }: { html: string }) {
     setPending(true);
     setError("");
     try {
-      // Download-only: this button has no draft to attach the uploaded URLs to, so it
-      // uses the base64 the capture returns alongside them.
-      const { images } = await captureAction(html);
+      // Download-only: this button holds HTML and no plan, and has no draft to attach
+      // uploaded URLs to, so it takes the base64 path.
+      const images = await captureHtmlAction(html);
       const blobs = images.map((b) => {
         const bin = window.atob(b);
         const len = bin.length;

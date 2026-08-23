@@ -56,6 +56,13 @@ describe("emptyDraft", () => {
   it("takes a fresh draft id", () => {
     expect(emptyDraft("a").draftId).not.toBe(emptyDraft("b").draftId);
   });
+
+  // The model is saved with the draft but chosen by the user. Clearing it on reset left
+  // the composer answering every message with "Pilih model AI dulu", which reads as the
+  // reset having broken the editor.
+  it("carries the chosen model through a reset", () => {
+    expect(emptyDraft("id", { model: "vour-high" }).model).toBe("vour-high");
+  });
 });
 
 describe("isPersistedUrl / revocableUrls", () => {
@@ -113,6 +120,12 @@ describe("restoreDraft", () => {
 
   it("falls back to the brief when finalBrief predates the split", () => {
     expect(restoreDraft({ brief: "b" }, "id").finalBrief).toBe("b");
+  });
+
+  // A draft saved before the model was recorded must not blank the picker on load.
+  it("keeps the picker default when the saved draft has no model", () => {
+    expect(restoreDraft({ brief: "b" }, "id", { model: "vour-high" }).model).toBe("vour-high");
+    expect(restoreDraft({ brief: "b", model: "vour-lite" }, "id", { model: "vour-high" }).model).toBe("vour-lite");
   });
 
   it("survives junk without taking the editor down", () => {
