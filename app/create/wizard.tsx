@@ -6,7 +6,8 @@ import { Card, CardContent } from "@/components/ui/card";
 import { PreviewFrame } from "@/components/preview-frame";
 import type { ModelId } from "@/lib/models";
 import type { SlidePlan } from "@/lib/ds/schema";
-import { planAction, reviseAction, reviseBriefAction, humanVoiceEditorAction, clearRevisionMemoryAction, uploadSingleImageAction, publishAction, getPublishingConfigAction, assembleAction, captureAction, getCarouselAction } from "./actions";
+import { planAction, reviseAction, reviseBriefAction, humanVoiceEditorAction, clearRevisionMemoryAction, uploadSingleImageAction, publishAction, getPublishingConfigAction, assembleAction, startCaptureAction, pollCaptureAction, getCarouselAction } from "./actions";
+import type { CaptureResult } from "./actions";
 import {
   emptyDraft,
   restoreDraft,
@@ -596,6 +597,38 @@ export function Wizard({
     handleExport(true);
   };
 
+  /**
+   * Poll a capture job to completion.
+   *
+   * `stillMine` is checked every tick rather than only at the end: a reset or a second
+   * export while this is in flight means the draft the result belongs to is gone, and the
+   * poll should stop there instead of running for another two minutes.
+   *
+   * The ceiling is generous because the work legitimately takes minutes on a degraded
+   * uplink — 269 seconds measured for five slides — and the failure it protects against
+   * is a job that never settles, not one that is merely slow.
+   */
+  const waitForCapture = async (
+    jobId: string,
+    stillMine: () => boolean
+  ): Promise<CaptureResult | null> => {
+    const deadline = Date.now() + 12 * 60 * 1000;
+    while (Date.now() < deadline) {
+      await new Promise((r) => setTimeout(r, 4000));
+      if (!stillMine()) return null;
+      const s = await pollCaptureAction(jobId);
+      if (!stillMine()) return null;
+      if (s.status === "done") return { images: s.images, urls: s.urls, uploadError: s.uploadError };
+      if (s.status === "error") throw new Error(s.error);
+      // The backend forgot the job — swept, or restarted mid-render. The slides may still
+      // have reached the row, but nothing here can prove it, so say so plainly.
+      if (s.status === "unknown") {
+        throw new Error("Proses ekspor terputus di server. Coba ekspor ulang.");
+      }
+    }
+    throw new Error("Ekspor melebihi batas waktu. Coba ekspor ulang.");
+  };
+
   const handleExport = async (forceExport = false) => {
     // The plan is what gets sent; the backend assembles the deck itself. This used to
     // gate on `html`, which is produced by an async effect — so clicking Export before
@@ -622,7 +655,16 @@ export function Wizard({
     try {
       // The backend renders AND uploads: the URLs come back permanent, so a refresh
       // does not have to pay for Playwright a second time.
-      const { images: base64s, urls, uploadError } = await captureAction(plan!, carouselId ?? undefined);
+      //
+      // Polled rather than awaited in one call. The work takes minutes on a bad uplink —
+      // most of it Cloudinary retries, not rendering — and Cloudflare closes an origin
+      // connection at 100 seconds, so the single long request came back 524 while the
+      // slides were already uploaded. Each poll is a short request; the work outlives it.
+      const jobId = await startCaptureAction(plan!, carouselId ?? undefined);
+      if (genRunRef.current !== runId) return;
+      const result = await waitForCapture(jobId, () => genRunRef.current === runId);
+      if (!result) return; // superseded by a reset or a second export
+      const { images: base64s, urls, uploadError } = result;
       // A reset (or a second export) while this was in flight — the draft this result
       // belongs to is gone, and writing it back is what used to un-reset the wizard.
       if (genRunRef.current !== runId) return;

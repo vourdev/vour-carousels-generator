@@ -109,17 +109,67 @@ export interface CaptureResult {
  * that the backend produced in the first place; posting it back to be captured meant it
  * crossed the wire twice per export, and Next refuses to encode a string that size as a
  * Server Action argument at all ("Maximum array nesting exceeded").
+ *
+ * Capture is a job now, not a response. It used to render, upload and reply on one
+ * connection; that connection lived as long as the work did — 269 seconds for a
+ * five-slide deck, because more than half the Cloudinary uploads fail on the first
+ * attempt against this VPS's uplink — and Cloudflare closes an origin connection at 100
+ * seconds. The browser got `Backend returned error 524` while the slides were already
+ * on Cloudinary. Starting the job and polling it keeps every request short.
  */
-export async function captureAction(plan: SlidePlan, carouselId?: string): Promise<CaptureResult> {
+export async function startCaptureAction(plan: SlidePlan, carouselId?: string): Promise<string> {
   const data = await fetchBackend("/api/capture", { plan, carouselId });
-  return { images: data.images ?? [], urls: data.urls ?? [], uploadError: data.uploadError };
+  if (!data.jobId) throw new Error("Backend did not start a capture job.");
+  return data.jobId;
 }
 
-/** Capture straight to base64, for callers that only want to download the JPEGs. */
+export type CaptureStatus =
+  | { status: "pending" }
+  | ({ status: "done" } & CaptureResult)
+  | { status: "error"; error: string }
+  /** Swept, or the backend restarted under the job. The caller should export again. */
+  | { status: "unknown" };
+
+export async function pollCaptureAction(jobId: string): Promise<CaptureStatus> {
+  await requireSession();
+  try {
+    const data = await fetchBackend(`/api/capture/${jobId}`, null, "GET");
+    if (data.status === "done") {
+      return {
+        status: "done",
+        images: data.images ?? [],
+        urls: data.urls ?? [],
+        uploadError: data.uploadError,
+      };
+    }
+    if (data.status === "error") return { status: "error", error: data.error ?? "capture failed" };
+    return { status: "pending" };
+  } catch {
+    // backendFetch throws on any non-2xx, and the only one this endpoint returns is the
+    // 404 for a job it no longer knows about.
+    return { status: "unknown" };
+  }
+}
+
+/**
+ * Capture straight to base64, for callers that only want to download the JPEGs.
+ *
+ * This one has no draft and no carousel row to poll against from the client, so it waits
+ * here. The bound matters: without it this would be exactly the long-lived request the
+ * job queue exists to avoid, and it would fail the same way.
+ */
 export async function captureHtmlAction(html: string): Promise<string[]> {
   await requireSession();
-  const data = await fetchBackend("/api/capture", { html });
-  return data.images ?? [];
+  const { jobId } = await fetchBackend("/api/capture", { html });
+  const deadline = Date.now() + 90_000;
+  while (Date.now() < deadline) {
+    await new Promise((r) => setTimeout(r, 3000));
+    const s = await pollCaptureAction(jobId);
+    if (s.status === "done") return s.images;
+    if (s.status === "error") throw new Error(s.error);
+    if (s.status === "unknown") throw new Error("Capture job is no longer available.");
+  }
+  throw new Error("Capture took too long; try exporting from the wizard instead.");
 }
 
 /** The exported slides of a saved carousel — what a refreshed wizard reads to skip re-capture. */
