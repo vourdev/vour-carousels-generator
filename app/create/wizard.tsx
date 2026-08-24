@@ -88,6 +88,8 @@ export function Wizard({
   const [exportedImages, setExportedImages] = useState<string[]>([]);
   const [uploadedImageUrls, setUploadedImageUrls] = useState<string[]>([]);
   const [exportPending, setExportPending] = useState(false);
+  /** Zipping fetches every slide back from Cloudinary, so the button has to say it is busy. */
+  const [zipPending, setZipPending] = useState(false);
   const [dueAt, setDueAt] = useState("");
   const [pubConfig, setPubConfig] = useState<{ hasIg: boolean; hasTt: boolean } | null>(null);
   const [publishState, setPublishState] = useState<{
@@ -777,7 +779,13 @@ export function Wizard({
   };
 
   /**
-   * Save every slide as a file.
+   * Save the whole deck as one archive named after its title.
+   *
+   * Eight separate downloads was the old shape and it was wrong twice over: browsers
+   * rate-limit a burst of programmatic saves from one gesture and drop the tail, and what
+   * survived was eight files called `slide_01.jpg` with nothing tying them to the deck they
+   * came from. One `.zip` is one download, and its name is the title the operator already
+   * knows the deck by.
    *
    * The Cloudinary branch is the normal path now, not the after-a-reload fallback it was
    * written as. Capture uploads server-side and only returns base64 when that upload
@@ -785,28 +793,30 @@ export function Wizard({
    * why the button sat permanently disabled while the per-slide link still worked.
    */
   const handleDownloadAll = async () => {
-    const { namedBlobs, downloadNamedBlobs, downloadUrlsAsFiles } = await import(
-      "@/lib/export/download"
-    );
-    if (blobs.length > 0) {
-      downloadNamedBlobs(namedBlobs(blobs));
-      toast.success(`${blobs.length} gambar diunduh.`);
+    if (blobs.length === 0 && exportedImages.length === 0) {
+      toast.error("Belum ada slide gambar yang di-export.");
       return;
     }
-    if (exportedImages.length > 0) {
-      try {
-        await downloadUrlsAsFiles(exportedImages);
-        toast.success(`${exportedImages.length} gambar diunduh.`);
-      } catch (err) {
-        toast.error(
-          `Gagal mengunduh gambar dari penyimpanan: ${summarizeError(
-            err instanceof Error ? err.message : String(err)
-          )}`
-        );
-      }
-      return;
+
+    setZipPending(true);
+    try {
+      const { downloadBlobsAsZip, downloadUrlsAsZip } = await import("@/lib/export/download");
+      const title = plan?.title;
+      const name =
+        blobs.length > 0
+          ? await downloadBlobsAsZip(blobs, title)
+          : await downloadUrlsAsZip(exportedImages, title);
+      const count = blobs.length > 0 ? blobs.length : exportedImages.length;
+      toast.success(`${count} slide diunduh sebagai ${name}`);
+    } catch (err) {
+      toast.error(
+        `Gagal menyiapkan arsip: ${summarizeError(
+          err instanceof Error ? err.message : String(err)
+        )}`
+      );
+    } finally {
+      setZipPending(false);
     }
-    toast.error("Belum ada slide gambar yang di-export.");
   };
 
   /** One slide, saved rather than opened. Same reason as the bulk path. */
@@ -1549,6 +1559,7 @@ export function Wizard({
                     pending={exportPending}
                     expectedCount={slideCount}
                     canDownload={!exportPending && (blobs.length > 0 || exportedImages.length > 0)}
+                    zipping={zipPending}
                     onDownloadAll={handleDownloadAll}
                     onDownloadOne={handleDownloadOne}
                   />
