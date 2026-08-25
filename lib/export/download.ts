@@ -47,10 +47,14 @@ export function downloadNamedBlobs(
 /**
  * Fetch remote images as blobs, in deck order.
  *
- * `<a download href="https://res.cloudinary.com/…">` does not download anything: the
- * attribute is ignored for a cross-origin URL, so the browser navigates to the image
- * instead of saving it. The bytes have to come back through fetch first, which also gives
- * each file a real name rather than Cloudinary's public id.
+ * `<a download href="https://cdn.vour.dev/…">` does not download anything: the attribute
+ * is ignored for a cross-origin URL, so the browser navigates to the image instead of
+ * saving it. The bytes have to come back through fetch first, which also gives each file
+ * a real name rather than the sha256 the store addresses it by.
+ *
+ * This needs `Access-Control-Allow-Origin` on the image host — cdn.vour.dev's nginx sets
+ * it, as Cloudinary did before it. Without that header the fetch fails and the zip never
+ * gets built.
  *
  * Throws if any image cannot be fetched, so the caller can say so rather than appearing to
  * have done nothing.
