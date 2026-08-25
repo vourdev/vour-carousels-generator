@@ -1,7 +1,16 @@
 # Build here, ship into the VPS. Deliberately not the usual "runner pushes to a registry,
-# server pulls": that box loses 12-60% of its outbound packets, so a pull of a ~300 MB
-# image would take hours, and `npm ci` on it does not finish at all. Inbound to it
-# measures 0% loss, so the runner does the building and pushes the finished image in.
+# server pulls": that box cannot reach the npm registry or Docker Hub at any useful rate.
+#
+# It does not stream a docker image in either, which is what this workflow used to do.
+# The uplink drops 12-60% of the box's outbound packets, and that breaks bulk transfers in
+# BOTH directions -- an inbound transfer still needs the box to ACK, and when the ACKs are
+# what is being lost the sender's window collapses. Measured 25 Aug 2026: under 50 KB/s
+# sustained. A 122 MB `docker save` stream never finished, and three runs in a row died on
+# the job timeout with the ssh still hanging.
+#
+# So the bytes had to go, not the timeout. The runner now rsyncs the *build output* --
+# rsync sends only what changed and resumes what it started -- and the VPS assembles the
+# image from a base that already sits on its disk. Steady-state deploys move a few MB.
 name: Deploy to VPS
 
 on:
@@ -9,8 +18,8 @@ on:
     branches: [vour-carousels-saas]
   workflow_dispatch:
 
-# One deploy at a time, and never cancel one midway: a cancelled run can leave the
-# service updating against an image that was only half received.
+# One deploy at a time, and never cancel one midway: a half-applied rsync would leave the
+# app directory mixing two builds.
 concurrency:
   group: deploy-vps
   cancel-in-progress: false
@@ -18,7 +27,7 @@ concurrency:
 jobs:
   deploy:
     runs-on: ubuntu-latest
-    timeout-minutes: 30
+    timeout-minutes: 45
 
     steps:
       - uses: actions/checkout@v4
@@ -41,8 +50,27 @@ jobs:
       - name: Test
         run: npm test
 
-      - name: Build image
-        run: docker build -t vour-carousels-frontend:${{ github.sha }} .
+      # Built on the runner rather than inside docker, because what gets shipped is the
+      # output directory, not an image. ubuntu-latest is x64 glibc like the runtime base,
+      # so the native bindings next traces into standalone (@libsql/linux-x64-gnu) are the
+      # right ones.
+      - name: Build
+        env:
+          NEXT_TELEMETRY_DISABLED: "1"
+        run: npm run build
+
+      # standalone carries its own traced node_modules; static and public are not traced
+      # because nothing imports them, so they are staged beside it -- the same layout the
+      # old Dockerfile assembled.
+      - name: Stage the deploy tree
+        run: |
+          rm -rf deploy-out
+          cp -r .next/standalone deploy-out
+          mkdir -p deploy-out/.next
+          cp -r .next/static deploy-out/.next/static
+          cp -r public deploy-out/public
+          test -f deploy-out/server.js || { echo "no server.js in the standalone output"; exit 1; }
+          du -sh deploy-out
 
       - name: Ship and deploy
         env:
@@ -56,31 +84,33 @@ jobs:
           printf '%s\n' "$SSH_KEY" > ~/.ssh/id_ed25519
           chmod 600 ~/.ssh/id_ed25519 ~/.ssh/known_hosts
 
-          docker save vour-carousels-frontend:${{ github.sha }} | gzip -1 > /tmp/image.tgz
-          ls -lh /tmp/image.tgz
+          SSH="ssh -i $HOME/.ssh/id_ed25519 -p $PORT -o BatchMode=yes -o ServerAliveInterval=15 -o ServerAliveCountMax=8 -o ConnectTimeout=30"
 
-          # Retried, because the link still drops packets. Measured 25 Aug 2026 after the
-          # provider reported a fix: short HTTPS requests recovered completely (0 timeouts
-          # in 20), but ICMP still loses 5-25% and a ~300 MB transfer stalled mid-flight
-          # and was killed by ServerAliveInterval after nine minutes. Short requests ride
-          # out that loss; this one is long enough to meet it.
-          for attempt in 1 2 3; do
-            echo "::group::ship attempt $attempt"
-            if ssh -i ~/.ssh/id_ed25519 -p "$PORT" \
-                   -o BatchMode=yes \
-                   -o ServerAliveInterval=15 -o ServerAliveCountMax=8 \
-                   -o ConnectTimeout=30 \
-                   "root@$HOST" < /tmp/image.tgz; then
+          # --checksum, not the default size+mtime: npm ci gives every file a fresh
+          # timestamp on every run, so by mtime the whole 90 MB of traced node_modules
+          # looks new each deploy when its contents are identical.
+          # --partial so a run that dies mid-file resumes instead of restarting, and
+          # --timeout so a stalled link fails the attempt in three minutes rather than
+          # hanging until the job timeout, which is exactly how the old workflow died.
+          for attempt in 1 2 3 4 5; do
+            echo "::group::rsync attempt $attempt"
+            if rsync -az --checksum --delete --partial --timeout=180 \
+                     --info=stats2 -e "$SSH" \
+                     deploy-out/ "root@$HOST:/"; then
               echo "::endgroup::"
-              echo "shipped on attempt $attempt"
-              exit 0
+              echo "synced on attempt $attempt"
+              SYNCED=1
+              break
             fi
             echo "::endgroup::"
             echo "attempt $attempt failed"
-            sleep 30
+            sleep 20
           done
-          echo "all three attempts failed -- see the uplink notes in deploy/ci-deploy-carousels.sh"
-          exit 1
+          [ "${SYNCED:-}" = 1 ] || { echo "rsync failed five times -- see the uplink notes in deploy/ci-deploy-carousels.sh"; exit 1; }
+
+          # The image is built on the VPS from what was just synced. Small, local, and
+          # nothing crosses the network here but this one command.
+          $SSH "root@$HOST" "deploy ${{ github.sha }}"
 
       - name: Verify it answers
         env:
