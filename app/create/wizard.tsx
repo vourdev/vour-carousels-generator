@@ -6,6 +6,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { PreviewFrame, type PreviewMode } from "@/components/preview-frame";
 import type { ModelId } from "@/lib/models";
 import type { SlidePlan } from "@/lib/ds/schema";
+import type { EvidenceAttempt } from "./actions";
 import { planAction, reviseAction, reviseBriefAction, humanVoiceEditorAction, clearRevisionMemoryAction, uploadSingleImageAction, publishAction, getPublishingConfigAction, assembleAction, startCaptureAction, pollCaptureAction, getCarouselAction } from "./actions";
 import type { CaptureResult } from "./actions";
 import {
@@ -58,6 +59,7 @@ export function Wizard({
   const [brief, setBrief] = useState<string>("");
   const [finalBrief, setFinalBrief] = useState<string>("");
   const [plan, setPlan] = useState<SlidePlan | null>(null);
+  const [evidenceAttempts, setEvidenceAttempts] = useState<EvidenceAttempt[]>([]);
   const [approved, setApproved] = useState(false);
   const [isTyping, setIsTyping] = useState(false);
   // The artifact tab doubles as the draft's saved view, so it keeps its old name.
@@ -1245,10 +1247,13 @@ export function Wizard({
     const runId = genRunRef.current;
     start(async () => {
       try {
-        const generatedPlan = await planAction(brief, model as ModelId);
+        const { plan: generatedPlan, evidence } = await planAction(brief, model as ModelId);
         // Reset while the plan was generating — do not walk the cleared draft to step 3.
         if (genRunRef.current !== runId) return;
         setPlan(generatedPlan);
+        // Why each screenshot slide is still empty, so the uploader can say so instead of
+        // showing a bare "Belum" on a slide the backend already tried and failed to fill.
+        setEvidenceAttempts(evidence);
         setPanelOpen(true);
         setApproved(false);
         setStep(3);
@@ -1547,7 +1552,7 @@ export function Wizard({
                       // Renders nothing unless a slide is waiting on a real screenshot, so
                       // this costs the preview no height in the ordinary case.
                       <div className="shrink-0 max-h-[38%] overflow-y-auto">
-                        <ScreenshotUploads plan={plan} onUpdate={handleUpdateScreenshot} />
+                        <ScreenshotUploads plan={plan} attempts={evidenceAttempts} onUpdate={handleUpdateScreenshot} />
                       </div>
                     )}
                   </div>

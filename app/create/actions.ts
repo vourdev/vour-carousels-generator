@@ -27,9 +27,57 @@ export async function humanVoiceEditorAction(brief: string, id: ModelId): Promis
   return data.brief;
 }
 
-export async function planAction(brief: string, id: ModelId): Promise<SlidePlan> {
+/**
+ * One automatic screenshot-evidence attempt the backend made while planning.
+ *
+ * `outcome` is anything but "captured" when the slide still needs a human: the site could
+ * not be resolved from a web search, the page would not load, or the picture failed the
+ * automated quality check. `slideIndex` is which slide to put the upload form on.
+ */
+export interface EvidenceAttempt {
+  slideIndex?: number;
+  entity: string;
+  host?: string;
+  url?: string;
+  outcome: "captured" | "skipped" | "rejected" | "error";
+  reason?: string;
+}
+
+export interface PlanResult {
+  plan: SlidePlan;
+  /** Absent for a deck with no screenshot slide, which is most of them. */
+  evidence: EvidenceAttempt[];
+}
+
+export async function planAction(brief: string, id: ModelId): Promise<PlanResult> {
   const data = await fetchBackend("/api/plan", { brief, modelId: id });
-  return data.plan;
+  return { plan: data.plan, evidence: data.evidence ?? [] };
+}
+
+export interface EvidenceUpload {
+  dataUrl: string;
+  width: number;
+  height: number;
+  bytes: number;
+  /** The picture looks blank or flat. Advice only — the person chose this file. */
+  warning?: "mostly-blank" | "flat-overlay";
+}
+
+/**
+ * Hand an uploaded screenshot to the backend to be cropped, capped and re-encoded.
+ *
+ * The crop used to run in the browser here, and it had drifted from the backend's:
+ * centre-anchored at 1080px and quality 0.8 against top-anchored at 2048 and 0.9, so a
+ * slide looked different depending on whether a person or the automatic capture filled
+ * it. There is one implementation now, and it is not in this app.
+ */
+export async function evidenceUploadAction(input: {
+  dataUrl: string;
+  cropRatio?: string;
+  slideIndex?: number;
+  source?: string;
+}): Promise<EvidenceUpload> {
+  return await fetchBackend("/api/evidence/upload", input);
 }
 
 export async function reviseAction(

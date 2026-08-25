@@ -1,84 +1,94 @@
 "use client";
 
-import { Upload } from "lucide-react";
+import { useState } from "react";
+import { Upload, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import type { SlidePlan } from "@/lib/ds/schema";
+import { evidenceUploadAction, type EvidenceAttempt } from "../actions";
+
+/** Read a picked file as a data URL. Shaping it is the backend's job, not this one's. */
+function fileToDataUrl(file: File): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(String(reader.result));
+    reader.onerror = () => reject(new Error("file could not be read"));
+    reader.readAsDataURL(file);
+  });
+}
+
+/** Server Actions are capped at 10 MB in next.config; refuse before the round trip. */
+const MAX_FILE_BYTES = 8 * 1024 * 1024;
 
 /**
- * Crop an uploaded screenshot to the slide's target ratio and inline it as a data URL.
- * Kept client-side so evidence never leaves the machine before the user exports.
+ * Why the backend could not fill this slide by itself, in the operator's language.
+ *
+ * Every one of these ends the same way — the slide is empty and a person has to supply
+ * the picture — but which one it was decides what they should do about it: a wrong or
+ * missing site is a brief problem, a rejected shot is usually a page that needs a login.
  */
-export function processUploadedScreenshot(file: File, cropRatio = "4:5"): Promise<string> {
-  return new Promise((resolve, reject) => {
-    const img = new Image();
-    img.src = URL.createObjectURL(file);
-    img.onload = () => {
-      URL.revokeObjectURL(img.src);
-      const canvas = document.createElement("canvas");
-      const ctx = canvas.getContext("2d");
-      if (!ctx) {
-        reject(new Error("canvas context not available"));
-        return;
-      }
+const REASON_COPY: Record<string, string> = {
+  "no-search": "Web search tidak aktif, jadi URL resminya tidak bisa dipastikan.",
+  "no-answer": "Web search tidak mengembalikan jawaban.",
+  unparseable: "Jawaban pencarian tidak bisa dibaca.",
+  "low-confidence": "Hasil pencarian tidak cukup yakin soal situs resminya.",
+  "not-https": "Situs yang ditemukan tidak pakai HTTPS.",
+  uncorroborated: "Domain yang diusulkan tidak didukung hasil pencarian — tidak dipotret.",
+  aggregator: "Yang ketemu cuma Wikipedia/Reddit, bukan situs resmi.",
+  "mostly-blank": "Halaman ter-capture nyaris kosong — kemungkinan gagal load atau butuh login.",
+  "flat-overlay": "Hasilnya satu blok warna rata — kemungkinan overlay atau halaman belum render.",
+  "too-small": "Hasil capture terlalu kecil untuk jadi bukti.",
+  "no-detail": "Hasil capture nyaris tanpa detail.",
+};
 
-      let targetRatio = 4 / 5;
-      if (cropRatio === "1:1") targetRatio = 1;
-      else if (cropRatio === "16:9") targetRatio = 16 / 9;
-
-      let srcWidth = img.width;
-      let srcHeight = img.height;
-      let srcX = 0;
-      let srcY = 0;
-
-      const currentRatio = srcWidth / srcHeight;
-      if (currentRatio > targetRatio) {
-        srcWidth = srcHeight * targetRatio;
-        srcX = (img.width - srcWidth) / 2;
-      } else {
-        srcHeight = srcWidth / targetRatio;
-        srcY = (img.height - srcHeight) / 2;
-      }
-
-      const outWidth = 1080;
-      const outHeight = Math.round(outWidth / targetRatio);
-      canvas.width = outWidth;
-      canvas.height = outHeight;
-
-      ctx.drawImage(img, srcX, srcY, srcWidth, srcHeight, 0, 0, outWidth, outHeight);
-      resolve(canvas.toDataURL("image/jpeg", 0.8));
-    };
-    img.onerror = (e) => reject(e);
-  });
+function explain(attempt: EvidenceAttempt | undefined): string | null {
+  if (!attempt || attempt.outcome === "captured") return null;
+  const known = attempt.reason ? REASON_COPY[attempt.reason] : undefined;
+  if (known) return known;
+  if (attempt.outcome === "error") return `Gagal memotret: ${attempt.reason ?? "halaman tidak bisa dibuka"}.`;
+  return "Screenshot otomatis tidak berhasil.";
 }
 
 /**
  * Evidence uploader for slides whose mockup is a real screenshot.
  *
- * Only rendered when the plan actually contains such a slide — this is one of the
- * panels that used to be visible regardless of whether it applied.
+ * The backend tries to fill these on its own — it resolves the official URL from a web
+ * search, photographs the page and keeps the shot only if it passes an automated quality
+ * check. This panel is what happens when that does not work: it names the slide, says why
+ * the automatic attempt failed, and takes the file.
+ *
+ * Only rendered when the plan actually contains such a slide.
  */
 export function ScreenshotUploads({
   plan,
+  attempts = [],
   onUpdate,
 }: {
   plan: SlidePlan;
+  /** Automatic-capture results from /api/plan, keyed to slides by `slideIndex`. */
+  attempts?: EvidenceAttempt[];
   onUpdate: (slideIndex: number, dataUrl: string) => void;
 }) {
+  const [busy, setBusy] = useState<number | null>(null);
+
   const targets = plan.slides
     .map((s, idx) => ({ s, idx }))
     .filter(({ s }) => s.role === "point" && s.mockup?.type === "screenshot");
 
   if (targets.length === 0) return null;
 
+  const pending = targets.filter(
+    ({ s }) => s.role === "point" && s.mockup?.type === "screenshot" && !s.mockup.screenshotImage?.dataUrl
+  ).length;
+
   return (
     <div className="flex flex-col gap-3 p-3.5 bg-muted/20 border border-hairline rounded-xl">
       <div className="flex flex-col gap-0.5">
         <span className="text-xs font-semibold text-foreground flex items-center gap-2">
           <Upload className="size-3.5 text-primary" />
-          Screenshot asli dibutuhkan ({targets.length} slide)
+          Screenshot asli dibutuhkan ({pending} dari {targets.length} slide)
         </span>
         <span className="text-[11px] text-muted-foreground">
-          Gambar dikecilkan dan ditempel langsung ke slide, jadi ekspor tetap jalan tanpa internet.
+          Dipotong ke rasio slide di server, lalu ditempel langsung ke slide — ekspor tetap jalan tanpa internet.
         </span>
       </div>
 
@@ -88,15 +98,39 @@ export function ScreenshotUploads({
           const m = s.mockup;
           const status = m.evidenceStatus || "pending";
           const shotBrief = m.screenshotBrief;
+          const attempt = attempts.find((a) => a.slideIndex === idx);
+          const failure = m.screenshotImage?.dataUrl ? null : explain(attempt);
+          const uploading = busy === idx;
 
           const upload = async (file: File | undefined) => {
             if (!file) return;
+            if (file.size > MAX_FILE_BYTES) {
+              toast.error("Gambar terlalu besar (maksimal 8 MB).");
+              return;
+            }
+            setBusy(idx);
             try {
-              const dataUrl = await processUploadedScreenshot(file, shotBrief?.cropRatio || "4:5");
-              onUpdate(idx, dataUrl);
-              toast.success(`Screenshot slide ${idx + 1} tersimpan`);
-            } catch {
-              toast.error("Gagal memproses gambar");
+              const dataUrl = await fileToDataUrl(file);
+              const shaped = await evidenceUploadAction({
+                dataUrl,
+                cropRatio: shotBrief?.cropRatio || "4:5",
+                slideIndex: idx,
+                source: shotBrief?.source,
+              });
+              onUpdate(idx, shaped.dataUrl);
+              if (shaped.warning) {
+                toast.warning(
+                  shaped.warning === "mostly-blank"
+                    ? `Slide ${idx + 1}: gambarnya nyaris kosong — cek lagi kalau salah file.`
+                    : `Slide ${idx + 1}: gambarnya satu blok warna rata — cek lagi kalau salah file.`
+                );
+              } else {
+                toast.success(`Screenshot slide ${idx + 1} tersimpan`);
+              }
+            } catch (e) {
+              toast.error(e instanceof Error ? e.message : "Gagal memproses gambar");
+            } finally {
+              setBusy(null);
             }
           };
 
@@ -119,6 +153,13 @@ export function ScreenshotUploads({
                 </span>
               </div>
 
+              {failure && (
+                <div className="text-[11px] leading-relaxed text-amber-700 dark:text-amber-500 bg-amber-500/10 border border-amber-500/20 p-2 rounded">
+                  <span className="font-semibold">Auto-capture gagal.</span> {failure}
+                  {attempt?.host && <span className="font-mono"> ({attempt.host})</span>}
+                </div>
+              )}
+
               {shotBrief && (
                 <div className="text-[11px] text-muted-foreground flex flex-col gap-0.5 bg-muted/40 p-2 rounded">
                   <div>Sumber: {shotBrief.source || "Aplikasi / tool"}</div>
@@ -135,23 +176,31 @@ export function ScreenshotUploads({
                     className="size-12 object-cover rounded border border-hairline"
                   />
                   <label className="cursor-pointer text-xs font-medium text-primary hover:underline">
-                    Ganti gambar
+                    {uploading ? "Memproses…" : "Ganti gambar"}
                     <input
                       type="file"
-                      accept="image/png,image/jpeg,image/webp"
+                      accept="image/png,image/jpeg,image/webp,image/avif"
                       className="hidden"
+                      disabled={uploading}
                       onChange={(e) => upload(e.target.files?.[0])}
                     />
                   </label>
                 </div>
               ) : (
-                <label className="flex items-center justify-center gap-2 p-2.5 border border-dashed border-primary/40 hover:border-primary rounded-lg cursor-pointer bg-primary/5 hover:bg-primary/10 transition-colors text-xs font-medium text-primary">
-                  <Upload className="size-3.5" />
-                  <span>Unggah screenshot slide {idx + 1}</span>
+                <label
+                  className={`flex items-center justify-center gap-2 p-2.5 border border-dashed rounded-lg text-xs font-medium transition-colors ${
+                    uploading
+                      ? "border-hairline text-muted-foreground cursor-wait"
+                      : "border-primary/40 hover:border-primary cursor-pointer bg-primary/5 hover:bg-primary/10 text-primary"
+                  }`}
+                >
+                  {uploading ? <Loader2 className="size-3.5 animate-spin" /> : <Upload className="size-3.5" />}
+                  <span>{uploading ? "Memproses gambar…" : `Unggah screenshot slide ${idx + 1}`}</span>
                   <input
                     type="file"
-                    accept="image/png,image/jpeg,image/webp"
+                    accept="image/png,image/jpeg,image/webp,image/avif"
                     className="hidden"
+                    disabled={uploading}
                     onChange={(e) => upload(e.target.files?.[0])}
                   />
                 </label>
