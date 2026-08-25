@@ -1,0 +1,77 @@
+# Build here, ship into the VPS. Deliberately not the usual "runner pushes to a registry,
+# server pulls": that box loses 12-60% of its outbound packets, so a pull of a ~300 MB
+# image would take hours, and `npm ci` on it does not finish at all. Inbound to it
+# measures 0% loss, so the runner does the building and pushes the finished image in.
+name: Deploy to VPS
+
+on:
+  push:
+    branches: [vour-carousels-saas]
+  workflow_dispatch:
+
+# One deploy at a time, and never cancel one midway: a cancelled run can leave the
+# service updating against an image that was only half received.
+concurrency:
+  group: deploy-vps
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install
+        run: npm ci
+
+      # Reported, not enforced. The repo carries 25 pre-existing lint errors (mostly
+      # `no-explicit-any` in code this change did not touch), and blocking on them would
+      # mean no deploy could ship until an unrelated cleanup lands. Tests below do block.
+      - name: Lint (report only)
+        continue-on-error: true
+        run: npx eslint app lib components
+
+      - name: Test
+        run: npm test
+
+      - name: Build image
+        run: docker build -t vour-carousels-frontend:${{ github.sha }} .
+
+      - name: Ship and deploy
+        env:
+          SSH_KEY: ${{ secrets.VPS_SSH_KEY }}
+          KNOWN_HOSTS: ${{ secrets.VPS_KNOWN_HOSTS }}
+          HOST: ${{ secrets.VPS_HOST }}
+          PORT: ${{ secrets.VPS_PORT }}
+        run: |
+          mkdir -p ~/.ssh
+          printf '%s\n' "$KNOWN_HOSTS" > ~/.ssh/known_hosts
+          printf '%s\n' "$SSH_KEY" > ~/.ssh/id_ed25519
+          chmod 600 ~/.ssh/id_ed25519 ~/.ssh/known_hosts
+          # The key is pinned to /usr/local/bin/ci-deploy-carousels by authorized_keys,
+          # so there is no command to send: the image on stdin is the whole request.
+          # gzip -1 because the runner's CPU is cheaper than the link, but only just.
+          docker save vour-carousels-frontend:${{ github.sha }} \
+            | gzip -1 \
+            | ssh -i ~/.ssh/id_ed25519 -p "$PORT" \
+                  -o BatchMode=yes -o ServerAliveInterval=30 \
+                  "root@$HOST"
+
+      - name: Verify it answers
+        env:
+          URL: https://carousels-generator.vour.dev
+        run: |
+          for i in $(seq 1 20); do
+            code=$(curl -so /dev/null -w '%{http_code}' --max-time 20 "$URL/login" || true)
+            echo "attempt $i: $code"
+            case "$code" in 200|302|307) echo "up"; exit 0 ;; esac
+            sleep 10
+          done
+          echo "did not come up"; exit 1

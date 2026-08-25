@@ -4,34 +4,59 @@
  * genuinely testable part of the background-tab fix.
  */
 
-/** Collapse a raw model/API error into something a non-engineer can act on. */
+/**
+ * Turn a raw error into something readable — without throwing away what it said.
+ *
+ * This used to answer "Terjadi kesalahan pada sistem AI." for anything longer than 120
+ * characters, which covered almost every real failure. The operator was told that
+ * something broke and never what, so every incident started by opening server logs. Now
+ * a recognised cause gets a plain-language headline AND keeps the underlying text, and
+ * an unrecognised one is shown rather than replaced.
+ */
+const KNOWN_CAUSES: ReadonlyArray<[RegExp, string]> = [
+  [
+    /queue budget|maxwaitms|requestqueue/i,
+    "Antrean OmniRoute penuh — permintaan menunggu terlalu lama sebelum dapat giliran.",
+  ],
+  [
+    /quota exceeded|exceeded your current quota|rate limit|rate-limits/i,
+    "Batas kuota model terlampaui (rate limit).",
+  ],
+  [/high demand|experiencing high demand/i, "Model sedang sibuk karena permintaan tinggi."],
+  [
+    /invalid api key|api key not valid|api_key|unauthorized|401/i,
+    "Kredensial ke layanan model ditolak — periksa API key.",
+  ],
+  [/no longer available|not available|model not found/i, "Model yang dipilih tidak tersedia."],
+  [
+    /tidak bisa dihubungi|econnrefused|enotfound|fetch failed/i,
+    "Backend tidak bisa dihubungi dari frontend — layanan mati atau alamat internalnya salah.",
+  ],
+  [/tidak menjawab dalam|timeout|etimedout|aborted/i, "Backend tidak menjawab sampai batas waktu."],
+  [/502|503|504|bad gateway|gateway timeout/i, "Gateway menolak atau memutus permintaan."],
+];
+
+/** The most informative part of a long message, whitespace-collapsed and bounded. */
+function condense(msg: string): string {
+  let out = msg.trim();
+
+  // AI SDK wraps its real cause behind a retry summary; the tail is the useful half.
+  const last = out.lastIndexOf("Last error: ");
+  if (last !== -1) out = out.slice(last + "Last error: ".length);
+
+  out = out.replace(/^AI_APICallError:\s*/i, "").replace(/\s+/g, " ").trim();
+  return out.length > 300 ? `${out.slice(0, 300)}…` : out;
+}
+
 export function summarizeError(msg: string): string {
-  const lower = msg.toLowerCase();
+  const detail = condense(msg);
+  if (!detail) return "Terjadi kesalahan tanpa keterangan.";
 
-  if (lower.includes("quota exceeded") || lower.includes("exceeded your current quota") || lower.includes("rate limit") || lower.includes("rate-limits")) {
-    return "Batas kuota API Gemini terlampaui (Rate Limit / Quota Exceeded). Silakan coba beberapa saat lagi.";
-  }
-  if (lower.includes("high demand") || lower.includes("experiencing high demand")) {
-    return "Server model sedang sibuk karena permintaan tinggi (High Demand). Silakan coba lagi nanti.";
-  }
-  if (lower.includes("invalid api key") || lower.includes("api key not valid") || lower.includes("api_key")) {
-    return "Konfigurasi API Key tidak valid. Silakan periksa kembali berkas .env Anda.";
-  }
-  if (lower.includes("no longer available") || lower.includes("not available")) {
-    return "Model yang dipilih sudah tidak tersedia atau tidak aktif.";
-  }
+  const hit = KNOWN_CAUSES.find(([re]) => re.test(msg));
+  if (!hit) return detail;
 
-  if (msg.length > 120) {
-    const lastErrorIdx = msg.lastIndexOf("Last error: ");
-    if (lastErrorIdx !== -1) {
-      const sub = msg.substring(lastErrorIdx + "Last error: ".length);
-      const firstSentence = sub.split(".")[0] || sub;
-      return firstSentence.replace(/^AI_APICallError:\s*/i, "").trim();
-    }
-    return "Terjadi kesalahan pada sistem AI.";
-  }
-
-  return msg;
+  // Do not repeat the detail when the headline already is the message.
+  return detail === hit[1] ? detail : `${hit[1]} — ${detail}`;
 }
 
 /** Read the vourdev-meta block (title/caption/hashtags) from an uploaded HTML carousel. */
