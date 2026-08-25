@@ -371,6 +371,24 @@ const coverHookNocGrid = z.object({
 });
 
 /** Cover anchor — a Norman door: pull handle labeled with a contradicting action */
+/**
+ * Cover anchor — an unDraw illustration, mirroring src/lib/ds/schema.ts in the backend.
+ *
+ * This file is a copy of the backend's schema and the two must agree: the backend now
+ * emits `hook: { kind: "illustration" }` for "pakai illustration untuk cover", and a plan
+ * carrying one would fail to parse here if this variant were missing. It was added there
+ * on 25 Aug 2026 because a cover has no `mockup` field, so an illustration on the cover
+ * had nowhere legal to live and rendered as an empty box.
+ */
+const coverHookIllustration = z.object({
+  kind: z.literal("illustration"),
+  illustrationSlugs: z
+    .array(z.string().transform(normalizeIllustration))
+    .min(1)
+    .max(2),
+  caption: z.string().max(90).optional(),
+});
+
 const coverHookDoor = z.object({
   kind: z.literal("door"),
   label: z.string().max(12).optional(), // renderer falls back to "DORONG"
@@ -384,6 +402,7 @@ export const coverHookSchema = z.discriminatedUnion("kind", [
   coverHookBadge,
   coverHookNocGrid,
   coverHookDoor,
+  coverHookIllustration,
 ]);
 
 export type CoverHook = z.infer<typeof coverHookSchema>;
