@@ -26,6 +26,11 @@ export async function setup() {
   // Create illustrations table and seed it
   const { createClient } = await import("@libsql/client");
   const db = createClient({ url: TEST_DB });
+
+  // WAL, set once and persisted in the file: the default rollback journal takes a lock
+  // over the whole database for any write, which is what turned overlapping test files
+  // into "database is locked".
+  await db.execute("PRAGMA journal_mode = WAL");
   
   await db.execute(`
     CREATE TABLE IF NOT EXISTS illustrations (

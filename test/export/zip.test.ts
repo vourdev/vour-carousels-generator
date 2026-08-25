@@ -106,36 +106,28 @@ describe("zipStore", () => {
     expect([...roots]).toEqual(["Deck"]);
   });
 
-  it("round-trips a non-ASCII entry name", async () => {
-    const blob = await zipStore([
-      { name: "Café ☕/slide_01.jpg", blob: new Blob([bytes(32, 5) as BlobPart]) },
-    ]);
-    const dir = mkdtempSync(join(tmpdir(), "zip-utf8-"));
-    const archive = join(dir, "deck.zip");
-    writeFileSync(archive, Buffer.from(await blob.arrayBuffer()));
+  it("stores a non-ASCII entry name as UTF-8 and says so in the flags", async () => {
+    const name = "Café ☕/slide_01.jpg";
+    const blob = await zipStore([{ name, blob: new Blob([bytes(32, 5) as BlobPart]) }]);
+    const buf = Buffer.from(await blob.arrayBuffer());
 
-    // The extractor has to be chosen per platform, because the two disagree about this
-    // archive and only one of them is wrong. macOS ships Info-ZIP 6.00 from 2009, which
-    // predates general-purpose bit 11 and transcodes names through its own table instead
-    // — it turns this entry into "Caf+? ???" and then refuses to create it. So on macOS
-    // the reader is ditto, the engine behind Finder's own unarchiving and the one users
-    // actually double-click. Linux ships a version that honours bit 11, so plain unzip is
-    // the right reader there — and it is the only one CI has.
-    const out = join(dir, "x");
-    if (process.platform === "darwin") {
-      execFileSync("ditto", ["-x", "-k", archive, out]);
-    } else {
-      execFileSync("unzip", ["-q", archive, "-d", out]);
-    }
+    // Asserted against the archive rather than against an extractor, because the
+    // extractors disagree and both common ones are wrong. macOS ships Info-ZIP 6.00 from
+    // 2009, which predates general-purpose bit 11 and transcodes the name through its own
+    // table — and Ubuntu's build does the same, turning this entry into "Caf├й тШХ". Only
+    // ditto and Windows Explorer read it as written. So the thing worth testing is what
+    // this writer controls: the bytes on disk and the flag that declares them.
+    expect(buf.readUInt32LE(0)).toBe(0x04034b50); // local file header
 
-    // The name is read back from the filesystem rather than reconstructed, because the
-    // two disagree there too: APFS stores names decomposed (NFD) while ext4 keeps the
-    // bytes it was given. Comparing normalized, then reopening under the name readdir
-    // actually returned, is true on both.
-    const roots = readdirSync(out);
-    expect(roots.map((n) => n.normalize("NFC"))).toContain("Café ☕");
-    const rootName = roots.find((n) => n.normalize("NFC") === "Café ☕")!;
-    expect(readdirSync(join(out, rootName))).toEqual(["slide_01.jpg"]);
+    const flags = buf.readUInt16LE(6);
+    expect(flags & 0x800).toBe(0x800); // bit 11: the name is UTF-8
+
+    const nameLen = buf.readUInt16LE(26);
+    const stored = buf.subarray(30, 30 + nameLen);
+    expect(stored.equals(Buffer.from(name, "utf8"))).toBe(true);
+    // No stray transcoding: the length is the UTF-8 byte length, not the character count.
+    expect(nameLen).toBe(Buffer.byteLength(name, "utf8"));
+    expect(nameLen).toBeGreaterThan(name.length);
   });
 
   it("writes an empty archive rather than a malformed one", async () => {
