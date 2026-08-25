@@ -114,19 +114,28 @@ describe("zipStore", () => {
     const archive = join(dir, "deck.zip");
     writeFileSync(archive, Buffer.from(await blob.arrayBuffer()));
 
-    // Extracted with ditto, which is the engine behind Finder's own unarchiving, rather
-    // than with the `unzip` used above. macOS ships Info-ZIP 6.00 from 2009, which predates
-    // general-purpose bit 11 and transcodes names through its own table instead — it turns
-    // this entry into "Caf+? ???" and then refuses to create it. Nothing in the archive can
-    // satisfy both readers, so the archive stays correct and the test uses the reader the
-    // users actually double-click.
+    // The extractor has to be chosen per platform, because the two disagree about this
+    // archive and only one of them is wrong. macOS ships Info-ZIP 6.00 from 2009, which
+    // predates general-purpose bit 11 and transcodes names through its own table instead
+    // — it turns this entry into "Caf+? ???" and then refuses to create it. So on macOS
+    // the reader is ditto, the engine behind Finder's own unarchiving and the one users
+    // actually double-click. Linux ships a version that honours bit 11, so plain unzip is
+    // the right reader there — and it is the only one CI has.
     const out = join(dir, "x");
-    execFileSync("ditto", ["-x", "-k", archive, out]);
-    // Normalized before comparing: APFS stores names decomposed (NFD), so the composed
-    // string written here is not the string readdir hands back, though both are one name.
-    const roots = readdirSync(out).map((n) => n.normalize("NFC"));
-    expect(roots).toContain("Café ☕");
-    expect(readdirSync(join(out, "Café ☕".normalize("NFD")))).toEqual(["slide_01.jpg"]);
+    if (process.platform === "darwin") {
+      execFileSync("ditto", ["-x", "-k", archive, out]);
+    } else {
+      execFileSync("unzip", ["-q", archive, "-d", out]);
+    }
+
+    // The name is read back from the filesystem rather than reconstructed, because the
+    // two disagree there too: APFS stores names decomposed (NFD) while ext4 keeps the
+    // bytes it was given. Comparing normalized, then reopening under the name readdir
+    // actually returned, is true on both.
+    const roots = readdirSync(out);
+    expect(roots.map((n) => n.normalize("NFC"))).toContain("Café ☕");
+    const rootName = roots.find((n) => n.normalize("NFC") === "Café ☕")!;
+    expect(readdirSync(join(out, rootName))).toEqual(["slide_01.jpg"]);
   });
 
   it("writes an empty archive rather than a malformed one", async () => {
