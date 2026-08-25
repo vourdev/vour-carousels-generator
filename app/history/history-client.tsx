@@ -15,9 +15,6 @@ import {
   AlertCircle,
   CalendarDays,
   Sparkles,
-  Link2,
-  Copy,
-  Check,
   Loader2,
   Eraser
 } from "lucide-react";
@@ -79,7 +76,6 @@ export default function HistoryClient({ initialItems, userId, betterAuthSecret }
   
   const [pending, startTransition] = useTransition();
   const [publishingId, setPublishingId] = useState<string | null>(null);
-  const [copied, setCopied] = useState(false);
 
   /**
    * Which cleanup is awaiting confirmation: a single deck, or every posted one.
@@ -90,20 +86,6 @@ export default function HistoryClient({ initialItems, userId, betterAuthSecret }
    */
   const [cleanupTarget, setCleanupTarget] = useState<Carousel | "posted" | null>(null);
   const [cleaningUp, setCleaningUp] = useState(false);
-
-  const n8nUrl = useMemo(() => {
-    if (typeof window !== "undefined") {
-      return `${window.location.origin}/api/calendar?userId=${userId}`;
-    }
-    return `/api/calendar?userId=${userId}`;
-  }, [userId]);
-
-  const copyN8NUrl = () => {
-    navigator.clipboard.writeText(n8nUrl);
-    setCopied(true);
-    toast.success("n8n API endpoint URL copied to clipboard!");
-    setTimeout(() => setCopied(false), 2000);
-  };
 
   /**
    * Free Cloudinary assets for one deck, or for every deck already posted.
@@ -629,32 +611,6 @@ export default function HistoryClient({ initialItems, userId, betterAuthSecret }
           </CardContent>
         </Card>
       ) : null}
-
-      {/* Connection for n8n Section */}
-      <Card className="border border-indigo-500/20 bg-gradient-to-r from-indigo-500/5 via-primary/5 to-transparent shadow-xs">
-        <CardContent className="p-5 flex flex-col md:flex-row items-start md:items-center justify-between gap-5">
-          <div className="space-y-1">
-            <span className="text-[10px] font-bold text-indigo-500 uppercase tracking-widest flex items-center gap-1.5">
-              <Link2 className="size-3.5" />
-              INTEGRASI API UNTUK N8N
-            </span>
-            <h3 className="font-bold text-sm">Gunakan Endpoint API ini untuk n8n Workflow Anda</h3>
-            <p className="text-xs text-muted-foreground leading-relaxed max-w-2xl">
-              n8n dapat menarik data kalender konten (status, caption, judul, thumbnail, dan link slide lengkap) 
-              menggunakan metode <code className="bg-muted px-1 py-0.5 rounded text-[10px] font-mono">GET</code> dengan header <code className="bg-muted px-1 py-0.5 rounded text-[10px] font-mono">x-api-key</code>.
-            </p>
-          </div>
-
-          <div className="flex items-center gap-2 w-full md:w-auto">
-            <div className="bg-muted/40 border border-hairline font-mono text-[11px] px-3 py-2 rounded-lg truncate select-all flex-1 md:flex-initial max-w-[280px]">
-              {n8nUrl}
-            </div>
-            <Button size="icon" variant="outline" className="size-9 shrink-0" onClick={copyN8NUrl}>
-              {copied ? <Check className="size-4 text-emerald-500" /> : <Copy className="size-4" />}
-            </Button>
-          </div>
-        </CardContent>
-      </Card>
 
       {/* DIALOG 1: Scheduling Date-Time Picker Modal */}
       {schedulingTarget && (
