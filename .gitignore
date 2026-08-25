@@ -46,3 +46,5 @@ next-env.d.ts
 *.db-journal
 
 graphify-out/
+# staged by CI before rsync, never committed
+deploy-out/

@@ -83,11 +83,15 @@ DOCKERFILE
 # `docker service update` wants --env-add, and sh has no arrays to rewrite a flag across a
 # saved list. The first attempt round-tripped the arguments through a delimiter to patch
 # the flag name, and left an empty "=" entry in the service spec for its trouble.
+#
+# `|| [ -n "$line" ]` is not decoration: a .env whose last line has no terminating newline
+# loses that line to a bare `read`. The backend's .env was in exactly that state, and an
+# appended key was silently glued onto the line before it.
 
 if docker service inspect "$SERVICE" >/dev/null 2>&1; then
   log "updating existing service"
   set --
-  while IFS= read -r line; do
+  while IFS= read -r line || [ -n "$line" ]; do
     case "$line" in ''|'#'*) continue ;; esac
     key=${line%%=*}; val=${line#*=}
     case "$key" in *[!A-Za-z0-9_]*|'') continue ;; esac
@@ -105,7 +109,7 @@ if docker service inspect "$SERVICE" >/dev/null 2>&1; then
 else
   log "creating service"
   set --
-  while IFS= read -r line; do
+  while IFS= read -r line || [ -n "$line" ]; do
     case "$line" in ''|'#'*) continue ;; esac
     key=${line%%=*}; val=${line#*=}
     case "$key" in *[!A-Za-z0-9_]*|'') continue ;; esac
