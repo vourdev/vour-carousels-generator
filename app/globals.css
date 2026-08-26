@@ -54,6 +54,22 @@
     background: var(--color-ink);
     color: var(--color-on-primary);
   }
+  /* The rule above paints ink on light, which is right everywhere but the user's own
+     chat bubble — that surface is already ink, so a selection there was dark on dark and
+     you could not tell a word was highlighted at all.
+
+     The highlight is the bubble's own pair swapped, not a fixed white-on-black. The
+     bubble is `bg-primary text-primary-foreground`, and both flip with the theme, so
+     borrowing them keeps the contrast correct in light and dark alike. Hardcoding white
+     would go invisible again the moment the bubble turns light in dark mode — and it
+     would, because .dark flips --primary without flipping --color-canvas.
+
+     Both selectors are needed: the element's own text nodes and any nested ones. */
+  .chat-bubble-user::selection,
+  .chat-bubble-user ::selection {
+    background: var(--primary-foreground);
+    color: var(--primary);
+  }
   * {
     @apply border-border outline-ring/50;
   }

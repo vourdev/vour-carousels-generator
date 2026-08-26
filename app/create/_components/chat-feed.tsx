@@ -71,7 +71,7 @@ export function ChatFeed({
           messages.map((m, idx) =>
             m.sender === "user" ? (
               <div key={idx} className="flex justify-end">
-                <div className="max-w-[85%] rounded-2xl rounded-br-md bg-primary text-primary-foreground px-4 py-2.5 text-sm leading-relaxed">
+                <div className="chat-bubble-user max-w-[85%] rounded-2xl rounded-br-md bg-primary text-primary-foreground px-4 py-2.5 text-sm leading-relaxed">
                   {m.text}
                 </div>
               </div>

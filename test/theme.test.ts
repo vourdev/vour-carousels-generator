@@ -24,3 +24,26 @@ describe("app UI theme tokens (vercel-DESIGN.md)", () => {
     expect(css).not.toContain("#E94B19");
   });
 });
+
+/**
+ * The global ::selection paints ink-on-light, which is correct everywhere except on the
+ * one surface that is already ink: the user's own chat bubble. There, selecting text
+ * painted dark on dark and the highlight was invisible — you could not tell whether a
+ * word was selected. Only that bubble is inverted.
+ */
+describe("selection on the user's chat bubble", () => {
+  it("inverts the bubble's own pair, so it survives a theme flip", () => {
+    // Not a hardcoded white: .dark flips --primary without flipping --color-canvas, so a
+    // fixed light highlight would go invisible the moment the bubble turns light.
+    expect(css).toMatch(/\.chat-bubble-user[^{]*::selection\s*{[^}]*background:\s*var\(--primary-foreground\)/);
+    expect(css).toMatch(/\.chat-bubble-user[^{]*::selection\s*{[^}]*color:\s*var\(--primary\)/);
+  });
+
+  it("covers the text nodes inside it, not only the element itself", () => {
+    expect(css).toContain(".chat-bubble-user ::selection");
+  });
+
+  it("leaves the global selection rule alone", () => {
+    expect(css).toMatch(/^\s{2}::selection\s*{/m);
+  });
+});
