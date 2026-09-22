@@ -11,7 +11,8 @@ export default async function CreatePage({
   searchParams: Promise<{ topic?: string }>;
 }) {
   const [session, { topic: topicId }] = await Promise.all([requireSession(), searchParams]);
-  const models = (await listModelsAction()).filter((m) => m === "vour-high" || m === "vour-lite");
+  // Whatever the backend reports, minus the retired ids it still resolves for saved records.
+  const models = (await listModelsAction()).filter((m) => m !== "vour-lite" && m !== "gemini");
   const initialTopic = topicId ? await getTopic(topicId, session.user.id) : null;
   return (
     <main className="mx-auto w-full max-w-7xl h-[100dvh] overflow-hidden p-3 md:p-4 flex flex-col gap-2.5">
