@@ -51,6 +51,7 @@ import {
   CheckCircle2,
   AlertTriangle,
   RotateCcw,
+  Newspaper,
 } from "lucide-react";
 import { toast } from "sonner";
 import type { Topic, TopicCategory, TopicStatus } from "@/lib/topics/bank";
@@ -60,6 +61,7 @@ import {
   bulkDeleteTopicsAction,
   bulkUpdateTopicStatusAction,
   deleteTopicsByStatusAction,
+  discoverTrendingAction,
   generateFromNotesAction,
   generateTopicsAction,
   getProductsAction,
@@ -383,6 +385,42 @@ export function TopicBank() {
     });
   };
 
+  /**
+   * Sweep the tech press for trending topics.
+   *
+   * The toast reports the funnel, not just the count. A sweep that saves nothing is a normal
+   * outcome — the corroboration rule drops most of any news day on purpose — and a bare
+   * "0 topics" would read as a broken feature every time it happened.
+   */
+  const handleDiscoverTrending = () => {
+    startTransition(async () => {
+      try {
+        const { topics, skipped, stats } = await discoverTrendingAction();
+        if (topics.length > 0) {
+          toast.success(
+            `${topics.length} topik trending masuk bank — dari ${stats.corroborated} berita terkonfirmasi ≥2 sumber.`
+          );
+        } else {
+          const dup = skipped.filter((s) => s.reason === "duplicate").length;
+          toast.info(
+            stats.corroborated === 0
+              ? `Tidak ada berita yang terkonfirmasi 2 sumber independen dari ${stats.itemsFetched} item hari ini.`
+              : dup > 0
+                ? `${stats.corroborated} berita terkonfirmasi, tapi ${dup} sudah ada di bank dan sisanya tidak lolos filter signifikansi.`
+                : `${stats.corroborated} berita terkonfirmasi, tidak ada yang cukup signifikan untuk audiens Vour.`
+          );
+        }
+        if (stats.feedsFailed > 0) {
+          toast.warning(`${stats.feedsFailed} sumber berita tidak bisa dibaca kali ini.`);
+        }
+        fetchTopics();
+      } catch (e) {
+        const msg = e instanceof Error ? e.message : "failed";
+        toast.error(`Gagal riset berita: ${msg}`);
+      }
+    });
+  };
+
   const handleGenerateFromNotes = () => {
     if (!notesText.trim()) {
       toast.error("Catatan mentah tidak boleh kosong");
@@ -548,6 +586,17 @@ export function TopicBank() {
             Ideas
           </Button>
           <Button
+            onClick={handleDiscoverTrending}
+            disabled={isPending}
+            className="gap-2 shadow-xs h-8.5 cursor-pointer"
+            variant="outline"
+            size="sm"
+            title="Riset berita teknologi hari ini — hanya yang terkonfirmasi minimal 2 media independen"
+          >
+            <Newspaper className="size-4" />
+            Trending
+          </Button>
+          <Button
             onClick={() => setShowNotesModal(true)}
             disabled={isPending}
             className="gap-2 shadow-xs h-8.5 cursor-pointer"
@@ -636,11 +685,12 @@ export function TopicBank() {
                 className="size-3.5 rounded accent-primary"
               />
               <Globe className="size-3.5 text-primary" />
-              Riset berita/tren dev terkini dulu (web search) sebelum generate
+              Riset berita/tren dev terkini dulu (web search) sebelum generate — pakai tombol
+              Trending; di sini diabaikan
             </label>
             {isPending && (
               <p className="text-xs text-muted-foreground animate-pulse">
-                Generating{research ? " (riset tren dulu, bisa ~1 menit)" : ""}…
+                Generating…
               </p>
             )}
           </CardContent>

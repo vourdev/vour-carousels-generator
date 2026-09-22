@@ -108,6 +108,49 @@ export async function generateTopicsAction(input: GenerateTopicsInput): Promise<
   return data.topics;
 }
 
+export interface DiscoverTrendingResult {
+  topics: Topic[];
+  skipped: { headline: string; reason: string; detail: string }[];
+  stats: {
+    itemsFetched: number;
+    feedsOk: number;
+    feedsFailed: number;
+    clusters: number;
+    corroborated: number;
+    picked: number;
+    saved: number;
+  };
+}
+
+/**
+ * Sweep the tech press and bank what clears corroboration + significance + dedup.
+ *
+ * Returns the skip list too, not just the saved rows. "0 topics" has several causes here —
+ * a quiet news day, a strict significance filter, everything already in the bank — and the
+ * UI can only say which if it is told.
+ */
+export async function discoverTrendingAction(input?: {
+  withinHours?: number;
+  minSources?: number;
+  maxTopics?: number;
+  dryRun?: boolean;
+}): Promise<DiscoverTrendingResult> {
+  const data = await backendSend("/api/topics/generate-trending", input ?? {});
+  return {
+    topics: data.topics ?? [],
+    skipped: data.skipped ?? [],
+    stats: data.stats ?? {
+      itemsFetched: 0,
+      feedsOk: 0,
+      feedsFailed: 0,
+      clusters: 0,
+      corroborated: 0,
+      picked: 0,
+      saved: 0,
+    },
+  };
+}
+
 export async function generateFromNotesAction(
   rawNotes: string,
   modelId?: ModelId
