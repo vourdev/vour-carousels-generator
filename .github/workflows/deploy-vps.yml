@@ -63,6 +63,9 @@ jobs:
       # because nothing imports them, so they are staged beside it -- the same layout the
       # old Dockerfile assembled.
       - name: Stage the deploy tree
+        # Deployment is Dokploy's job since 23 Sep 2026 (its webhook builds on push).
+        # Kept here for a manual run: `gh workflow run deploy-vps.yml`.
+        if: github.event_name == 'workflow_dispatch'
         run: |
           rm -rf deploy-out
           cp -r .next/standalone deploy-out
@@ -73,6 +76,9 @@ jobs:
           du -sh deploy-out
 
       - name: Ship and deploy
+        # Deployment is Dokploy's job since 23 Sep 2026 (its webhook builds on push).
+        # Kept here for a manual run: `gh workflow run deploy-vps.yml`.
+        if: github.event_name == 'workflow_dispatch'
         env:
           SSH_KEY: ${{ secrets.VPS_SSH_KEY }}
           KNOWN_HOSTS: ${{ secrets.VPS_KNOWN_HOSTS }}
@@ -113,6 +119,9 @@ jobs:
           $SSH "root@$HOST" "deploy ${{ github.sha }}"
 
       - name: Verify it answers
+        # Deployment is Dokploy's job since 23 Sep 2026 (its webhook builds on push).
+        # Kept here for a manual run: `gh workflow run deploy-vps.yml`.
+        if: github.event_name == 'workflow_dispatch'
         env:
           URL: https://carousels-generator.vour.dev
         run: |
