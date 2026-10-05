@@ -80,6 +80,11 @@ function SlideView({
       title={label ?? ""}
       aria-hidden={label ? undefined : true}
       tabIndex={-1}
+      // The deck is model-written content plus uploads, and a srcDoc frame is otherwise
+      // same-origin with this app — any script that slipped past the backend's sanitizer
+      // could call Server Actions as the signed-in user. The deck is static HTML/CSS with
+      // inline fonts; it needs no script and no origin.
+      sandbox=""
       srcDoc={html}
       style={{
         width: SLIDE_W,

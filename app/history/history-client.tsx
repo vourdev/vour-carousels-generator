@@ -41,8 +41,6 @@ import type { Carousel, CarouselStatus } from "@/lib/history/repo";
 
 interface HistoryClientProps {
   initialItems: Carousel[];
-  userId: string;
-  betterAuthSecret: string;
 }
 
 const statusStyle: Record<CarouselStatus, { text: string; bg: string; border: string }> = {
@@ -63,7 +61,7 @@ function timeAgo(ts: number): string {
   return `${Math.floor(h / 24)}h lalu`;
 }
 
-export default function HistoryClient({ initialItems, userId, betterAuthSecret }: HistoryClientProps) {
+export default function HistoryClient({ initialItems }: HistoryClientProps) {
   const [items, setItems] = useState<Carousel[]>(initialItems);
   const [view, setView] = useState<"list" | "calendar">("calendar");
   const [currentDate, setCurrentDate] = useState(new Date());

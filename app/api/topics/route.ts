@@ -1,10 +1,10 @@
 import { NextResponse } from "next/server";
+import { hasAutomationKey } from "@/lib/api-key";
 import { getTopics, getTopic, updateTopic, deleteTopic, createTopic } from "@/lib/topics/bank";
 import type { TopicCategory, TopicStatus } from "@/lib/topics/bank";
 
 export async function GET(req: Request) {
-  const apiKey = req.headers.get("x-api-key");
-  if (!apiKey || apiKey !== process.env.BETTER_AUTH_SECRET) {
+  if (!hasAutomationKey(req)) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
@@ -43,8 +43,7 @@ export async function GET(req: Request) {
 }
 
 export async function POST(req: Request) {
-  const apiKey = req.headers.get("x-api-key");
-  if (!apiKey || apiKey !== process.env.BETTER_AUTH_SECRET) {
+  if (!hasAutomationKey(req)) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
@@ -79,8 +78,7 @@ export async function POST(req: Request) {
 }
 
 export async function PATCH(req: Request) {
-  const apiKey = req.headers.get("x-api-key");
-  if (!apiKey || apiKey !== process.env.BETTER_AUTH_SECRET) {
+  if (!hasAutomationKey(req)) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
@@ -104,8 +102,7 @@ export async function PATCH(req: Request) {
 }
 
 export async function DELETE(req: Request) {
-  const apiKey = req.headers.get("x-api-key");
-  if (!apiKey || apiKey !== process.env.BETTER_AUTH_SECRET) {
+  if (!hasAutomationKey(req)) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 

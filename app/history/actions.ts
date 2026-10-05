@@ -12,6 +12,8 @@ import {
   type Carousel,
 } from "@/lib/history/repo";
 
+const CAROUSEL_STATUSES: readonly CarouselStatus[] = ["draft", "exported", "scheduled", "posted", "failed"];
+
 /** Persist a freshly-exported carousel. Returns the new carousel id. */
 export async function saveExportedCarouselAction(input: {
   source: CarouselSource;
@@ -52,8 +54,13 @@ export async function markCarouselStatusAction(
     thumbnail?: string | null;
   }
 ): Promise<void> {
-  await requireSession();
-  await updateCarousel(id, patch);
+  const session = await requireSession();
+  // Server Action arguments arrive from the network, so the status is checked rather
+  // than trusted the way its TypeScript type suggests.
+  if (patch.status !== undefined && !CAROUSEL_STATUSES.includes(patch.status)) {
+    throw new Error(`Unknown carousel status: ${String(patch.status)}`);
+  }
+  await updateCarousel(id, session.user.id, patch);
 }
 
 /**

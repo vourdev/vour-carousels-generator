@@ -44,6 +44,8 @@ next-env.d.ts
 # local sqlite/libsql db files
 *.db
 *.db-journal
+*.db-shm
+*.db-wal
 
 graphify-out/
 # staged by CI before rsync, never committed

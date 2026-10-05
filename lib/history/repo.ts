@@ -149,8 +149,10 @@ const PATCH_COLUMNS: Record<string, string> = {
   imageUrls: "image_urls",
 };
 
+/** Scoped to the owner like every other write here: a foreign id updates nothing. */
 export async function updateCarousel(
   id: string,
+  userId: string,
   patch: Partial<
     Pick<Carousel, "status" | "thumbnail" | "bufferIgId" | "bufferTtId" | "dueAt" | "title" | "caption" | "imageUrls">
   >
@@ -168,8 +170,11 @@ export async function updateCarousel(
   if (sets.length === 0) return;
   sets.push("updated_at = ?");
   args.push(Date.now());
-  args.push(id);
-  await db().execute({ sql: `UPDATE carousels SET ${sets.join(", ")} WHERE id = ?`, args });
+  args.push(id, userId);
+  await db().execute({
+    sql: `UPDATE carousels SET ${sets.join(", ")} WHERE id = ? AND user_id = ?`,
+    args,
+  });
 }
 
 export async function listCarousels(userId: string, limit = 50): Promise<Carousel[]> {

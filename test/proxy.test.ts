@@ -17,15 +17,16 @@ describe("proxy", () => {
     expect(res.status).toBe(200);
   });
 
-  it("redirects authenticated requests to /login back to /", () => {
+  // A cookie is not proof of a live session. Bouncing /login to / here looped with
+  // requireSession() whenever the cookie outlived its session; /login decides itself.
+  it("lets a request carrying a session cookie reach /login", () => {
     const req = new NextRequest("http://localhost:3000/login", {
       headers: {
         cookie: "better-auth.session_token=mock-token",
       },
     });
     const res = proxy(req);
-    expect(res.status).toBe(307);
-    expect(res.headers.get("location")).toBe("http://localhost:3000/");
+    expect(res.status).toBe(200);
   });
 
   it("allows authenticated requests to /", () => {

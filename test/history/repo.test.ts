@@ -30,7 +30,7 @@ describe("carousel history repo", () => {
     const fetched = await getCarousel(c.id, user);
     expect(fetched?.title).toBe("Idempotency");
 
-    await updateCarousel(c.id, { status: "scheduled", bufferIgId: "ig-123" });
+    await updateCarousel(c.id, user, { status: "scheduled", bufferIgId: "ig-123" });
     const updated = await getCarousel(c.id, user);
     expect(updated?.status).toBe("scheduled");
     expect(updated?.bufferIgId).toBe("ig-123");
@@ -46,6 +46,16 @@ describe("carousel history repo", () => {
     const c = await createCarousel({ userId: owner, source: "upload", title: "Mine" });
     expect(await getCarousel(c.id, other)).toBeNull();
     expect(await listCarousels(other)).toHaveLength(0);
+  });
+
+  it("scopes updates to the owner", async () => {
+    const owner = `u-${crypto.randomUUID()}`;
+    const other = `u-${crypto.randomUUID()}`;
+    const c = await createCarousel({ userId: owner, source: "upload", title: "Mine" });
+    await updateCarousel(c.id, other, { title: "Stolen", status: "failed" });
+    const after = await getCarousel(c.id, owner);
+    expect(after?.title).toBe("Mine");
+    expect(after?.status).toBe("draft");
   });
 
   it("deletes a carousel", async () => {

@@ -7,10 +7,6 @@ export default async function HistoryPage() {
   const items = await listCarousels(session.user.id);
 
   return (
-    <HistoryClient
-      initialItems={items}
-      userId={session.user.id}
-      betterAuthSecret={process.env.BETTER_AUTH_SECRET || ""}
-    />
+    <HistoryClient initialItems={items} />
   );
 }

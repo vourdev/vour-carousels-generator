@@ -1,9 +1,9 @@
 import { NextResponse } from "next/server";
+import { hasAutomationKey } from "@/lib/api-key";
 
 export async function POST(req: Request) {
-  // 1. Authenticate with x-api-key matching BETTER_AUTH_SECRET
-  const apiKey = req.headers.get("x-api-key");
-  if (!apiKey || apiKey !== process.env.BETTER_AUTH_SECRET) {
+  // 1. Authenticate with the automation key (see lib/api-key.ts)
+  if (!hasAutomationKey(req)) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
@@ -22,14 +22,13 @@ export async function POST(req: Request) {
 
   // Forward to Hono backend automation endpoint (port 3001)
   const backendUrl = process.env.BACKEND_AUTOMATION_URL || "http://localhost:3001";
-  const automationSecret = process.env.AUTOMATION_SECRET || process.env.BETTER_AUTH_SECRET;
 
   try {
     const res = await fetch(`${backendUrl}/automation/generate`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        "X-API-Key": automationSecret || "",
+        "X-API-Key": process.env.AUTOMATION_SECRET ?? "",
       },
       body: JSON.stringify(body),
     });

@@ -1,14 +1,14 @@
 import { NextResponse } from "next/server";
+import { hasAutomationKey } from "@/lib/api-key";
 import { auth } from "@/lib/auth";
 import { headers } from "next/headers";
 import { listCarousels } from "@/lib/history/repo";
 
 export async function GET(req: Request) {
-  const apiKey = req.headers.get("x-api-key");
   let userId: string | null = null;
 
-  // Allow n8n / automation bypass via API Key matching BETTER_AUTH_SECRET
-  if (apiKey && apiKey === process.env.BETTER_AUTH_SECRET) {
+  // n8n / automation: the automation key plus an explicit userId (see lib/api-key.ts)
+  if (hasAutomationKey(req)) {
     const { searchParams } = new URL(req.url);
     userId = searchParams.get("userId");
     
