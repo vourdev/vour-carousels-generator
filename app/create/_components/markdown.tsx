@@ -33,18 +33,15 @@ export function renderMarkdown(md: string) {
       }
     } else if (trimmed.startsWith("## ")) {
       const text = trimmed.substring(3);
-      const isEyebrow = text.toLowerCase() === "eyebrow";
       const isHeadline = text.toLowerCase() === "headline";
-      const isHighlight = text.toLowerCase().includes("highlight");
-      const isVisual = text.toLowerCase().includes("visual");
 
       elements.push(
-        <h2 key={idx} className={`text-xs font-semibold uppercase tracking-wider mt-3 mb-1 font-heading ${isEyebrow ? "text-indigo-400 font-mono" :
-            isHeadline ? "text-amber-400 font-bold" :
-              isHighlight ? "text-emerald-400 font-semibold" :
-                isVisual ? "text-purple-400 font-semibold" :
-                  "text-muted-foreground border-b border-hairline pb-0.5"
-          }`}>
+        <h2
+          key={idx}
+          className={`mt-3 mb-1 border-b border-border pb-0.5 text-xs font-semibold ${
+            isHeadline ? "text-foreground" : "text-muted-foreground"
+          }`}
+        >
           {text}
         </h2>
       );

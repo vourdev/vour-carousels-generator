@@ -23,7 +23,7 @@ import {
   markTopicPublishedAction,
 } from "@/app/topics/actions";
 import type { Topic } from "@/lib/topics/bank";
-import { AlertCircle, ArrowRight, Images, LayoutGrid, PanelRightOpen, RectangleVertical, RotateCcw, Sparkles } from "lucide-react";
+import { AlertCircle, ArrowRight, Images, LayoutGrid, PanelRightOpen, RectangleVertical, RotateCcw } from "lucide-react";
 import { toast } from "sonner";
 
 import { compressImageBlob, revealedLength, summarizeError } from "./_components/utils";
@@ -1413,9 +1413,6 @@ export function Wizard({
             footer={nextAction}
             emptyState={
               <div className="flex flex-col items-center text-center gap-5 py-10">
-                <span className="size-11 rounded-xl bg-primary/10 border border-primary/20 flex items-center justify-center text-primary">
-                  <Sparkles className="size-5" />
-                </span>
                 <div className="space-y-1.5">
                   <h2 className="text-lg font-semibold tracking-tight">Mau bikin carousel tentang apa?</h2>
                   <p className="text-sm text-muted-foreground max-w-sm">
@@ -1429,7 +1426,7 @@ export function Wizard({
                       type="button"
                       onClick={() => handleUnifiedSubmit(s)}
                       disabled={!model || busy}
-                      className="text-left text-sm rounded-lg border border-hairline bg-card px-3.5 py-2.5 hover:bg-muted/50 hover:border-primary/30 active:scale-[0.99] transition-all disabled:opacity-50"
+                      className="text-left text-sm rounded-md border border-border bg-card px-3.5 py-2.5 hover:bg-accent transition-colors disabled:opacity-50"
                     >
                       {s}
                     </button>
@@ -1622,9 +1619,9 @@ export function Wizard({
           role="dialog"
           aria-modal="true"
           aria-labelledby="pending-shot-title"
-          className="fixed inset-0 bg-black/60 backdrop-blur-xs z-50 flex items-center justify-center p-4 animate-in fade-in duration-150"
+          className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4 animate-in fade-in duration-150"
         >
-          <Card className="w-full max-w-md bg-card border-hairline shadow-xl">
+          <Card className="w-full max-w-md bg-card border-border shadow-[0_8px_30px_rgb(0_0_0/0.12)]">
             <CardContent className="p-5 flex flex-col gap-4">
               <div className="flex items-start gap-3">
                 <span className="size-9 rounded-lg bg-amber-500/10 border border-amber-500/20 flex items-center justify-center text-amber-500 shrink-0">

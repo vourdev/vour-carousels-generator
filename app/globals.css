@@ -75,14 +75,6 @@
   }
 }
 
-/* Mesh-gradient text helper class */
-@utility gradient-text {
-  background: linear-gradient(90deg, var(--color-grad-develop-start), var(--color-grad-develop-end));
-  -webkit-background-clip: text;
-  background-clip: text;
-  color: transparent;
-}
-
 /* shadcn UI variables mapping to design system properties */
 @theme inline {
   --font-heading: var(--font-sans);

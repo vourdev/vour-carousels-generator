@@ -39,12 +39,9 @@ export function LoginForm() {
   return (
     <Card className="w-full max-w-[380px]">
       <CardHeader>
-        <CardTitle className="text-[32px] tracking-tight font-semibold">
-          <span className="gradient-text">Vour</span> Carousels
-        </CardTitle>
-        <CardDescription className="font-mono text-xs uppercase tracking-wider">
-          Sign in to continue
-        </CardDescription>
+        <img src="/vourdev-logo.jpeg" alt="" className="mb-2 size-8 rounded-md" />
+        <CardTitle className="text-lg font-semibold tracking-tight">Masuk ke Vour Carousels</CardTitle>
+        <CardDescription>Studio carousel @vourdev.</CardDescription>
       </CardHeader>
       <CardContent>
         <form onSubmit={onSubmit} className="grid gap-4">

@@ -119,8 +119,8 @@ export function StepLoader({
   }
 
   return (
-    <div className="absolute inset-0 z-20 flex items-center justify-center bg-card/85 backdrop-blur-sm animate-in fade-in duration-200">
-      <div className="w-full max-w-xs flex flex-col gap-3.5 p-5 rounded-2xl border border-hairline bg-card shadow-lg">
+    <div className="absolute inset-0 z-20 flex items-center justify-center bg-background/80 animate-in fade-in duration-200">
+      <div className="w-full max-w-xs flex flex-col gap-3.5 p-5 rounded-lg border border-border bg-card shadow-[0_8px_30px_rgb(0_0_0/0.12)]">
         <div className="flex items-center gap-2.5">
           <Loader2 className="size-4 text-primary animate-spin shrink-0" />
           <span className="text-xs font-semibold truncate">{title}</span>

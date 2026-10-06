@@ -77,7 +77,7 @@ export function Composer({
   );
 
   return (
-    <div className="shrink-0 border-t border-hairline bg-background/80 backdrop-blur-sm">
+    <div className="shrink-0 border-t border-hairline bg-background">
       <div className="mx-auto w-full max-w-[720px] px-4 md:px-6 py-3 flex flex-col gap-2">
         {hint}
 
@@ -106,10 +106,10 @@ export function Composer({
               </Button>
 
               {attachOpen && (
-                <div className="absolute left-0 bottom-full mb-2 z-50 w-80 bg-card border border-hairline rounded-xl shadow-xl p-2 animate-in fade-in slide-in-from-bottom-1 duration-150">
+                <div className="absolute left-0 bottom-full mb-2 z-50 w-80 bg-card border border-hairline rounded-lg shadow-[0_8px_30px_rgb(0_0_0/0.12)] p-2 animate-in fade-in slide-in-from-bottom-1 duration-150">
                   {topics.length > 0 && (
                     <>
-                      <div className="px-1.5 pt-1 pb-2 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
+                      <div className="px-1.5 pt-1 pb-2 text-xs font-medium text-muted-foreground">
                         Dari Topic Bank
                       </div>
                       <div className="relative mb-1.5">
@@ -136,7 +136,7 @@ export function Composer({
                             className="w-full flex items-center gap-2 p-2 rounded-lg text-xs text-left hover:bg-muted/50 transition-colors"
                           >
                             <span className="font-medium truncate flex-1">{t.title}</span>
-                            <span className="text-[9px] font-mono uppercase text-muted-foreground shrink-0">{t.status}</span>
+                            <span className="text-xs text-muted-foreground shrink-0">{t.status}</span>
                           </button>
                         ))}
                       </div>

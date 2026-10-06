@@ -81,7 +81,7 @@ export function ModelPicker({
       {open && (
         <div
           role="listbox"
-          className="absolute bottom-full right-0 mb-2 z-50 w-80 bg-card border border-hairline rounded-2xl shadow-2xl backdrop-blur-xl p-1.5 animate-in fade-in slide-in-from-bottom-2 duration-150 overflow-hidden"
+          className="absolute bottom-full right-0 mb-2 z-50 w-80 bg-card border border-hairline rounded-lg shadow-[0_8px_30px_rgb(0_0_0/0.12)] p-1.5 animate-in fade-in slide-in-from-bottom-2 duration-150 overflow-hidden"
         >
           <div className="space-y-1">
             {choices.map((id) => (

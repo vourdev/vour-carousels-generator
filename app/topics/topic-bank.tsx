@@ -55,6 +55,7 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import type { Topic, TopicCategory, TopicStatus } from "@/lib/topics/bank";
+import { TopicStatusBadge } from "@/components/status-badge";
 import {
   createTopicAction,
   deleteTopicAction,
@@ -83,35 +84,12 @@ const CATEGORIES: { value: TopicCategory; label: string }[] = [
   { value: "deep-dive", label: "Deep Dive" },
 ];
 
-const STATUS_CONFIG: Record<
-  TopicStatus,
-  { label: string; color: string; icon: React.ComponentType<{ className?: string }> }
-> = {
-  idea: {
-    label: "Idea",
-    color: "bg-muted text-muted-foreground border-border",
-    icon: Inbox,
-  },
-  queued: {
-    label: "Queued",
-    color: "bg-blue-500/10 text-blue-600 dark:text-blue-400 border-blue-500/20",
-    icon: Clock,
-  },
-  generated: {
-    label: "Generated",
-    color: "bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/20",
-    icon: Sparkles,
-  },
-  published: {
-    label: "Published",
-    color: "bg-purple-500/10 text-purple-600 dark:text-purple-400 border-purple-500/20",
-    icon: CheckCircle2,
-  },
-  archived: {
-    label: "Archived",
-    color: "bg-zinc-500/10 text-zinc-500 border-zinc-500/20",
-    icon: Archive,
-  },
+const STATUS_CONFIG: Record<TopicStatus, { label: string }> = {
+  idea: { label: "Idea" },
+  queued: { label: "Queued" },
+  generated: { label: "Generated" },
+  published: { label: "Published" },
+  archived: { label: "Archived" },
 };
 
 type SortOption = "priority" | "newest" | "oldest" | "title" | "scheduled";
@@ -569,7 +547,7 @@ export function TopicBank() {
             onClick={() => handleGenerate("monthly")}
             disabled={isPending}
             className="gap-2 shadow-xs h-8.5 cursor-pointer"
-            variant="default"
+            variant="outline"
             size="sm"
           >
             <CalendarRange className="size-4" />
@@ -646,13 +624,10 @@ export function TopicBank() {
 
       {/* 2. Collapsible Generation Quality Settings */}
       {showSettings && (
-        <Card className="border-border/70 bg-card/60 backdrop-blur-xs shadow-xs animate-in fade-in slide-in-from-top-2 duration-150">
+        <Card className="border-border shadow-none">
           <CardContent className="p-4 space-y-3">
             <div className="flex items-center justify-between">
-              <h3 className="font-semibold text-xs uppercase tracking-wider text-muted-foreground flex items-center gap-1.5">
-                <SlidersHorizontal className="size-3.5 text-primary" />
-                Generation Quality Parameters
-              </h3>
+              <h3 className="font-medium text-sm">Parameter generate</h3>
               <Button
                 variant="ghost"
                 size="sm"
@@ -712,7 +687,7 @@ export function TopicBank() {
 
       {/* 4. Add Manual Form */}
       {showAddForm && (
-        <Card className="border-primary/40 shadow-md animate-in fade-in slide-in-from-top-2 duration-150">
+        <Card className="border-border shadow-none">
           <CardContent className="p-4 space-y-3">
             <div className="flex items-center justify-between">
               <h3 className="font-semibold text-sm">Add New Topic Manual</h3>
@@ -831,10 +806,8 @@ export function TopicBank() {
               >
                 <span>{tab.label}</span>
                 <span
-                  className={`px-1.5 py-0.2 rounded-full text-[10px] font-mono ${
-                    isActive
-                      ? "bg-background/20 text-background font-bold"
-                      : "bg-muted text-muted-foreground"
+                  className={`text-xs tabular-nums ${
+                    isActive ? "text-background/70" : "text-muted-foreground/70"
                   }`}
                 >
                   {tab.count}
@@ -943,7 +916,7 @@ export function TopicBank() {
 
       {/* 7. Floating Bulk Action Toolbar */}
       {selectedIds.size > 0 && (
-        <div className="sticky top-4 z-40 bg-zinc-900/95 dark:bg-zinc-950/95 text-white border border-zinc-700/60 rounded-xl p-2.5 px-4 shadow-2xl backdrop-blur-md flex items-center justify-between gap-3 flex-wrap animate-in fade-in slide-in-from-top-2 duration-150">
+        <div className="sticky top-2 z-40 bg-zinc-900 dark:bg-zinc-800 text-white border border-zinc-700 rounded-lg p-2 px-3 shadow-[0_8px_24px_rgb(0_0_0/0.18)] flex items-center justify-between gap-3 flex-wrap">
           <div className="flex items-center gap-3">
             <button
               onClick={handleSelectAllVisible}
@@ -951,24 +924,22 @@ export function TopicBank() {
               title={isAllVisibleSelected ? "Deselect All on Page" : "Select All on Page"}
             >
               {isAllVisibleSelected ? (
-                <CheckSquare className="size-4.5 text-emerald-400" />
+                <CheckSquare className="size-4.5 text-white" />
               ) : isSomeVisibleSelected ? (
-                <MinusSquare className="size-4.5 text-emerald-400" />
+                <MinusSquare className="size-4.5 text-white" />
               ) : (
                 <Square className="size-4.5 text-zinc-400" />
               )}
             </button>
             <div className="flex items-center gap-2">
               <span className="font-semibold text-xs text-zinc-100 flex items-center gap-1.5">
-                <span className="px-1.5 py-0.5 rounded bg-emerald-500/20 text-emerald-300 font-mono text-[11px] font-bold">
-                  {selectedIds.size}
-                </span>
-                Topik Terpilih
+                <span className="tabular-nums">{selectedIds.size}</span>
+                topik terpilih
               </span>
               {selectedIds.size < filteredTopics.length && (
                 <button
                   onClick={handleSelectAllFiltered}
-                  className="text-xs text-emerald-400 underline hover:text-emerald-300 ml-1 transition-colors cursor-pointer"
+                  className="text-xs text-zinc-300 underline underline-offset-4 hover:text-white ml-1 transition-colors cursor-pointer"
                 >
                   Pilih semua {filteredTopics.length} hasil
                 </button>
@@ -984,7 +955,7 @@ export function TopicBank() {
               onClick={() => handleBulkStatus("queued")}
               disabled={isPending}
             >
-              <Clock className="size-3.5 text-blue-400" />
+              <Clock className="size-3.5" />
               Queue
             </Button>
             <Button
@@ -1026,16 +997,16 @@ export function TopicBank() {
         viewMode === "table" ? (
           <div className="border border-hairline rounded-xl overflow-hidden bg-card shadow-2xs">
             <table className="w-full text-left text-xs">
-              <thead className="bg-muted/50 border-b border-hairline text-muted-foreground font-medium">
+              <thead className="border-b border-border text-xs text-muted-foreground">
                 <tr>
                   <th className="p-3 w-10 text-center">
                     <div className="size-4 rounded bg-muted animate-pulse mx-auto" />
                   </th>
-                  <th className="p-3 font-semibold text-foreground">Topic Title & Details</th>
-                  <th className="p-3 w-44 font-semibold text-foreground">Category & Product</th>
-                  <th className="p-3 w-28 font-semibold text-foreground">Status</th>
-                  <th className="p-3 w-28 font-semibold text-foreground">Scheduled</th>
-                  <th className="p-3 w-48 text-right font-semibold text-foreground">Actions</th>
+                  <th className="p-3 font-normal">Topic Title & Details</th>
+                  <th className="p-3 w-44 font-normal">Category & Product</th>
+                  <th className="p-3 w-28 font-normal">Status</th>
+                  <th className="p-3 w-28 font-normal">Scheduled</th>
+                  <th className="p-3 w-48 text-right font-normal">Actions</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-hairline">
@@ -1135,7 +1106,7 @@ export function TopicBank() {
         <div className="border border-hairline rounded-xl overflow-hidden bg-card shadow-2xs">
           <div className="overflow-x-auto">
             <table className="w-full text-left text-xs">
-              <thead className="bg-muted/50 border-b border-hairline text-muted-foreground font-medium select-none">
+              <thead className="border-b border-border text-xs text-muted-foreground select-none">
                 <tr>
                   <th className="p-3 w-10 text-center">
                     <button
@@ -1151,11 +1122,11 @@ export function TopicBank() {
                       )}
                     </button>
                   </th>
-                  <th className="p-3 font-semibold text-foreground">Topic Title & Details</th>
-                  <th className="p-3 w-44 font-semibold text-foreground">Category & Product</th>
-                  <th className="p-3 w-28 font-semibold text-foreground">Status</th>
-                  <th className="p-3 w-28 font-semibold text-foreground">Scheduled</th>
-                  <th className="p-3 w-48 text-right font-semibold text-foreground">Actions</th>
+                  <th className="p-3 font-normal">Topic Title & Details</th>
+                  <th className="p-3 w-44 font-normal">Category & Product</th>
+                  <th className="p-3 w-28 font-normal">Status</th>
+                  <th className="p-3 w-28 font-normal">Scheduled</th>
+                  <th className="p-3 w-48 text-right font-normal">Actions</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-hairline">
@@ -1169,7 +1140,6 @@ export function TopicBank() {
                     : relatedProdId
                       ? "Product"
                       : null;
-                  const statusInfo = STATUS_CONFIG[topic.status];
 
                   return (
                     <tr
@@ -1226,8 +1196,8 @@ export function TopicBank() {
                         </div>
                         {relatedProdId && (
                           <div>
-                            <span className="inline-flex items-center gap-1 text-[11px] px-2 py-0.5 rounded bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20 font-medium">
-                              <LinkIcon className="size-2.5" />
+                            <span className="inline-flex items-center gap-1 text-[11px] text-muted-foreground">
+                              <LinkIcon className="size-3" />
                               <span className="truncate max-w-[130px]">{productName}</span>
                             </span>
                           </div>
@@ -1235,19 +1205,12 @@ export function TopicBank() {
                       </td>
 
                       <td className="p-3 align-middle">
-                        <span
-                          className={`inline-flex items-center gap-1 text-[11px] px-2 py-0.5 rounded border font-medium ${statusInfo.color}`}
-                        >
-                          <statusInfo.icon className="size-3" />
-                          {statusInfo.label}
-                        </span>
+                        <TopicStatusBadge status={topic.status} />
                       </td>
 
                       <td className="p-3 align-middle text-xs text-muted-foreground">
                         {scheduled ? (
-                          <span className="px-1.5 py-0.5 rounded bg-amber-500/10 text-amber-600 dark:text-amber-400 font-medium">
-                            {scheduled}
-                          </span>
+                          <span className="whitespace-nowrap tabular-nums text-foreground">{scheduled}</span>
                         ) : (
                           <span className="text-muted-foreground/50">—</span>
                         )}
@@ -1335,7 +1298,6 @@ export function TopicBank() {
               : relatedProdId
                 ? "Product"
                 : null;
-            const statusInfo = STATUS_CONFIG[topic.status];
 
             return (
               <Card
@@ -1366,18 +1328,14 @@ export function TopicBank() {
                             {CATEGORIES.find((c) => c.value === topic.category)?.label ??
                               topic.category}
                           </span>
-                          <span
-                            className={`text-xs px-2 py-0.5 rounded border font-medium ${statusInfo.color}`}
-                          >
-                            {statusInfo.label}
-                          </span>
+                          <TopicStatusBadge status={topic.status} />
                           {scheduled && (
-                            <span className="text-xs px-2 py-0.5 rounded bg-amber-500/10 text-amber-600 dark:text-amber-400 font-medium">
+                            <span className="text-xs tabular-nums text-muted-foreground">
                               {scheduled}
                             </span>
                           )}
                           {relatedProdId && (
-                            <span className="text-xs px-2 py-0.5 rounded bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20 font-medium inline-flex items-center gap-1">
+                            <span className="text-xs text-muted-foreground inline-flex items-center gap-1">
                               <LinkIcon className="size-3" />
                               {productName}
                             </span>

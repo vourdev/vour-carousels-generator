@@ -20,7 +20,7 @@ function DialogBackdrop({
     <DialogPrimitive.Backdrop
       data-slot="dialog-backdrop"
       className={cn(
-        "fixed inset-0 z-50 bg-black/80 backdrop-blur-md transition-all duration-200 data-[ending-style]:opacity-0 data-[starting-style]:opacity-0",
+        "fixed inset-0 z-50 bg-black/50 transition-opacity duration-150 data-[ending-style]:opacity-0 data-[starting-style]:opacity-0",
         className
       )}
       {...props}
@@ -46,7 +46,7 @@ function DialogContent({
         <DialogPrimitive.Popup
           data-slot="dialog-content"
           className={cn(
-            "pointer-events-auto relative w-full max-w-[calc(100%-2rem)] gap-4.5 rounded-2xl border border-hairline bg-card/95 p-6 shadow-2xl backdrop-blur-xl duration-200 overflow-hidden before:absolute before:inset-x-0 before:top-0 before:h-px before:bg-linear-to-r before:from-transparent before:via-white/20 dark:before:via-white/10 before:to-transparent data-[ending-style]:scale-95 data-[ending-style]:opacity-0 data-[starting-style]:scale-95 data-[starting-style]:opacity-0 sm:max-w-lg",
+            "pointer-events-auto relative grid w-full max-w-[calc(100%-2rem)] gap-4 rounded-lg border border-border bg-card p-5 shadow-[0_8px_30px_rgb(0_0_0/0.12)] transition-[opacity,scale] duration-150 ease-out data-[ending-style]:scale-[0.98] data-[ending-style]:opacity-0 data-[starting-style]:scale-[0.98] data-[starting-style]:opacity-0 sm:max-w-lg",
             className
           )}
           {...props}
@@ -55,7 +55,7 @@ function DialogContent({
           {showClose && (
             <DialogPrimitive.Close
               data-slot="dialog-close"
-              className="absolute top-4 right-4 size-7 rounded-lg border border-hairline/60 bg-muted/40 text-muted-foreground flex items-center justify-center transition-all hover:bg-muted hover:text-foreground hover:border-hairline focus:outline-hidden disabled:pointer-events-none cursor-pointer"
+              className="absolute top-3.5 right-3.5 flex size-7 items-center justify-center rounded-md text-muted-foreground transition-colors outline-none hover:bg-accent hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring disabled:pointer-events-none"
             >
               <XIcon className="size-3.5" />
               <span className="sr-only">Close</span>
@@ -88,7 +88,7 @@ function DialogFooter({
     <div
       data-slot="dialog-footer"
       className={cn(
-        "flex flex-col-reverse gap-2 sm:flex-row sm:justify-end sm:gap-2 pt-2 border-t border-hairline/60",
+        "flex flex-col-reverse gap-2 sm:flex-row sm:justify-end",
         className
       )}
       {...props}
@@ -116,7 +116,7 @@ function DialogDescription({
   return (
     <DialogPrimitive.Description
       data-slot="dialog-description"
-      className={cn("text-xs text-muted-foreground leading-relaxed", className)}
+      className={cn("text-sm text-muted-foreground leading-relaxed", className)}
       {...props}
     />
   )
