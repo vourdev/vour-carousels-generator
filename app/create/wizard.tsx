@@ -263,7 +263,7 @@ export function Wizard({
           addMessage("ai", "Brief outline berhasil diperbarui dengan konteks penuh. Silakan periksa perubahannya.");
         } catch (e) {
           const msg = e instanceof Error ? e.message : "failed";
-          toast.error(msg);
+          toast.error(summarizeError(msg));
           addMessage("ai", `Revisi brief gagal: ${summarizeError(msg)}`);
         } finally {
           setLoadingJob(null);
@@ -287,7 +287,7 @@ export function Wizard({
           addMessage("ai", "Rancangan slide berhasil disesuaikan. Silakan cek preview terbaru pada panel di sebelah kanan.");
         } catch (e) {
           const msg = e instanceof Error ? e.message : "failed";
-          toast.error(msg);
+          toast.error(summarizeError(msg));
           addMessage("ai", `Revisi slide gagal: ${summarizeError(msg)}`);
         } finally {
           setLoadingJob(null);
@@ -770,7 +770,7 @@ export function Wizard({
     } catch (e) {
       if (genRunRef.current !== runId) return;
       const msg = e instanceof Error ? e.message : "failed";
-      toast.error(`Gagal ekspor: ${msg}`);
+      toast.error(`Gagal ekspor: ${summarizeError(msg)}`);
       addMessage("ai", `Gagal memproses ekspor gambar: ${msg}`);
     } finally {
       if (genRunRef.current === runId) {
@@ -974,7 +974,7 @@ export function Wizard({
         errorMsg: msg,
       });
       addMessage("ai", `Gagal mempublikasikan: ${msg}`);
-      toast.error(`Publish error: ${msg}`);
+      toast.error(`Publish error: ${summarizeError(msg)}`);
       if (carouselId) markCarouselStatusAction(carouselId, { status: "failed" }).catch(() => { });
     }
   };
@@ -1032,7 +1032,7 @@ export function Wizard({
         errorMsg: msg,
       });
       addMessage("ai", `Gagal menyimpan ke Stock Konten: ${msg}`);
-      toast.error(`Gagal menyimpan: ${msg}`);
+      toast.error(`Gagal menyimpan: ${summarizeError(msg)}`);
     }
   };
 
@@ -1176,7 +1176,7 @@ export function Wizard({
         if (genRunRef.current !== runId) return;
         if (e.name === "AbortError") return;
         const msg = e instanceof Error ? e.message : "failed";
-        toast.error(msg);
+        toast.error(summarizeError(msg));
         addMessage("ai", `${errorLabel}: ${summarizeError(msg)}`);
       })
       .finally(() => {
@@ -1261,7 +1261,7 @@ export function Wizard({
         addMessage("ai", "Slide deck HTML berhasil dirender! Anda sekarang dapat meninjau visualnya pada tab 'Live Design Preview'. Jika butuh penyesuaian, ketik revisi Anda di kolom chat.");
       } catch (e) {
         const msg = e instanceof Error ? e.message : "failed";
-        toast.error(msg);
+        toast.error(summarizeError(msg));
         addMessage("ai", `Gagal merender slide: ${summarizeError(msg)}`);
       } finally {
         setLoadingJob(null);
@@ -1282,7 +1282,7 @@ export function Wizard({
         addMessage("ai", "Brief telah diperbarui tanpa pola agentic/AI generik. Silakan periksa hasilnya.");
       } catch (e) {
         const msg = e instanceof Error ? e.message : "failed";
-        toast.error(msg);
+        toast.error(summarizeError(msg));
         addMessage("ai", `Gagal memoles brief: ${summarizeError(msg)}`);
       }
     });

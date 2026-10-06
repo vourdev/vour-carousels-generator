@@ -624,15 +624,7 @@ export default function HistoryClient({ initialItems }: HistoryClientProps) {
 
             <div className="grid gap-5 md:grid-cols-[180px_1fr]">
               <div className="flex flex-col gap-3">
-                <div className="aspect-4/5 overflow-hidden rounded-md border border-border bg-muted">
-                  {selectedCarousel.thumbnail ? (
-                    <img src={selectedCarousel.thumbnail} alt="" className="size-full object-cover" />
-                  ) : (
-                    <div className="flex size-full items-center justify-center p-4 text-center text-xs text-muted-foreground">
-                      Tidak ada thumbnail
-                    </div>
-                  )}
-                </div>
+                <Thumb src={selectedCarousel.thumbnail} className="w-full rounded-md" />
                 {selectedCarousel.imageUrls && selectedCarousel.imageUrls.length > 0 && (
                   <div className="flex flex-wrap gap-1">
                     {selectedCarousel.imageUrls.map((url, i) => (

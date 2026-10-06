@@ -32,19 +32,46 @@ const KNOWN_CAUSES: ReadonlyArray<[RegExp, string]> = [
     /tidak bisa dihubungi|econnrefused|enotfound|fetch failed/i,
     "Backend tidak bisa dihubungi dari frontend — layanan mati atau alamat internalnya salah.",
   ],
+  [
+    /\b52[0-6]\b|origin is unreachable|web server is down/i,
+    "Layanan model tidak terjangkau — server asal di balik Cloudflare sedang mati.",
+  ],
   [/tidak menjawab dalam|timeout|etimedout|aborted/i, "Backend tidak menjawab sampai batas waktu."],
   [/502|503|504|bad gateway|gateway timeout/i, "Gateway menolak atau memutus permintaan."],
 ];
+
+/**
+ * An upstream that fails with an HTML page (Cloudflare, nginx) arrives here as markup.
+ * Its <title> is the one line written for humans; without one, the visible text is.
+ */
+function fromHtml(msg: string): string {
+  if (!/<!doctype html|<html[\s>]|<\/(?:head|body|div)>/i.test(msg)) return msg;
+  const title = msg.match(/<title[^>]*>([^<]*)<\/title>/i)?.[1]?.trim();
+  if (title) return title;
+  const text = msg
+    .replace(/<none>/gi, " ") // the AI SDK's placeholder for "no message"
+    .replace(/\(?Response:/gi, " ")
+    .replace(/<!--[\s\S]*?(?:-->|$)/g, " ") // a body cut off mid-comment never closes it
+    .replace(/<(script|style)[^>]*>[\s\S]*?(?:<\/\1>|$)/gi, " ")
+    .replace(/<[^>]*>?/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+  // Truncated before anything readable: say what came back rather than show nothing.
+  return /[a-z0-9]{3,}/i.test(text)
+    ? text
+    : "Layanan hulu membalas dengan halaman HTML, bukan JSON — biasanya gateway atau proxy di depannya sedang error.";
+}
 
 /** The most informative part of a long message, whitespace-collapsed and bounded. */
 function condense(msg: string): string {
   let out = msg.trim();
 
   // AI SDK wraps its real cause behind a retry summary; the tail is the useful half.
+  // Cut before reading HTML, or stripping the page would leave "Last error:" with nothing after it.
   const last = out.lastIndexOf("Last error: ");
   if (last !== -1) out = out.slice(last + "Last error: ".length);
 
-  out = out.replace(/^AI_APICallError:\s*/i, "").replace(/\s+/g, " ").trim();
+  out = fromHtml(out).replace(/^AI_APICallError:\s*/i, "").replace(/\s+/g, " ").trim();
   return out.length > 300 ? `${out.slice(0, 300)}…` : out;
 }
 

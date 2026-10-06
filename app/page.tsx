@@ -116,11 +116,12 @@ export default async function OverviewPage() {
       />
 
       <div className="flex flex-col gap-4 p-4 md:gap-6 md:p-6">
-        <dl className="grid grid-cols-2 overflow-hidden rounded-lg border border-border bg-card lg:grid-cols-4">
+        <nav aria-label="Ringkasan" className="grid grid-cols-2 overflow-hidden rounded-lg border border-border bg-card lg:grid-cols-4">
           {summary.map((s, i) => (
             <Link
               key={s.label}
               href={s.href}
+              aria-label={`${s.label}: ${s.value}. ${s.note}`}
               className={cn(
                 "flex flex-col gap-1 px-4 py-3 outline-none transition-colors hover:bg-accent/50 focus-visible:bg-accent",
                 i % 2 === 1 && "border-l border-border",
@@ -128,12 +129,12 @@ export default async function OverviewPage() {
                 i === 2 && "lg:border-l"
               )}
             >
-              <dt className="text-xs text-muted-foreground">{s.label}</dt>
-              <dd className="text-xl font-semibold tabular-nums">{s.value}</dd>
-              <dd className="truncate text-xs text-muted-foreground">{s.note}</dd>
+              <span className="text-xs text-muted-foreground">{s.label}</span>
+              <span className="text-xl font-semibold tabular-nums">{s.value}</span>
+              <span className="truncate text-xs text-muted-foreground">{s.note}</span>
             </Link>
           ))}
-        </dl>
+        </nav>
 
         <div className="grid items-start gap-4 md:gap-6 lg:grid-cols-2">
           <Section title="Jadwal terdekat" href="/history" linkLabel="Calendar">

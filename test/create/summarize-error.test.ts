@@ -59,6 +59,50 @@ describe("summarizeError", () => {
     expect(summarizeError("Judul wajib diisi")).toBe("Judul wajib diisi");
   });
 
+  it("reads an HTML error page by its title instead of pasting the markup", () => {
+    // What /api/brief handed back when omniroute.vour.dev's origin was down: the provider
+    // answered with Cloudflare's error page, and the chat showed `<!DOCTYPE html> <!--[if lt IE 7]>`.
+    const raw =
+      "<none> (Response: <!DOCTYPE html> <!--[if lt IE 7]> <html class=\"no-js ie6 oldie\" lang=\"en-US\"> <![endif]-->" +
+      "<head><title>vour.dev | 523: Origin is unreachable</title><style>body{color:red}</style></head>" +
+      "<body><div id=\"cf-error-details\"><span class=\"code-label\">Error code 523</span></div></body></html>)";
+
+    const out = summarizeError(raw);
+
+    expect(out).toContain("523: Origin is unreachable");
+    expect(out).toContain("tidak terjangkau");
+    expect(out).not.toMatch(/<!DOCTYPE|<html|<!--|<style/i);
+  });
+
+  it("says an HTML page came back when the page was cut off before anything readable", () => {
+    // Exactly what the chat received: the backend truncated the body before <title>.
+    const raw =
+      '<none> (Response: <!DOCTYPE html> <!--[if lt IE 7]> <html class="no-js ie6 oldie" lang="en-US"> <![endif]--> ' +
+      '<!--[if IE 7]> <html class="no-js ie7 oldie" lang="en-US"> <![endif]--> <!--[if g)';
+
+    const out = summarizeError(raw);
+
+    expect(out).toContain("halaman HTML");
+    expect(out).not.toMatch(/<!--|<html|\(Response:/i);
+  });
+
+  it("keeps the HTML explanation when it sits behind the AI SDK retry summary", () => {
+    const raw =
+      "Failed after 3 attempts. Last error: <none> (Response: <!DOCTYPE html> " +
+      '<!--[if lt IE 7]> <html class="no-js ie6 oldie" lang="en-US"> <![endif]--> <!--[if g)';
+
+    const out = summarizeError(raw);
+
+    expect(out).toContain("halaman HTML");
+    expect(out).not.toMatch(/Last error:\s*$/);
+  });
+
+  it("strips markup from an HTML page that has no title", () => {
+    const out = summarizeError("<html><body><h1>502 Bad Gateway</h1><hr><center>nginx</center></body></html>");
+    expect(out).toContain("502 Bad Gateway nginx");
+    expect(out).not.toContain("<");
+  });
+
   it("does not answer with an empty string", () => {
     expect(summarizeError("   ")).toBe("Terjadi kesalahan tanpa keterangan.");
   });

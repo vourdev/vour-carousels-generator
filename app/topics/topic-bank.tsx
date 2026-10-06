@@ -920,6 +920,8 @@ export function TopicBank() {
           <div className="flex items-center gap-3">
             <button
               onClick={handleSelectAllVisible}
+              aria-label="Pilih semua topik di halaman ini"
+              aria-pressed={isAllVisibleSelected}
               className="p-1 rounded-md bg-white/10 hover:bg-white/20 text-white transition-colors flex items-center justify-center cursor-pointer"
               title={isAllVisibleSelected ? "Deselect All on Page" : "Select All on Page"}
             >
@@ -1111,6 +1113,8 @@ export function TopicBank() {
                   <th className="p-3 w-10 text-center">
                     <button
                       onClick={handleSelectAllVisible}
+              aria-label="Pilih semua topik di halaman ini"
+              aria-pressed={isAllVisibleSelected}
                       className="p-1 hover:text-foreground inline-flex items-center cursor-pointer"
                     >
                       {isAllVisibleSelected ? (
@@ -1151,6 +1155,8 @@ export function TopicBank() {
                       <td className="p-3 text-center align-middle">
                         <button
                           onClick={() => handleToggleSelect(topic.id)}
+                          aria-label={`Pilih topik: ${topic.title}`}
+                          aria-pressed={isSelected}
                           className="p-1 hover:text-foreground inline-flex items-center cursor-pointer"
                         >
                           {isSelected ? (
@@ -1311,6 +1317,8 @@ export function TopicBank() {
                     <div className="flex items-start gap-2.5 flex-1">
                       <button
                         onClick={() => handleToggleSelect(topic.id)}
+                          aria-label={`Pilih topik: ${topic.title}`}
+                          aria-pressed={isSelected}
                         className="p-0.5 mt-0.5 hover:text-foreground cursor-pointer"
                       >
                         {isSelected ? (

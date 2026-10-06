@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { CalendarDays, LayoutDashboard, ListTodo, LogOut, Menu, PenSquare, X } from "lucide-react";
@@ -56,6 +56,7 @@ function NavList({ pathname, onNavigate }: { pathname: string; onNavigate?: () =
             href={href}
             onClick={onNavigate}
             aria-current={active ? "page" : undefined}
+            aria-keyshortcuts={key}
             className={cn(
               "group flex h-8 items-center gap-2.5 rounded-md px-2 text-sm outline-none transition-colors focus-visible:ring-2 focus-visible:ring-ring",
               active
@@ -65,7 +66,7 @@ function NavList({ pathname, onNavigate }: { pathname: string; onNavigate?: () =
           >
             <Icon className="size-4 shrink-0" />
             <span className="flex-1">{label}</span>
-            <kbd className="hidden font-sans text-[11px] text-muted-foreground/70 uppercase md:inline">{key}</kbd>
+            <kbd aria-hidden className="hidden font-sans text-[11px] text-muted-foreground/70 uppercase md:inline">{key}</kbd>
           </Link>
         );
       })}
@@ -102,13 +103,20 @@ function Account({ email }: { email: string }) {
 export function AppSidebar({ email }: { email: string }) {
   const pathname = usePathname();
   const [open, setOpen] = useState(false);
+  const menuButton = useRef<HTMLButtonElement>(null);
+  const drawer = useRef<HTMLElement>(null);
   useShortcuts();
 
   useEffect(() => {
     if (!open) return;
+    drawer.current?.querySelector<HTMLElement>("nav a")?.focus();
     const onKey = (e: KeyboardEvent) => e.key === "Escape" && setOpen(false);
     window.addEventListener("keydown", onKey);
-    return () => window.removeEventListener("keydown", onKey);
+    const trigger = menuButton.current;
+    return () => {
+      window.removeEventListener("keydown", onKey);
+      trigger?.focus();
+    };
   }, [open]);
 
   return (
@@ -125,6 +133,7 @@ export function AppSidebar({ email }: { email: string }) {
       {/* Mobile: a bar with the current page, and the same column as a drawer. */}
       <div className="flex h-12 shrink-0 items-center gap-2 border-b border-border bg-sidebar px-2 md:hidden">
         <button
+          ref={menuButton}
           type="button"
           aria-label="Open navigation"
           aria-expanded={open}
@@ -143,7 +152,13 @@ export function AppSidebar({ email }: { email: string }) {
             className="absolute inset-0 bg-black/40"
             onClick={() => setOpen(false)}
           />
-          <aside className="absolute inset-y-0 left-0 flex w-64 flex-col gap-4 border-r border-border bg-sidebar p-3 shadow-[4px_0_24px_rgb(0_0_0/0.12)]">
+          <aside
+            ref={drawer}
+            role="dialog"
+            aria-modal="true"
+            aria-label="Navigation"
+            className="absolute inset-y-0 left-0 flex w-64 flex-col gap-4 border-r border-border bg-sidebar p-3 shadow-[4px_0_24px_rgb(0_0_0/0.12)]"
+          >
             <div className="flex items-center justify-between">
               <Brand />
               <button
