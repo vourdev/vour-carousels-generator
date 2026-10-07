@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import Link from "next/link";
 import { ArrowRight, Plus } from "lucide-react";
 import { requireSession } from "@/lib/session";
@@ -10,6 +11,8 @@ import { CarouselStatusBadge, TopicStatusBadge } from "@/components/status-badge
 import { Thumb } from "@/components/thumb";
 import { buttonVariants } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
+
+export const metadata: Metadata = { title: "Overview" };
 
 const dayFmt = new Intl.DateTimeFormat("id-ID", { weekday: "short", day: "numeric", month: "short" });
 const timeFmt = new Intl.DateTimeFormat("id-ID", { hour: "2-digit", minute: "2-digit" });
@@ -209,23 +212,23 @@ export default async function OverviewPage() {
                   <tr className="border-b border-border text-left text-xs text-muted-foreground">
                     <th className="px-4 py-2 font-normal">Judul</th>
                     <th className="px-4 py-2 font-normal">Status</th>
-                    <th className="hidden px-4 py-2 font-normal sm:table-cell">Slide</th>
-                    <th className="hidden px-4 py-2 font-normal md:table-cell">Jadwal</th>
+                    <th className="hidden px-4 py-2 font-normal lg:table-cell">Slide</th>
+                    <th className="hidden px-4 py-2 font-normal lg:table-cell">Jadwal</th>
                     <th className="px-4 py-2 text-right font-normal">Diubah</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-border">
                   {recent.map((c) => (
                     <tr key={c.id}>
-                      <td className="max-w-0 px-4 py-2 sm:w-1/2">
+                      <td className="w-full max-w-0 px-4 py-2">
                         <div className="flex items-center gap-3">
                           <Thumb src={c.thumbnail} />
                           <span className="truncate">{c.title || "Untitled"}</span>
                         </div>
                       </td>
                       <td className="px-4 py-2"><CarouselStatusBadge status={c.status} /></td>
-                      <td className="hidden px-4 py-2 tabular-nums text-muted-foreground sm:table-cell">{c.slideCount}</td>
-                      <td className="hidden px-4 py-2 text-muted-foreground md:table-cell">
+                      <td className="hidden px-4 py-2 tabular-nums text-muted-foreground lg:table-cell">{c.slideCount}</td>
+                      <td className="hidden px-4 py-2 text-muted-foreground lg:table-cell">
                         {c.dueAt ? dayFmt.format(new Date(c.dueAt)) : "—"}
                       </td>
                       <td className="whitespace-nowrap px-4 py-2 text-right text-muted-foreground">{ago(c.updatedAt, now)}</td>

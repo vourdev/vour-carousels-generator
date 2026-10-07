@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { Paperclip, Search, Send, Square, Plus, Mic, AudioLines } from "lucide-react";
+import { Search, Send, Square, Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -39,7 +39,8 @@ export function Composer({
   canSend: boolean;
   placeholder: string;
   topics: Topic[];
-  onPickTopic: (t: Topic) => void;
+  /** Omitted when there is nothing a topic could start — the button goes with it. */
+  onPickTopic?: (t: Topic) => void;
   hint?: React.ReactNode;
   modelSelector?: React.ReactNode;
   /** Bottom-left slot under the input — where the model selector lives. */
@@ -93,6 +94,7 @@ export function Composer({
           />
 
           <div className="absolute inset-x-2 bottom-2 flex items-center justify-between gap-2">
+            {onPickTopic ? (
             <div className="relative" ref={attachRef}>
               <Button
                 type="button"
@@ -150,25 +152,13 @@ export function Composer({
                 </div>
               )}
             </div>
+            ) : (
+              // Holds the left edge so the model picker and send stay on the right.
+              <span aria-hidden />
+            )}
 
             <div className="flex items-center gap-1">
               {modelSelector}
-              
-              <button
-                type="button"
-                className="size-8 rounded-lg flex items-center justify-center text-muted-foreground hover:text-foreground transition-all hover:bg-muted/40 cursor-pointer"
-                aria-label="Input suara"
-              >
-                <Mic className="size-4" />
-              </button>
-
-              <button
-                type="button"
-                className="size-8 rounded-lg flex items-center justify-center text-muted-foreground hover:text-foreground transition-all hover:bg-muted/40 cursor-pointer"
-                aria-label="Visualizer suara"
-              >
-                <AudioLines className="size-4" />
-              </button>
 
               <Button
                 type="button"

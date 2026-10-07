@@ -9,6 +9,11 @@ export const modelDetails: Record<string, { label: string; description: string }
     label: "Opus 4.6",
     description: "Kualitas penulisan terbaik dengan penalaran dan analisis mendalam"
   },
+  // Offered only when the backend sets OMNIROUTE_COMBO / OMNIROUTE_MODEL.
+  omniroute: {
+    label: "OmniRoute custom",
+    description: "Model atau combo yang diset di backend (OMNIROUTE_COMBO)"
+  },
   // "vour-lite" (Sonnet 4.5) is gone: the OmniRoute combo behind it, `vour-learning`, was
   // deleted on 22 Sep 2026 and every generation that picked it answered
   // `400 Unable to determine provider`. The backend no longer offers it, and this list now

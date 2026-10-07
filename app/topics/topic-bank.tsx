@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState, useTransition } from "react";
+import { useCallback, useEffect, useMemo, useState, useSyncExternalStore, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -27,7 +27,6 @@ import {
   Calendar,
   CalendarRange,
   Trash2,
-  Globe,
   FileText,
   Link as LinkIcon,
   Layers,
@@ -72,6 +71,10 @@ import {
 } from "./actions";
 
 const CATEGORIES: { value: TopicCategory; label: string }[] = [
+  { value: "trending", label: "Trending" },
+  { value: "evergreen", label: "Evergreen" },
+  { value: "personal", label: "Personal" },
+  { value: "product", label: "Product" },
   { value: "ai-workflow", label: "AI Workflow" },
   { value: "developer-tools", label: "Developer Tools" },
   { value: "automation", label: "Automation" },
@@ -94,6 +97,38 @@ const STATUS_CONFIG: Record<TopicStatus, { label: string }> = {
 
 type SortOption = "priority" | "newest" | "oldest" | "title" | "scheduled";
 
+// Trigger text only — the options keep their longer labels. Sized for the 160px trigger.
+const SORT_LABELS: Record<SortOption, string> = {
+  priority: "Priority",
+  newest: "Newest",
+  oldest: "Oldest",
+  title: "Title A–Z",
+  scheduled: "Scheduled",
+};
+
+// Base UI's Select.Value prints the raw value ("case-study", "priority") unless the root
+// is handed the labels, so every Select here gets an `items` map.
+const CATEGORY_LABELS: Record<string, string> = Object.fromEntries(
+  CATEGORIES.map((c) => [c.value, c.label])
+);
+
+/**
+ * Whether the table has room. Below 1280px the sidebar leaves the title column ~120px
+ * and every title breaks one word per line, so narrower screens get the cards instead.
+ * The server snapshot says yes: the first paint is the loading skeleton either way.
+ */
+function useTableFits(): boolean {
+  return useSyncExternalStore(
+    (onChange) => {
+      const mq = window.matchMedia("(min-width: 1280px)");
+      mq.addEventListener("change", onChange);
+      return () => mq.removeEventListener("change", onChange);
+    },
+    () => window.matchMedia("(min-width: 1280px)").matches,
+    () => true
+  );
+}
+
 function formatScheduled(iso?: string): string | null {
   if (!iso) return null;
   const d = new Date(iso);
@@ -114,6 +149,8 @@ export function TopicBank() {
   const [filterCategory, setFilterCategory] = useState<TopicCategory | "all">("all");
   const [sortBy, setSortBy] = useState<SortOption>("priority");
   const [viewMode, setViewMode] = useState<"table" | "grid">("table");
+  const tableFits = useTableFits();
+  const view = tableFits ? viewMode : "grid";
 
   // Multi-select state
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
@@ -136,7 +173,6 @@ export function TopicBank() {
   // Generation quality settings
   const [focusArea, setFocusArea] = useState("");
   const [directives, setDirectives] = useState("");
-  const [research, setResearch] = useState(false);
 
   // Manual add form
   const [formTitle, setFormTitle] = useState("");
@@ -345,7 +381,6 @@ export function TopicBank() {
           category: filterCategory === "all" ? undefined : filterCategory,
           focusArea: focusArea.trim() || undefined,
           directives: directives.trim() || undefined,
-          research,
           startDate: new Date().toISOString(),
         });
         toast.success(
@@ -604,7 +639,7 @@ export function TopicBank() {
           >
             <SlidersHorizontal className="size-3.5" />
             Settings
-            {(focusArea || directives || research) && (
+            {(focusArea || directives) && (
               <span className="size-1.5 rounded-full bg-primary" />
             )}
           </Button>
@@ -652,17 +687,6 @@ export function TopicBank() {
                 className="text-xs resize-none"
               />
             </div>
-            <label className="flex items-center gap-2 text-xs cursor-pointer select-none text-muted-foreground hover:text-foreground">
-              <input
-                type="checkbox"
-                checked={research}
-                onChange={(e) => setResearch(e.target.checked)}
-                className="size-3.5 rounded accent-primary"
-              />
-              <Globe className="size-3.5 text-primary" />
-              Riset berita/tren dev terkini dulu (web search) sebelum generate — pakai tombol
-              Trending; di sini diabaikan
-            </label>
             {isPending && (
               <p className="text-xs text-muted-foreground animate-pulse">
                 Generating…
@@ -713,6 +737,7 @@ export function TopicBank() {
                 <Select
                   value={formCategory}
                   onValueChange={(v) => setFormCategory(v as TopicCategory)}
+                  items={CATEGORY_LABELS}
                 >
                   <SelectTrigger className="w-full">
                     <SelectValue />
@@ -734,6 +759,10 @@ export function TopicBank() {
                 <Select
                   value={formRelatedProduct}
                   onValueChange={(v) => setFormRelatedProduct(v ?? "none")}
+                  items={{
+                    none: "None (Bukan soft-sell)",
+                    ...Object.fromEntries(products.map((p) => [p.id, p.name])),
+                  }}
                 >
                   <SelectTrigger className="w-full">
                     <SelectValue placeholder="Pilih produk terkait" />
@@ -856,6 +885,7 @@ export function TopicBank() {
           <Select
             value={filterCategory}
             onValueChange={(v) => setFilterCategory(v as TopicCategory | "all")}
+            items={{ all: "All Categories", ...CATEGORY_LABELS }}
           >
             <SelectTrigger className="w-[190px] h-9 text-xs bg-card">
               <SelectValue placeholder="All Categories" />
@@ -873,7 +903,7 @@ export function TopicBank() {
 
         {/* Sort & View Mode Switcher */}
         <div className="flex gap-2 items-center self-end sm:self-auto">
-          <Select value={sortBy} onValueChange={(v) => setSortBy(v as SortOption)}>
+          <Select value={sortBy} onValueChange={(v) => setSortBy(v as SortOption)} items={SORT_LABELS}>
             <SelectTrigger className="w-[160px] h-9 text-xs bg-card">
               <ArrowUpDown className="size-3.5 mr-1 text-muted-foreground" />
               <SelectValue placeholder="Sort By" />
@@ -887,7 +917,7 @@ export function TopicBank() {
             </SelectContent>
           </Select>
 
-          <div className="flex items-center border border-hairline rounded-lg p-0.5 bg-card">
+          <div className="hidden xl:flex items-center border border-hairline rounded-lg p-0.5 bg-card">
             <button
               onClick={() => setViewMode("table")}
               className={`p-1.5 rounded-md transition-colors cursor-pointer ${
@@ -996,7 +1026,7 @@ export function TopicBank() {
       {/* 8. Main Topic Display: Skeleton Loading State OR Table / Grid Views */}
       {isLoading ? (
         /* SKELETON LOADING STATE */
-        viewMode === "table" ? (
+        view === "table" ? (
           <div className="border border-hairline rounded-xl overflow-hidden bg-card shadow-2xs">
             <table className="w-full text-left text-xs">
               <thead className="border-b border-border text-xs text-muted-foreground">
@@ -1103,7 +1133,7 @@ export function TopicBank() {
             )}
           </CardContent>
         </Card>
-      ) : viewMode === "table" ? (
+      ) : view === "table" ? (
         /* DENSE TABLE / LIST VIEW (High-Craft Proportional Action Buttons) */
         <div className="border border-hairline rounded-xl overflow-hidden bg-card shadow-2xs">
           <div className="overflow-x-auto">
@@ -1385,6 +1415,7 @@ export function TopicBank() {
                     <p className="text-xs text-muted-foreground italic pl-6.5">{topic.angle}</p>
                   )}
 
+                  {topic.status !== "published" && topic.status !== "archived" && (
                   <div className="flex gap-2 pt-2 border-t border-hairline justify-end items-center">
                     {(topic.status === "idea" || topic.status === "queued") && (
                       <Button
@@ -1407,16 +1438,14 @@ export function TopicBank() {
                         Queue
                       </Button>
                     )}
-                    {topic.status !== "archived" && topic.status !== "published" && (
-                      <Button
-                        size="sm"
-                        variant="ghost"
-                        className="text-xs h-7.5 cursor-pointer"
-                        onClick={() => handleUpdateStatus(topic.id, "archived")}
-                      >
-                        Archive
-                      </Button>
-                    )}
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      className="text-xs h-7.5 cursor-pointer"
+                      onClick={() => handleUpdateStatus(topic.id, "archived")}
+                    >
+                      Archive
+                    </Button>
                     {topic.status === "generated" && topic.carouselId && (
                       <Button
                         size="sm"
@@ -1428,6 +1457,7 @@ export function TopicBank() {
                       </Button>
                     )}
                   </div>
+                  )}
                 </CardContent>
               </Card>
             );
@@ -1684,7 +1714,7 @@ export function TopicBank() {
                 Bersihkan Semua Topik Published ({statusCounts.published})?
               </DialogTitle>
               <DialogDescription className="leading-relaxed">
-                Semua <strong className="text-foreground font-semibold">{statusCounts.published} topik</strong> dengan status &quot;Published&quot; akan dihapus dari bank untuk merapikan backlog Anda.
+                Semua <strong className="text-foreground font-semibold">{statusCounts.published} topik</strong> dengan status “Published” akan dihapus dari bank untuk merapikan backlog Anda.
               </DialogDescription>
             </div>
           </div>

@@ -1,7 +1,10 @@
+import type { Metadata } from "next";
 import { requireSession } from "@/lib/session";
 import { AppShell } from "@/components/app-shell";
 import { PageHeader } from "@/components/page-header";
 import { TopicBank } from "./topic-bank";
+
+export const metadata: Metadata = { title: "Topics" };
 
 export default async function TopicsPage() {
   const session = await requireSession();

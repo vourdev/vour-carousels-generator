@@ -9,7 +9,7 @@ const geistSans = Geist({ subsets: ["latin"], variable: "--font-sans" });
 const geistMono = Geist_Mono({ subsets: ["latin"], variable: "--font-mono" });
 
 export const metadata: Metadata = {
-  title: "Vour Carousels",
+  title: { default: "Vour Carousels", template: "%s · Vour" },
   description: "On-brand @vourdev carousel builder",
 };
 

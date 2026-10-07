@@ -1,9 +1,12 @@
+import type { Metadata } from "next";
 import { requireSession } from "@/lib/session";
 import { getTopic } from "@/lib/topics/bank";
 import { AppShell } from "@/components/app-shell";
 import { PageHeader } from "@/components/page-header";
 import { listModelsAction } from "./actions";
 import { Wizard } from "./wizard";
+
+export const metadata: Metadata = { title: "Create carousel" };
 
 export default async function CreatePage({
   searchParams,

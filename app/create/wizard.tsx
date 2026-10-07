@@ -3,6 +3,7 @@
 import { useState, useTransition, useEffect, useRef, useCallback } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { PreviewFrame, type PreviewMode } from "@/components/preview-frame";
 import type { ModelId } from "@/lib/models";
 import type { SlidePlan } from "@/lib/ds/schema";
@@ -127,6 +128,9 @@ export function Wizard({
   const [topicTitle, setTopicTitle] = useState<string | null>(null);
   const [bankTopics, setBankTopics] = useState<Topic[]>([]);
   const [showPendingModal, setShowPendingModal] = useState(false);
+  const [confirmReset, setConfirmReset] = useState(false);
+  /** Arrived via /create?topic=… while another draft was open: offered, not forced. */
+  const [waitingTopic, setWaitingTopic] = useState<Topic | null>(null);
   const [chatInput, setChatInput] = useState<string>("");
   const initialTopicApplied = useRef(false);
 
@@ -344,11 +348,14 @@ export function Wizard({
 
   // Surface progress in the tab title, which is the only part of the page a
   // backgrounded user can still see.
+  // Only while busy, and it puts back what it found: writing a fixed title on cleanup
+  // left "Create carousel" on every page navigated to afterwards.
   useEffect(() => {
-    const base = "Create carousel · Vour";
-    document.title = busy ? `◐ ${LOADING_JOBS[loadingJob ?? "brief"].title}… · Vour` : base;
+    if (!busy) return;
+    const previous = document.title;
+    document.title = `◐ ${LOADING_JOBS[loadingJob ?? "brief"].title}… · Vour`;
     return () => {
-      document.title = base;
+      document.title = previous;
     };
   }, [busy, loadingJob]);
 
@@ -539,11 +546,12 @@ export function Wizard({
       });
   }, [canPublish]);
 
-  // Step 1: load pickable Topic Bank entries (queued/idea) for the dropdown.
+  // Step 1: load pickable Topic Bank entries (queued/idea) for the dropdown. Asked for by
+  // status: the first 50 of every status, filtered here, left out most of the ideas.
   useEffect(() => {
     if (!mounted || step !== 1) return;
-    listTopicsAction({ limit: 50 })
-      .then((all) => setBankTopics(all.filter((t) => t.status === "idea" || t.status === "queued")))
+    Promise.all([listTopicsAction({ status: "queued" }), listTopicsAction({ status: "idea" })])
+      .then(([queued, ideas]) => setBankTopics([...queued, ...ideas]))
       .catch(() => { });
   }, [mounted, step]);
 
@@ -551,10 +559,13 @@ export function Wizard({
   useEffect(() => {
     if (!mounted || !initialTopic || initialTopicApplied.current) return;
     initialTopicApplied.current = true;
+    // The query has done its job either way. Left in the URL, a reload would offer this
+    // topic again on top of whatever draft the user has moved on to.
+    window.history.replaceState(null, "", "/create");
     if (step !== 1 || brief) {
-      toast.info(
-        `Ada draft yang sedang berjalan. Reset dulu untuk mulai dari topic "${initialTopic.title}".`
-      );
+      // A toast here was a dead end: it said to reset, and after a reset nothing started.
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- one-shot, guarded by the ref above
+      setWaitingTopic(initialTopic);
       return;
     }
     // Hoisted function declaration, defined further down with the other generation
@@ -1137,6 +1148,9 @@ export function Wizard({
     // eslint-disable-next-line react-hooks/purity -- only called from a settled fetch, never during render
     const startedAt = Date.now();
     const finish = () => {
+      // One-shot. Left armed after the reveal ends, the next hidden tab would run it again
+      // and write this brief back over every edit, polish and revision made since.
+      if (revealFinishRef.current === finish) revealFinishRef.current = null;
       setBrief(res);
       setIsTyping(false);
       if (typewriterIntervalRef.current) {
@@ -1382,7 +1396,7 @@ export function Wizard({
           <Button
             variant="ghost"
             size="icon"
-            onClick={handleReset}
+            onClick={() => (brief || plan ? setConfirmReset(true) : handleReset())}
             title="Mulai sesi baru"
             aria-label="Mulai sesi baru"
             className="size-8 text-muted-foreground hover:text-foreground active:scale-95 transition-transform"
@@ -1391,6 +1405,32 @@ export function Wizard({
           </Button>
         </div>
       </div>
+
+      {waitingTopic && (
+        <div className="shrink-0 mb-2 flex flex-col gap-2 rounded-lg border border-hairline bg-card px-3 py-2.5 text-sm sm:flex-row sm:items-center sm:justify-between">
+          <p className="min-w-0 text-muted-foreground">
+            Draft lain masih terbuka. Mulai dari topic{" "}
+            <span className="font-medium text-foreground">“{waitingTopic.title}”</span>?
+          </p>
+          <div className="flex shrink-0 items-center gap-1.5">
+            <Button variant="ghost" size="sm" onClick={() => setWaitingTopic(null)}>
+              Tetap di draft ini
+            </Button>
+            <Button
+              size="sm"
+              disabled={busy || isResetting}
+              onClick={async () => {
+                const t = waitingTopic;
+                setWaitingTopic(null);
+                await handleReset();
+                startBriefFromTopic(t);
+              }}
+            >
+              Buang draft & mulai
+            </Button>
+          </div>
+        </div>
+      )}
 
       {/* One shell, two panes. The border and radius belong to this container now — the
           panes inside it are separated by the drag handle, not by a gap between cards. */}
@@ -1449,7 +1489,9 @@ export function Wizard({
             canSend={Boolean(model) && chatInput.trim().length > 0 && !isTyping}
             placeholder={composerPlaceholder}
             topics={bankTopics}
-            onPickTopic={startBriefFromTopic}
+            // A topic seeds a new draft; once a brief exists, picking one would run a
+            // second brief over the first. Starting over is what reset is for.
+            onPickTopic={step === 1 && !brief ? startBriefFromTopic : undefined}
             hint={
               topicTitle ? (
                 <p className="text-[11px] text-muted-foreground text-center truncate">
@@ -1613,6 +1655,31 @@ export function Wizard({
           </div>
         </div>
       )}
+
+      <Dialog open={confirmReset} onOpenChange={setConfirmReset}>
+        <DialogContent className="sm:max-w-sm">
+          <DialogHeader>
+            <DialogTitle>Mulai sesi baru?</DialogTitle>
+            <DialogDescription>
+              Brief{plan ? ", rancangan slide," : ""} dan percakapan di draft ini akan dibuang.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button variant="ghost" onClick={() => setConfirmReset(false)}>
+              Batal
+            </Button>
+            <Button
+              variant="destructive"
+              onClick={() => {
+                setConfirmReset(false);
+                void handleReset();
+              }}
+            >
+              Buang draft
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       {showPendingModal && (
         <div

@@ -40,7 +40,12 @@ export type TopicCategory =
   | "tutorial"
   | "common-mistakes"
   | "case-study"
-  | "deep-dive";
+  | "deep-dive"
+  // What the research agent and the news sweep file topics under — most of the bank.
+  | "evergreen"
+  | "trending"
+  | "personal"
+  | "product";
 
 export type TopicStatus = "idea" | "queued" | "generated" | "published" | "archived";
 

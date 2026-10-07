@@ -44,7 +44,7 @@ export interface DraftSnapshot {
 }
 
 export const WELCOME_MESSAGE_TEXT =
-  "Draft dibersihkan. Silakan masukkan ide konten baru atau upload file md untuk memulai.";
+  "Draft dibersihkan. Tulis ide konten baru, atau ambil topik dari Topic Bank lewat tombol +.";
 
 /**
  * A draft with nothing in it. `draftId` is injected so this stays pure.

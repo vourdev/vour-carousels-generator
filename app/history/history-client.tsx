@@ -297,14 +297,18 @@ export default function HistoryClient({ initialItems }: HistoryClientProps) {
 
   const openSchedule = (c: Carousel) => {
     setSchedulingTarget(c.id);
+    // `dueAt` is UTC ISO and the input wants local wall-clock time. Slicing the ISO
+    // string showed 05:30 for a 12:30 WIB post, and saving it unchanged moved the post.
+    const pad = (n: number) => String(n).padStart(2, "0");
+    const local = (d: Date) =>
+      `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
     if (c.dueAt) {
-      setScheduleTime(c.dueAt.substring(0, 16));
+      setScheduleTime(local(new Date(c.dueAt)));
     } else {
       const tomorrow = new Date();
       tomorrow.setDate(tomorrow.getDate() + 1);
       tomorrow.setHours(9, 0, 0, 0);
-      const pad = (n: number) => String(n).padStart(2, "0");
-      setScheduleTime(`${tomorrow.getFullYear()}-${pad(tomorrow.getMonth() + 1)}-${pad(tomorrow.getDate())}T${pad(tomorrow.getHours())}:${pad(tomorrow.getMinutes())}`);
+      setScheduleTime(local(tomorrow));
     }
     setSelectedCarousel(null);
   };
@@ -525,9 +529,9 @@ export default function HistoryClient({ initialItems }: HistoryClientProps) {
                   <thead>
                     <tr className="border-b border-border text-left text-xs text-muted-foreground">
                       <th className="px-4 py-2 font-normal">Judul</th>
-                      <th className="hidden px-4 py-2 font-normal md:table-cell">Model</th>
-                      <th className="hidden px-4 py-2 font-normal sm:table-cell">Slide</th>
-                      <th className="px-4 py-2 font-normal">Jadwal</th>
+                      <th className="hidden px-4 py-2 font-normal lg:table-cell">Model</th>
+                      <th className="hidden px-4 py-2 font-normal lg:table-cell">Slide</th>
+                      <th className="hidden px-4 py-2 font-normal sm:table-cell">Jadwal</th>
                       <th className="px-4 py-2 font-normal">Status</th>
                     </tr>
                   </thead>
@@ -540,7 +544,7 @@ export default function HistoryClient({ initialItems }: HistoryClientProps) {
                           className="cursor-pointer transition-colors hover:bg-accent/50"
                           onClick={() => setSelectedCarousel(item)}
                         >
-                          <td className="max-w-0 px-4 py-2 sm:w-1/2">
+                          <td className="w-full max-w-0 px-4 py-2">
                             <div className="flex items-center gap-3">
                               <Thumb src={item.thumbnail} />
                               <div className="min-w-0">
@@ -551,15 +555,19 @@ export default function HistoryClient({ initialItems }: HistoryClientProps) {
                                 >
                                   {item.title || "Untitled"}
                                 </button>
-                                <p className="truncate text-xs text-muted-foreground">{item.caption}</p>
+                                <p className="hidden truncate text-xs text-muted-foreground sm:block">{item.caption}</p>
+                                {/* Phones drop the Jadwal column; the date moves under the title. */}
+                                <p className="truncate text-xs text-muted-foreground sm:hidden">
+                                  {item.dueAt ? dueFmt.format(new Date(item.dueAt)) : "Belum dijadwalkan"}
+                                </p>
                               </div>
                             </div>
                           </td>
-                          <td className="hidden px-4 py-2 text-muted-foreground md:table-cell">
+                          <td className="hidden px-4 py-2 text-muted-foreground lg:table-cell">
                             {item.model ? item.model.split("/").pop() : item.source}
                           </td>
-                          <td className="hidden px-4 py-2 tabular-nums text-muted-foreground sm:table-cell">{item.slideCount}</td>
-                          <td className="whitespace-nowrap px-4 py-2 tabular-nums">
+                          <td className="hidden px-4 py-2 tabular-nums text-muted-foreground lg:table-cell">{item.slideCount}</td>
+                          <td className="hidden whitespace-nowrap px-4 py-2 tabular-nums sm:table-cell">
                             {item.dueAt ? (
                               <>
                                 {dueFmt.format(new Date(item.dueAt))}
@@ -683,7 +691,7 @@ export default function HistoryClient({ initialItems }: HistoryClientProps) {
                     onClick={() => setCleanupTarget(selectedCarousel)}
                   >
                     <Eraser />
-                    Bersihkan aset ({selectedCarousel.imageUrls.length})
+                    Bersihkan aset ({selectedCarousel.imageUrls.length - 1})
                   </Button>
                 )}
 
