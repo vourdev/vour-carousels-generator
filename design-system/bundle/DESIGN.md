@@ -2,7 +2,9 @@
 
 # VOUR — Design System (self-contained bundle)
 
-> **Version 1.0 · "Engineering Editorial"**
+> **Version 1.2 · "Engineering Editorial" + "Annotated Editorial" + "Interface layer"**
+> v1.1 (2026-10) adds the poster compositions and the art layer — condensed display type, handwritten margin notes, overlay cards, drafting-paper decor. See **§22**.
+> v1.2 (2026-10) adds the interface layer — a product UI drawn onto the slide: cursors, an editor's text selection, a browser window running off the slide, workspace fragments around a headline. See **§23**. Where §22/§23 and an older rule disagree, the newer section wins.
 > The single source of truth for every visual that carries the Vour name.
 > `SKILL.md` is a thin pointer. `MAKING_CAROUSELS.md` is the build procedure. **If a rule appears in more than one file, this file wins.**
 
@@ -17,7 +19,7 @@
 > Non-negotiables:
 > - **Two surfaces only: Paper (warm cream) and Ink (warm near-black).** Never pure `#FFFFFF` or `#000000`. Never a second theme, never a synthwave/neon variant.
 > - **One hero accent: Ember `#EE4B1A`.** Max three colors on any single slide (surface + ink + one accent/tint). Ember never touches body copy.
-> - **Type:** Sora (display), Inter (body/UI), JetBrains Mono (code/eyebrow/counter), EB Garamond (signature serif — issue numbers, series labels, pull-quotes only). Max two weights per slide.
+> - **Type:** Sora (display), Inter (body/UI), JetBrains Mono (code/eyebrow/counter), EB Garamond (signature serif — issue numbers, series labels, pull-quotes only). Anton (condensed poster headline) and Caveat (handwritten margin notes) are §22 roles. Max two weights per slide, not counting the §22 roles.
 > - **8px grid.** Every gap/padding/margin is a canonical token from §7. Never invent intermediates.
 > - **One idea per slide. One accent word per headline. One visual focus per viewport.**
 > - **No AI slop:** no multi-hue gradients, no bouncy springs, no `#000`/`#fff` surfaces, no hand-rolled SVG icons, no centered body paragraphs, no emoji inline with body copy, no drop-shadow on the brand mark.
@@ -351,7 +353,7 @@ background:
   #FBF6EF;
 ```
 
-**Forbidden backgrounds:** ❌ mesh gradients ❌ noise textures over text ❌ multi-hue gradients ❌ neon/synthwave ❌ pure `#000`/`#fff` ❌ full-page grid on Paper (grid is an Ink-only "blueprint" treatment). The halo maxes at 6% so text is always legible.
+**Forbidden backgrounds:** ❌ mesh gradients ❌ noise textures over text ❌ multi-hue gradients ❌ neon/synthwave ❌ pure `#000`/`#fff` ❌ a full-page grid on Paper — **except** the §22 drafting grid (dashed 90px hairlines with crosses at the intersections, ≤ 7% ink), which is the Paper treatment of the poster compositions. The halo maxes at 6% so text is always legible.
 
 ---
 
@@ -625,7 +627,7 @@ The system is executed by AI. These are hard constraints — violating one is a 
 15. Every icon on an opaque tile (§6). Every card fill from the tint family or `--paper-raised` — never transparent over paper.
 16. One mockup per slide, full width (§5/§10). No `backdrop-filter`. No hand-rolled SVG icons. Iconify only.
 17. Terminal ≤ 8 lines. CommandList/CatalogList ≤ 6 rows. DataTable ≤ 4 rows. PromptCard ≤ 180 chars. QuoteInset ≤ 180 chars.
-18. Every visual element must carry meaning — **never decorate without purpose.**
+18. Every visual element must carry meaning — **never decorate without purpose.** The §22 decor kit (drafting grid, crop marks, dot cluster, sparkle, hatch, ghost index, ribbon) is the one sanctioned exception: it is drawn by the renderer, in the margins, behind the content.
 
 **Voice**
 19. Casual Indonesian, first-person (`saya`); tech terms stay English; never `kami`; `kamu` only in CTAs. No emoji in body. Arrows are `→` not `->`.
@@ -741,6 +743,75 @@ For convenience, you can inline it as a CSS custom property and reference it eve
 - Slides render at exactly **1080 × 1350** and export as screenshots.
 - No `backdrop-filter`, no external assets beyond Google Fonts + Iconify + the brand mark.
 - Fonts load from the §3 Google Fonts URL; production print surfaces host local `.woff2`.
+
+---
+
+# 22 · Annotated Editorial (v1.1 — poster compositions + the art layer)
+
+v1.0 put every inner slide in one column — eyebrow, headline, body, mockup — and the decks read as one template however the content varied. v1.1 keeps the palette, the surfaces and the copy rules, and changes how a slide is **composed**: like a design-magazine spread about engineering, with a human hand in the margin.
+
+### 22.1 · What the generator draws (lib/ds in backend-vour-carousels)
+| Piece | What it is | Who decides |
+|---|---|---|
+| **Drafting paper** | Paper + 90px dashed grid with crosses at intersections, ember corner glows. Ink gets the same grid in cream. | renderer |
+| **Decor kit** | crop marks, a 3×4 dot cluster, an outlined sparkle, a hatched square — in the 80px margins, rotating corners by slide | renderer |
+| **Condensed display** | **Anton**, all caps, sized to fill its measure (88–220px, fitted to the copy) — poster/blueprint headlines, poster cover and outro | renderer (size), model (words) |
+| **Ghost index** | huge outlined numeral behind the headline ("#01", "03") | model (`art.ghost`), else slide number on spotlight/blueprint |
+| **Ribbon** | Ember bookmark hung from the top edge, for ranked items | model (`art.ribbon`) |
+| **Hand note** | **Caveat** 46px in the accent + a curved arrow into the visual, 2–7 words | model (`art.annotations`, style `hand`) |
+| **Tag** | mono caps label on the visual's edge with a leader line ("N+1 QUERY", "3 × 8") | model (style `tag`) |
+| **Overlay card** | the "repo card" over the visual's corner: kicker, title, body, ≤ 3 chips; Ember left edge | model (`art.overlay`) |
+| **Tilt** | the visual panel tilted in perspective (~9° Y, ~2° Z) with a soft shadow | model (`art.tilt`) or alternating default |
+| **Statement / pill** | one bold closing line (or a pill at the foot of a poster) | model (`art.statement`, `art.tag`) |
+
+### 22.2 · Compositions (point slides — `layout`)
+- **spotlight** — headline across the top, body as a narrow mono column on the left, the visual tilted on the right with an overlay card on its corner. Tool / code / product spreads. Body ≤ 120 chars.
+- **blueprint** — condensed caps headline at poster scale, accent rule, body, the diagram on construction lines (beside the body if compact, under it if wide); notes become tags.
+- **poster** — centered condensed headline, ONE hero object, centered body, pill at the foot. The emotional beat: one number, one quote, one verdict.
+- **stage** — the visual full width at the top (optionally tilted, with an overlay card), the copy under it.
+- The v1.0 column flows (standard / mockup-forward / split-content / note-emphasis) remain — at most one per deck, as a breather.
+- Covers: **poster** (Paper, condensed centered headline, hook visual, pill) or **editorial** (Ink). Outro: **poster** (condensed closing line, Ember CTA pill, a hand note pointing at it).
+
+### 22.3 · Rules
+1. Never the same composition on consecutive slides; ≥ 3 compositions in a deck with ≥ 4 point slides (enforced in code).
+2. Hand notes on at least half the point slides — they are the signature of the style. A note is a senior dev's margin scribble: an opinion, the "aha", the gotcha. Never the headline again.
+3. A slide carries at most two of {hand note, overlay card, statement}. When they do not fit, the renderer moves the slide to a roomier composition, then drops them in that order — the content never shrinks below ~0.66× and never overlaps.
+4. **Overlay chips are facts from the brief only.** Never invented star counts, downloads, prices or percentages.
+5. Ink stays a rhythm accent (≤ 1 in 3, never two in a row). Paper is the default surface again.
+6. §19 rules 6, 7 and 13 are relaxed for the poster compositions: whitespace is measured per spread, poster slides center, and Anton/Caveat do not count toward the two-weight limit.
+7. Motion is implied, not animated: the tilt, the arrows and the overlap are what make a still slide feel kinetic. The export stays a static 1080×1350 JPEG.
+
+---
+
+# 23 · Interface layer (v1.2 — the reader's own tools, drawn onto the slide)
+
+A developer audience reads interfaces fluently: a cursor mid-click, a word caught in a selection, a site seen through a browser window. v1.2 borrows those to point at the content. Everything stays static; the cursor and the selection are what make a still slide feel used. One accent still: the cursor, the selection and the filled tags are Ember, never the system blue of the tools they quote.
+
+### 23.1 · Pieces (lib/ds/ui.ts, art.ts, art-covers.ts in backend-vour-carousels)
+| Piece | What it is | Who decides |
+|---|---|---|
+| **Dot-grid paper** | Paper with a plain 36px dot grid (ink dots at 15%) — the designer's canvas the interface slides sit on. Ink gets cream dots. | renderer |
+| **Cursor** | Ember pointer with a white keyline and a three-stroke click burst, drawn on the thing being clicked: the step pill, a showcase link, a scatter tooltip, the outro CTA | renderer |
+| **Step pill** | filled Ember pill holding the eyebrow ("LANGKAH 2") with the cursor on it | model (eyebrow), renderer (pill) |
+| **Chips** (mockup) | "Contoh:" and 2–4 outlined chips with an icon — the concrete names behind a step or a definition. A hex token shows its own colour | model (`type: "chips"`) |
+| **Site** (mockup) | a drawn landing page in a browser window: logo, nav, hero name and tagline, CTA, up to 3 feature cards (skeleton tiles when there are none) | model (`type: "site"`) |
+| **Selection** | the cover's accent word inside an editor selection: Ember wash + two drag handles, knob top-left and bottom-right | renderer, on `accentWord` |
+| **Label cluster** | 3–5 tilted labels above the select cover's headline, alternating a sans name card and a mono Ember tag | model (`art.labels`) |
+| **Footnote** | an Ember asterisk after the headline and the note at the foot | model (`art.footnote`) |
+| **Workspace fragments** | the scatter cover's floating pieces: review comment, tooltip, app tile, shell command, file tab, status pill, colour swatch — plus a tool rail and a selection frame drawn by the renderer | model (`art.props`), renderer (slots) |
+
+### 23.2 · Compositions
+- **step** (point) — dot grid; the step pill being clicked, the headline at full measure, the body as ONE bulleted line, then one compact object (usually chips). The block sits centred in the free height. Holds only chips · callout · bigstat · card · quote · checklist · promptcard.
+- **showcase** (point) — the item number top centre, "Geser →" top right, the name as the headline, `art.link` underlined with a cursor on it, the body as one centred line (clamped to three), and a 1000px browser window that runs off the bottom of the slide. Holds only site · browser · screenshot — pages, which crop naturally. A run of showcases is allowed (a tools list reads like flipping bookmarks).
+- **select** (cover) — eyebrow in small mono, the label cluster, a bold sans headline (≤ 8 words) with the accent selected, the lede as an Ember mono subtitle, brand row, footnote at the foot. No hook.
+- **scatter** (cover) — a giant centred headline in a 720px column, a divider with a square handle, the lede, and fragments in fixed margin slots around it (top band, side margins, bottom band). No hook.
+
+### 23.3 · Rules
+1. Proportion is the renderer's job and it does not trust the copy. Every piece of model-written copy has a hard cap in CSS (line clamps, max-widths with ellipsis) on top of the fit estimate, so text that runs long is cut inside its own box rather than pushed into a neighbour.
+2. A composition that cannot hold its copy steps aside instead of shrinking it past legibility: select/scatter → the poster cover, an Ink cover whose hook would drop below 40% → the poster cover, a column flow that would overflow → the poster composition the renderer would pick, a standard outro → the poster outro.
+3. Tags are labels (≤ 24 characters); a longer one is drawn as a hand note. Hand notes are clamped to two lines and their band is reserved at their real height.
+4. Numbers are facts (§22 rule 4, now for every field): a claim with a number — % faster, N× cheaper, stars, downloads, prices — must come from the idea or the brief. Example values in code or config are not claims.
+5. Interface pieces quote tools; they never impersonate one. No real product's logo, colours or UI chrome — the browser is a generic window, the site is drawn from the brief's own words.
 
 ---
 
