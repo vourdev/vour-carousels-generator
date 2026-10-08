@@ -1,6 +1,7 @@
 "use client";
 
-import { useState } from "react";
+import { useCallback, useState } from "react";
+
 import { cn } from "@/lib/utils";
 
 /**
@@ -10,15 +11,20 @@ import { cn } from "@/lib/utils";
  */
 export function Thumb({ src, className }: { src: string | null; className?: string }) {
   const [failed, setFailed] = useState(false);
+  // A server-rendered <img> can fail before React hydrates and attaches onError, so the
+  // error event is never seen. Check on attach: complete with no pixels means it failed.
+  const ref = useCallback((img: HTMLImageElement | null) => {
+    if (img?.complete && img.naturalWidth === 0) setFailed(true);
+  }, []);
+
   return (
     <span
-      className={cn(
-        "block aspect-4/5 w-8 shrink-0 overflow-hidden rounded border border-border bg-muted",
-        className
-      )}
+      className={cn("block aspect-4/5 w-8 shrink-0 overflow-hidden rounded border border-border bg-muted", className)}
     >
       {src && !failed ? (
-        <img src={src} alt="" loading="lazy" onError={() => setFailed(true)} className="size-full object-cover" />
+        // biome-ignore lint/performance/noImgElement: remote slide URLs on hosts next/image is not configured for
+        // eslint-disable-next-line @next/next/no-img-element
+        <img ref={ref} src={src} alt="" loading="lazy" onError={() => setFailed(true)} className="size-full object-cover" />
       ) : null}
     </span>
   );

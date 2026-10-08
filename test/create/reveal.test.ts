@@ -6,7 +6,7 @@ import {
   countSections,
   parseMeta,
   REVEAL_CHARS_PER_MS,
-} from "@/app/create/_components/utils";
+} from "@/app/(dashboard)/create/_components/utils";
 
 describe("revealedLength", () => {
   const T0 = 1_000_000;

@@ -6,7 +6,7 @@ import {
   isPersistedUrl,
   revocableUrls,
   type DraftSnapshot,
-} from "@/app/create/draft-state";
+} from "@/app/(dashboard)/create/draft-state";
 
 const CLOUDINARY = "https://res.cloudinary.com/x/image/upload/v1/vourdev-carousels/a.jpg";
 

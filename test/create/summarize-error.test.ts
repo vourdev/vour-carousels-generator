@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { summarizeError } from "@/app/create/_components/utils";
+import { summarizeError } from "@/app/(dashboard)/create/_components/utils";
 
 /**
  * The operator runs this app to find out why a generation failed. The previous version

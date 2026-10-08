@@ -1,19 +1,16 @@
 "use client";
 
 import { useState } from "react";
+
 import { useRouter } from "next/navigation";
-import { signIn } from "@/lib/auth-client";
+
+import { Eye, EyeOff, Loader2 } from "lucide-react";
+
 import { Button } from "@/components/ui/button";
+import { Field, FieldError, FieldGroup, FieldLabel } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
-import { Eye, EyeOff } from "lucide-react";
+import { InputGroup, InputGroupAddon, InputGroupButton, InputGroupInput } from "@/components/ui/input-group";
+import { signIn } from "@/lib/auth-client";
 
 export function LoginForm() {
   const router = useRouter();
@@ -30,69 +27,58 @@ export function LoginForm() {
     const res = await signIn.email({ email, password });
     setPending(false);
     if (res.error) {
-      setError("Invalid credentials");
+      setError("Email atau password salah.");
       return;
     }
     router.push("/");
   }
 
   return (
-    <Card className="w-full max-w-[380px]">
-      <CardHeader>
-        <img src="/vourdev-logo.jpeg" alt="" className="mb-2 size-8 rounded-md" />
-        <CardTitle className="text-lg font-semibold tracking-tight">Masuk ke Vour Carousels</CardTitle>
-        <CardDescription>Studio carousel @vourdev.</CardDescription>
-      </CardHeader>
-      <CardContent>
-        <form onSubmit={onSubmit} className="grid gap-4">
-          <div className="grid gap-2">
-            <Label htmlFor="email">Email</Label>
-            <Input
-              id="email"
-              type="email"
-              autoComplete="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              placeholder="admin@vourdev.local"
+    <form onSubmit={onSubmit} className="flex flex-col gap-4">
+      <FieldGroup className="gap-4">
+        <Field className="gap-1.5" data-invalid={Boolean(error)}>
+          <FieldLabel htmlFor="login-email">Email</FieldLabel>
+          <Input
+            id="login-email"
+            type="email"
+            autoComplete="email"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            placeholder="you@vour.dev"
+            aria-invalid={Boolean(error)}
+            required
+          />
+        </Field>
+        <Field className="gap-1.5" data-invalid={Boolean(error)}>
+          <FieldLabel htmlFor="login-password">Password</FieldLabel>
+          <InputGroup>
+            <InputGroupInput
+              id="login-password"
+              type={showPassword ? "text" : "password"}
+              autoComplete="current-password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              placeholder="••••••••"
+              aria-invalid={Boolean(error)}
+              required
             />
-          </div>
-          <div className="grid gap-2">
-            <Label htmlFor="password">Password</Label>
-            <div className="relative">
-              <Input
-                id="password"
-                type={showPassword ? "text" : "password"}
-                autoComplete="current-password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                placeholder="••••••••"
-                className="pr-9"
-              />
-              <button
-                type="button"
+            <InputGroupAddon align="inline-end">
+              <InputGroupButton
+                size="icon-xs"
                 onClick={() => setShowPassword((v) => !v)}
-                className="absolute right-2.5 top-1/2 -translate-y-1/2 text-muted-foreground transition-colors hover:text-foreground"
-                aria-label={showPassword ? "Hide password" : "Show password"}
+                aria-label={showPassword ? "Sembunyikan password" : "Tampilkan password"}
               >
-                {showPassword ? (
-                  <EyeOff className="size-4" />
-                ) : (
-                  <Eye className="size-4" />
-                )}
-              </button>
-            </div>
-          </div>
-          <Button type="submit" disabled={pending} className="w-full">
-            {pending ? "Signing in…" : "Sign in"}
-          </Button>
-          {error && (
-            <p role="alert" className="text-sm text-destructive">
-              {error}
-            </p>
-          )}
-        </form>
-      </CardContent>
-    </Card>
+                {showPassword ? <EyeOff /> : <Eye />}
+              </InputGroupButton>
+            </InputGroupAddon>
+          </InputGroup>
+          {error ? <FieldError>{error}</FieldError> : null}
+        </Field>
+      </FieldGroup>
+      <Button className="w-full" type="submit" disabled={pending}>
+        {pending ? <Loader2 className="animate-spin" data-icon="inline-start" /> : null}
+        {pending ? "Masuk…" : "Masuk"}
+      </Button>
+    </form>
   );
 }
-
