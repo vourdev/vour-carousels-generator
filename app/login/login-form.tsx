@@ -4,7 +4,7 @@ import { useState } from "react";
 
 import { useRouter } from "next/navigation";
 
-import { Eye, EyeOff, Loader2 } from "lucide-react";
+import { Eye, EyeOff, Loader2, LogIn } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Field, FieldError, FieldGroup, FieldLabel } from "@/components/ui/field";
@@ -75,8 +75,8 @@ export function LoginForm() {
           {error ? <FieldError>{error}</FieldError> : null}
         </Field>
       </FieldGroup>
-      <Button className="w-full" type="submit" disabled={pending}>
-        {pending ? <Loader2 className="animate-spin" data-icon="inline-start" /> : null}
+      <Button className="w-full" size="lg" type="submit" disabled={pending}>
+        {pending ? <Loader2 className="animate-spin" data-icon="inline-start" /> : <LogIn data-icon="inline-start" />}
         {pending ? "Masuk…" : "Masuk"}
       </Button>
     </form>
